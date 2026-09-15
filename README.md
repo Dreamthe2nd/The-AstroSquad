@@ -12,8 +12,9 @@ This repository contains the observational data, analysis, documentation, and re
 ## Research Team
 
 - Shlok
-- Team Member
-- Team Member
+- Annushka
+- Keya
+- Sheetal
 
 ## Project Status
 
