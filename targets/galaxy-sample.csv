@@ -1,2 +1,3 @@
 target,common_name,type,distance_mpc,notes
 M31,Andromeda Galaxy,Spiral,,Blueshift reference target
+M82,Cigar Galaxy,distorted edge-on spiral,Redshift reference target
