@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import child_process from 'child_process';
-import { dialog, shell, BrowserWindow } from 'electron';
+import { dialog, shell, BrowserWindow, clipboard } from 'electron';
 import { GoogleWindowManager } from './googleWindowManager';
 
 export interface FileNode {
@@ -260,26 +260,38 @@ export class FileHandlers {
   public static async openGoogleSuiteSession(
     appType: 'docs' | 'sheets' | 'slides' | 'drive',
     windowMode: 'station_window' | 'app_window' | 'browser_tab' = 'station_window',
-    _targetFilePath?: string,
+    targetFilePath?: string,
     preferredEngine?: string
   ): Promise<{ success: boolean; message: string }> {
     const urls: Record<string, string> = {
-      docs: 'https://docs.google.com/document/u/0/',
-      sheets: 'https://docs.google.com/spreadsheets/u/0/',
-      slides: 'https://docs.google.com/presentation/u/0/',
-      drive: 'https://drive.google.com/drive/u/0/my-drive'
+      docs: targetFilePath ? 'https://docs.google.com/document/u/0/?tab=open#open' : 'https://docs.google.com/document/u/0/',
+      sheets: targetFilePath ? 'https://docs.google.com/spreadsheets/u/0/?tab=open#open' : 'https://docs.google.com/spreadsheets/u/0/',
+      slides: targetFilePath ? 'https://docs.google.com/presentation/u/0/?tab=open#open' : 'https://docs.google.com/presentation/u/0/',
+      drive: 'https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing'
     };
 
     const targetUrl = urls[appType] || urls.drive;
     const isMac = process.platform === 'darwin';
     const isWin = process.platform === 'win32';
 
+    if (targetFilePath && fs.existsSync(targetFilePath)) {
+      try {
+        clipboard.writeText(targetFilePath);
+        shell.showItemInFolder(targetFilePath);
+      } catch (e) {
+        console.warn('Could not copy file path or show item in folder:', e);
+      }
+    }
+
+    const fileName = targetFilePath ? path.basename(targetFilePath) : '';
+    const fileHint = fileName ? ` Opened file picker for "${fileName}" (path copied to clipboard & revealed in folder for drag & drop).` : '';
+
     // Mode 1: Native AstroSquad Station Window (100% universal across macOS, Windows & Linux, no browser required)
     if (windowMode === 'station_window') {
-      GoogleWindowManager.openSession(appType, targetUrl);
+      GoogleWindowManager.openSession(appType, targetUrl, targetFilePath);
       return {
         success: true,
-        message: `Launched dedicated AstroSquad Station Window for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}.`
+        message: `Launched dedicated AstroSquad Station Window for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}.${fileHint}`
       };
     }
 
@@ -300,7 +312,7 @@ export class FileHandlers {
             child.unref();
             return {
               success: true,
-              message: `Launched standalone session in ${appBrowser.name}.`
+              message: `Launched standalone session in ${appBrowser.name}.${fileHint}`
             };
           } else if (isMac) {
             const child = child_process.spawn('open', ['-na', appBrowser.path, '--args', `--app=${targetUrl}`], {
@@ -310,7 +322,7 @@ export class FileHandlers {
             child.unref();
             return {
               success: true,
-              message: `Launched standalone session in ${appBrowser.name} (macOS).`
+              message: `Launched standalone session in ${appBrowser.name} (macOS).${fileHint}`
             };
           }
         } catch (err: any) {
@@ -323,8 +335,8 @@ export class FileHandlers {
       return {
         success: true,
         message: isMac
-          ? `Opened Google ${appType} in Safari / Default Browser (switch to Station Window mode for borderless desktop windows).`
-          : `Opened Google ${appType} in default browser.`
+          ? `Opened Google ${appType} in Safari / Default Browser.${fileHint}`
+          : `Opened Google ${appType} in default browser.${fileHint}`
       };
     }
 
@@ -332,7 +344,7 @@ export class FileHandlers {
     await shell.openExternal(targetUrl);
     return {
       success: true,
-      message: `Opened Google ${appType.charAt(0).toUpperCase() + appType.slice(1)} in default browser.`
+      message: `Opened Google ${appType.charAt(0).toUpperCase() + appType.slice(1)} in default browser.${fileHint}`
     };
   }
 
@@ -349,20 +361,20 @@ export class FileHandlers {
 
       // Check if configured for Google Productivity Suite standalone sessions
       if (trimmed === 'google_slides') {
-        await this.openGoogleSuiteSession('slides', preferredMode, filePath);
-        return '';
+        const res = await this.openGoogleSuiteSession('slides', preferredMode, filePath);
+        return res.message;
       }
       if (trimmed === 'google_sheets') {
-        await this.openGoogleSuiteSession('sheets', preferredMode, filePath);
-        return '';
+        const res = await this.openGoogleSuiteSession('sheets', preferredMode, filePath);
+        return res.message;
       }
       if (trimmed === 'google_docs') {
-        await this.openGoogleSuiteSession('docs', preferredMode, filePath);
-        return '';
+        const res = await this.openGoogleSuiteSession('docs', preferredMode, filePath);
+        return res.message;
       }
       if (trimmed === 'google_drive') {
-        await this.openGoogleSuiteSession('drive', preferredMode, filePath);
-        return '';
+        const res = await this.openGoogleSuiteSession('drive', preferredMode, filePath);
+        return res.message;
       }
 
       // Check if configured for Obsidian Markdown notes

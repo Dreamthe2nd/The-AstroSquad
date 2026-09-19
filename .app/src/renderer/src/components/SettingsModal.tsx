@@ -1146,7 +1146,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
-                    Access the squad's shared telescope drive, raw FITS spectra images, and calibration archives.
+                    Access the official squad shared Google Drive folder (<code className="text-indigo-300 font-mono text-[10px]">The-AstroSquad Cloud Hub</code>), raw FITS spectra images, and research archives.
                   </p>
                   <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
                     <button

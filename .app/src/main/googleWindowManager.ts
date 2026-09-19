@@ -1,3 +1,4 @@
+import path from 'path';
 import { BrowserWindow } from 'electron';
 
 export class GoogleWindowManager {
@@ -7,19 +8,31 @@ export class GoogleWindowManager {
    * Opens or focuses a native AstroSquad desktop window for Google Docs, Sheets, Slides, or Drive
    * Fully compatible with macOS, Windows, and Linux with zero external browser dependencies.
    */
-  public static openSession(appType: 'docs' | 'sheets' | 'slides' | 'drive', targetUrl: string): BrowserWindow {
+  public static openSession(
+    appType: 'docs' | 'sheets' | 'slides' | 'drive',
+    targetUrl: string,
+    targetFilePath?: string
+  ): BrowserWindow {
     const existing = this.windows.get(appType);
+    const fileName = targetFilePath ? path.basename(targetFilePath) : '';
+
     if (existing && !existing.isDestroyed()) {
       existing.show();
       existing.focus();
+      if (targetUrl) {
+        existing.loadURL(targetUrl);
+      }
+      if (fileName) {
+        existing.setTitle(`Google ${appType.charAt(0).toUpperCase() + appType.slice(1)} · ${fileName} (AstroSquad)`);
+      }
       return existing;
     }
 
     const titles: Record<string, string> = {
-      docs: 'Google Docs · AstroSquad Station Session',
-      sheets: 'Google Sheets · AstroSquad Station Session',
-      slides: 'Google Slides · AstroSquad Station Session',
-      drive: 'Google Drive · AstroSquad Cloud Hub'
+      docs: fileName ? `Google Docs · ${fileName}` : 'Google Docs · AstroSquad Station Session',
+      sheets: fileName ? `Google Sheets · ${fileName}` : 'Google Sheets · AstroSquad Station Session',
+      slides: fileName ? `Google Slides · ${fileName}` : 'Google Slides · AstroSquad Station Session',
+      drive: 'Google Drive · The-AstroSquad Cloud Hub'
     };
 
     const isMac = process.platform === 'darwin';

@@ -136,10 +136,11 @@ export const Workspace: React.FC<WorkspaceProps> = ({
       }
 
       // 2. Launch file in local desktop app
-      showToast('info', 'Opening Desktop App', `Launching ${selectedFile.split(/[/\\]/).pop()} in system default app...`);
+      showToast('info', 'Opening Desktop App', `Launching ${selectedFile.split(/[/\\]/).pop()} in configured application...`);
       const openResult = await window.api.fs.openInDesktopApp(selectedFile);
       if (openResult) {
-        showToast('warning', 'App Launch Notice', openResult);
+        const isSuccess = openResult.toLowerCase().includes('launched') || openResult.toLowerCase().includes('opened');
+        showToast(isSuccess ? 'success' : 'info', 'App Launch Active', openResult);
       }
 
       // 3. Temporarily morph button into glowing "Save & Share"
@@ -158,21 +159,17 @@ export const Workspace: React.FC<WorkspaceProps> = ({
       
       const fileName = selectedFile ? selectedFile.split(/[/\\]/).pop() : 'files';
       const notes = `Updated ${fileName}`;
-      const result = await window.api.git.commitAndPush(notes);
-
-      if (result.success) {
-        showToast('success', 'Shared with Team', result.message);
-        setIsEditMorphed(false); // Reset button back to normal
+      const pushRes = await window.api.git.commitAndPush(notes);
+      
+      if (pushRes.success) {
+        showToast('success', 'Shared with Team', pushRes.message);
+        setIsEditMorphed(false);
         await onRefreshFiles();
-        if (selectedFile) {
-          await loadFile(selectedFile);
-        }
+        if (selectedFile) await loadFileContent(selectedFile);
+      } else if (pushRes.conflictsResolved && pushRes.conflictsResolved.length > 0) {
+        showToast('conflict', 'Guardrail Protected Data', pushRes.message);
       } else {
-        if (result.conflictsResolved && result.conflictsResolved.length > 0) {
-          showToast('conflict', 'Guardrail Protected Data', result.message);
-        } else {
-          showToast('warning', 'Sync Notice', result.message);
-        }
+        showToast('warning', 'Sync Notice', pushRes.message);
       }
     } catch (err: any) {
       showToast('error', 'Push Failed', err.message);
@@ -187,13 +184,13 @@ export const Workspace: React.FC<WorkspaceProps> = ({
       await window.api.fs.writeFile(selectedFile, newContent);
       setFileContent(newContent);
       showToast('success', 'Saved Locally', `Saved changes to ${selectedFile}. Click "Save & Share" when ready to push.`);
-      setIsEditMorphed(true); // Morph to Save & Share
+      setIsEditMorphed(true);
     } catch (err: any) {
       showToast('error', 'Save Failed', err.message);
     }
   };
 
-  /* ---------------- Viewport Dispatcher ---------------- */
+  /* ---------------- Active Viewer Dispatcher ---------------- */
 
   const renderActiveViewer = () => {
     if (!selectedFile) {
@@ -205,7 +202,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
       );
     }
 
-    if (isLoadingFile) {
+    if (isLoadingContent) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
           <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
@@ -222,7 +219,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
         <PdfViewer
           filePath={selectedFile}
           base64Data={isBinary ? fileContent : undefined}
-          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+          onOpenInDesktop={handleEditInDesktop}
         />
       );
     }
@@ -233,7 +230,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
         <PptxViewer
           filePath={selectedFile}
           base64Data={fileContent}
-          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+          onOpenInDesktop={handleEditInDesktop}
         />
       );
     }
@@ -244,7 +241,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
         <CsvViewer
           filePath={selectedFile}
           csvContent={fileContent}
-          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+          onOpenInDesktop={handleEditInDesktop}
         />
       );
     }
@@ -256,7 +253,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           filePath={selectedFile}
           base64Data={fileContent}
           mimeType={mimeType}
-          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+          onOpenInDesktop={handleEditInDesktop}
         />
       );
     }
@@ -268,7 +265,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           filePath={selectedFile}
           content={fileContent}
           onSave={handleSaveMarkdownNote}
-          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+          onOpenInDesktop={handleEditInDesktop}
         />
       );
     }
@@ -280,7 +277,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           filePath={selectedFile}
           content={fileContent}
           onSave={handleSaveMarkdownNote}
-          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+          onOpenInDesktop={handleEditInDesktop}
         />
       );
     }
@@ -294,7 +291,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           <p className="text-xs text-slate-500 mt-1">Binary format. Launch in desktop app to inspect.</p>
         </div>
         <button
-          onClick={() => window.api.fs.openInDesktopApp(selectedFile)}
+          onClick={handleEditInDesktop}
           className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono"
         >
           Open with System Default App

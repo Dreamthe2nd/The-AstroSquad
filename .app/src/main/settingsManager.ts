@@ -47,10 +47,10 @@ export class SettingsManager {
     const docs = app ? app.getPath('documents') : process.cwd();
     return {
       fileAssociations: {
-        pptx: '',
-        pdf: '',
-        md: '',
-        csv: '',
+        pptx: 'google_slides',
+        pdf: 'google_docs',
+        md: 'obsidian',
+        csv: 'google_sheets',
         images: ''
       },
       repository: {
@@ -68,11 +68,11 @@ export class SettingsManager {
       },
       googleSuite: {
         engine: 'auto',
-        windowMode: 'app_window',
+        windowMode: 'station_window',
         docsUrl: 'https://docs.google.com/document/u/0/',
         sheetsUrl: 'https://docs.google.com/spreadsheets/u/0/',
         slidesUrl: 'https://docs.google.com/presentation/u/0/',
-        driveUrl: 'https://drive.google.com/drive/u/0/my-drive'
+        driveUrl: 'https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing'
       }
     };
   }
@@ -83,13 +83,32 @@ export class SettingsManager {
       if (fs.existsSync(this.filePath)) {
         const raw = fs.readFileSync(this.filePath, 'utf-8');
         const parsed = JSON.parse(raw);
-        return {
+        const merged: StationSettings = {
           fileAssociations: { ...defaults.fileAssociations, ...(parsed.fileAssociations || {}) },
           repository: { ...defaults.repository, ...(parsed.repository || {}) },
           discord: { ...defaults.discord, ...(parsed.discord || {}) },
           meeting: { ...defaults.meeting, ...(parsed.meeting || {}) },
           googleSuite: { ...defaults.googleSuite, ...(parsed.googleSuite || {}) }
         };
+
+        // Upgrade/migration overrides for AstroSquad team configuration:
+        if (!merged.fileAssociations.pdf || !merged.fileAssociations.pdf.trim()) {
+          merged.fileAssociations.pdf = 'google_docs';
+        }
+        if (!merged.fileAssociations.pptx || !merged.fileAssociations.pptx.trim()) {
+          merged.fileAssociations.pptx = 'google_slides';
+        }
+        if (!merged.fileAssociations.csv || !merged.fileAssociations.csv.trim()) {
+          merged.fileAssociations.csv = 'google_sheets';
+        }
+        if (!merged.fileAssociations.md || merged.fileAssociations.md === 'google_docs') {
+          merged.fileAssociations.md = 'obsidian';
+        }
+        if (!merged.googleSuite.driveUrl || merged.googleSuite.driveUrl.includes('my-drive')) {
+          merged.googleSuite.driveUrl = 'https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing';
+        }
+
+        return merged;
       }
     } catch (err) {
       console.error('Failed to parse station_settings.json, reverting to defaults:', err);
