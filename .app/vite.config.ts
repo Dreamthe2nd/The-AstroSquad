@@ -17,7 +17,8 @@ export default defineConfig({
           'vendor-markdown': ['react-markdown', 'remark-gfm', 'remark-math', 'rehype-katex', 'katex'],
           'vendor-jszip': ['jszip'],
           'vendor-papaparse': ['papaparse'],
-          'vendor-icons': ['lucide-react']
+          'vendor-icons': ['lucide-react'],
+          'vendor-pptx': ['@extend-ai/react-pptx']
         }
       }
     }

@@ -201,6 +201,15 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
           </button>
         )}
 
+        <button
+          onClick={() => window.api.shell.openGoogleSuite({ appType: 'drive', windowMode: 'app_window' })}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-500/30 bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 hover:text-white transition-colors text-xs font-mono shadow-sm"
+          title="Open The-AstroSquad Shared Cloud Hub (Google Drive)"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+          <span className="hidden md:inline font-semibold">Google Drive</span>
+        </button>
+
         {onOpenSettings && (
           <button
             onClick={onOpenSettings}

@@ -310,14 +310,15 @@ export class FileHandlers {
     targetFilePath?: string,
     preferredEngine?: string
   ): Promise<{ success: boolean; message: string }> {
+    const driveFolderUrl = 'https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing';
     const urls: Record<string, string> = {
-      docs: targetFilePath ? 'https://docs.google.com/document/u/0/?tab=open#open' : 'https://docs.google.com/document/u/0/',
-      sheets: targetFilePath ? 'https://docs.google.com/spreadsheets/u/0/?tab=open#open' : 'https://docs.google.com/spreadsheets/u/0/',
-      slides: targetFilePath ? 'https://docs.google.com/presentation/u/0/?tab=open#open' : 'https://docs.google.com/presentation/u/0/',
-      drive: 'https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing'
+      docs: targetFilePath ? driveFolderUrl : 'https://docs.google.com/document/u/0/',
+      sheets: targetFilePath ? driveFolderUrl : 'https://docs.google.com/spreadsheets/u/0/',
+      slides: targetFilePath ? driveFolderUrl : 'https://docs.google.com/presentation/u/0/',
+      drive: driveFolderUrl
     };
 
-    const targetUrl = urls[appType] || urls.drive;
+    const targetUrl = urls[appType] || driveFolderUrl;
     const isMac = process.platform === 'darwin';
     const isWin = process.platform === 'win32';
 
@@ -331,7 +332,9 @@ export class FileHandlers {
     }
 
     const fileName = targetFilePath ? path.basename(targetFilePath) : '';
-    const fileHint = fileName ? ` Opened file picker for "${fileName}" (path copied to clipboard & revealed in folder for drag & drop).` : '';
+    const fileHint = fileName
+      ? ` Opened The-AstroSquad Google Drive Cloud Hub for "${fileName}" (path copied & revealed in folder for drag-and-drop).`
+      : '';
 
     // Mode 1: Native AstroSquad Station Window (100% universal across macOS, Windows & Linux, no browser required)
     if (windowMode === 'station_window') {

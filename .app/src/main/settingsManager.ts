@@ -47,10 +47,10 @@ export class SettingsManager {
     const docs = app ? app.getPath('documents') : process.cwd();
     return {
       fileAssociations: {
-        pptx: 'google_slides',
-        pdf: 'google_docs',
+        pptx: '', // System Default (PowerPoint / Keynote / LibreOffice)
+        pdf: '',  // System Default (Adobe Acrobat / Preview / OS Reader)
         md: 'obsidian',
-        csv: 'google_sheets',
+        csv: '',  // System Default (Excel / Numbers / Calc)
         images: ''
       },
       repository: {
@@ -91,15 +91,12 @@ export class SettingsManager {
           googleSuite: { ...defaults.googleSuite, ...(parsed.googleSuite || {}) }
         };
 
-        // Upgrade/migration overrides for AstroSquad team configuration:
-        if (!merged.fileAssociations.pdf || !merged.fileAssociations.pdf.trim()) {
-          merged.fileAssociations.pdf = 'google_docs';
+        // Migration: Reset previously forced google_slides / google_sheets so local files open in native desktop apps (PowerPoint / Excel)
+        if (merged.fileAssociations.pptx === 'google_slides') {
+          merged.fileAssociations.pptx = '';
         }
-        if (!merged.fileAssociations.pptx || !merged.fileAssociations.pptx.trim()) {
-          merged.fileAssociations.pptx = 'google_slides';
-        }
-        if (!merged.fileAssociations.csv || !merged.fileAssociations.csv.trim()) {
-          merged.fileAssociations.csv = 'google_sheets';
+        if (merged.fileAssociations.csv === 'google_sheets') {
+          merged.fileAssociations.csv = '';
         }
         if (!merged.fileAssociations.md || merged.fileAssociations.md === 'google_docs') {
           merged.fileAssociations.md = 'obsidian';

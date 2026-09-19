@@ -26384,13 +26384,14 @@ var FileHandlers = class {
    * Universal across macOS, Windows, and Linux.
    */
   static async openGoogleSuiteSession(appType, windowMode = "station_window", targetFilePath, preferredEngine) {
+    const driveFolderUrl = "https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing";
     const urls = {
-      docs: targetFilePath ? "https://docs.google.com/document/u/0/?tab=open#open" : "https://docs.google.com/document/u/0/",
-      sheets: targetFilePath ? "https://docs.google.com/spreadsheets/u/0/?tab=open#open" : "https://docs.google.com/spreadsheets/u/0/",
-      slides: targetFilePath ? "https://docs.google.com/presentation/u/0/?tab=open#open" : "https://docs.google.com/presentation/u/0/",
-      drive: "https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing"
+      docs: targetFilePath ? driveFolderUrl : "https://docs.google.com/document/u/0/",
+      sheets: targetFilePath ? driveFolderUrl : "https://docs.google.com/spreadsheets/u/0/",
+      slides: targetFilePath ? driveFolderUrl : "https://docs.google.com/presentation/u/0/",
+      drive: driveFolderUrl
     };
-    const targetUrl = urls[appType] || urls.drive;
+    const targetUrl = urls[appType] || driveFolderUrl;
     const isMac = process.platform === "darwin";
     const isWin = process.platform === "win32";
     if (targetFilePath && import_fs2.default.existsSync(targetFilePath)) {
@@ -26402,7 +26403,7 @@ var FileHandlers = class {
       }
     }
     const fileName = targetFilePath ? import_path3.default.basename(targetFilePath) : "";
-    const fileHint = fileName ? ` Opened file picker for "${fileName}" (path copied to clipboard & revealed in folder for drag & drop).` : "";
+    const fileHint = fileName ? ` Opened The-AstroSquad Google Drive Cloud Hub for "${fileName}" (path copied & revealed in folder for drag-and-drop).` : "";
     if (windowMode === "station_window") {
       GoogleWindowManager.openSession(appType, targetUrl, targetFilePath);
       return {
@@ -26689,10 +26690,13 @@ var SettingsManager = class {
     const docs = import_electron4.app ? import_electron4.app.getPath("documents") : process.cwd();
     return {
       fileAssociations: {
-        pptx: "google_slides",
-        pdf: "google_docs",
+        pptx: "",
+        // System Default (PowerPoint / Keynote / LibreOffice)
+        pdf: "",
+        // System Default (Adobe Acrobat / Preview / OS Reader)
         md: "obsidian",
-        csv: "google_sheets",
+        csv: "",
+        // System Default (Excel / Numbers / Calc)
         images: ""
       },
       repository: {
@@ -26731,14 +26735,11 @@ var SettingsManager = class {
           meeting: { ...defaults.meeting, ...parsed.meeting || {} },
           googleSuite: { ...defaults.googleSuite, ...parsed.googleSuite || {} }
         };
-        if (!merged.fileAssociations.pdf || !merged.fileAssociations.pdf.trim()) {
-          merged.fileAssociations.pdf = "google_docs";
+        if (merged.fileAssociations.pptx === "google_slides") {
+          merged.fileAssociations.pptx = "";
         }
-        if (!merged.fileAssociations.pptx || !merged.fileAssociations.pptx.trim()) {
-          merged.fileAssociations.pptx = "google_slides";
-        }
-        if (!merged.fileAssociations.csv || !merged.fileAssociations.csv.trim()) {
-          merged.fileAssociations.csv = "google_sheets";
+        if (merged.fileAssociations.csv === "google_sheets") {
+          merged.fileAssociations.csv = "";
         }
         if (!merged.fileAssociations.md || merged.fileAssociations.md === "google_docs") {
           merged.fileAssociations.md = "obsidian";
