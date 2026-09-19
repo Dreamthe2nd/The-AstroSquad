@@ -208,7 +208,9 @@ function registerIpcHandlers(): void {
       ? targetFile
       : path.join(gitEngine.getRepoDir(), targetFile);
     const customApp = settingsManager.resolveAppForFile(fullPath);
-    return FileHandlers.openInDesktopApp(fullPath, customApp);
+    const settings = settingsManager.getSettings();
+    const mode = settings.googleSuite?.windowMode || 'station_window';
+    return FileHandlers.openInDesktopApp(fullPath, customApp, mode);
   });
 
   // Settings handlers
@@ -276,23 +278,26 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('shell:openGoogleSuite', async (_, args: {
     appType: 'docs' | 'sheets' | 'slides' | 'drive';
-    windowMode?: 'app_window' | 'browser_tab';
+    windowMode?: 'station_window' | 'app_window' | 'browser_tab';
     targetFilePath?: string;
+    preferredEngine?: string;
   }) => {
     const settings = settingsManager.getSettings();
-    const mode = args.windowMode || settings.googleSuite?.windowMode || 'app_window';
-    return FileHandlers.openGoogleSuiteSession(args.appType, mode, args.targetFilePath);
+    const mode = args.windowMode || settings.googleSuite?.windowMode || 'station_window';
+    const engine = args.preferredEngine || settings.googleSuite?.engine || 'auto';
+    return FileHandlers.openGoogleSuiteSession(args.appType, mode, args.targetFilePath, engine);
   });
 
   ipcMain.handle('shell:getDetectedBrowsers', async () => {
-    const browser = FileHandlers.findBrowserPath('auto');
-    const chrome = FileHandlers.findBrowserPath('chrome');
-    const edge = FileHandlers.findBrowserPath('edge');
+    const browsers = FileHandlers.detectBrowsers();
     return {
-      hasChrome: Boolean(chrome.path),
-      hasEdge: Boolean(edge.path),
-      detectedPath: browser.path,
-      engine: browser.engine
+      browsers,
+      platform: process.platform,
+      hasVivaldi: browsers.some((b) => b.id === 'vivaldi'),
+      hasChrome: browsers.some((b) => b.id === 'chrome'),
+      hasSafari: browsers.some((b) => b.id === 'safari'),
+      hasEdge: browsers.some((b) => b.id === 'edge'),
+      hasBrave: browsers.some((b) => b.id === 'brave')
     };
   });
 }

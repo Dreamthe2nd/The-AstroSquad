@@ -33,8 +33,8 @@ export interface StationSettings {
     platform: 'google_meet' | 'zoom' | 'custom';
   };
   googleSuite?: {
-    engine: 'auto' | 'chrome' | 'edge';
-    windowMode: 'app_window' | 'browser_tab';
+    engine?: string;
+    windowMode?: 'station_window' | 'app_window' | 'browser_tab';
     docsUrl?: string;
     sheetsUrl?: string;
     slidesUrl?: string;
@@ -79,8 +79,21 @@ export interface ApiBridge {
     openMeeting: (customUrl?: string) => Promise<void>;
     openRepoFolder: () => Promise<void>;
     copyToClipboard: (text: string) => void;
-    openGoogleSuite: (args: { appType: 'docs' | 'sheets' | 'slides' | 'drive'; windowMode?: 'app_window' | 'browser_tab'; targetFilePath?: string }) => Promise<{ success: boolean; message: string }>;
-    getDetectedBrowsers: () => Promise<{ hasChrome: boolean; hasEdge: boolean; detectedPath: string | null; engine: string }>;
+    openGoogleSuite: (args: {
+      appType: 'docs' | 'sheets' | 'slides' | 'drive';
+      windowMode?: 'station_window' | 'app_window' | 'browser_tab';
+      targetFilePath?: string;
+      preferredEngine?: string;
+    }) => Promise<{ success: boolean; message: string }>;
+    getDetectedBrowsers: () => Promise<{
+      browsers: Array<{ id: string; name: string; path: string | null; supportsAppMode: boolean; platform: string }>;
+      platform: string;
+      hasVivaldi: boolean;
+      hasChrome: boolean;
+      hasSafari: boolean;
+      hasEdge: boolean;
+      hasBrave: boolean;
+    }>;
   };
 }
 

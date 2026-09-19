@@ -17,7 +17,11 @@ import {
   ExternalLink, 
   Save,
   Video,
-  Lock
+  Lock,
+  Monitor,
+  Globe,
+  Layers,
+  Info
 } from 'lucide-react';
 import { StationSettings, AuthStatus } from '../types';
 
@@ -43,7 +47,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [initialRepoPath, setInitialRepoPath] = useState<string>('');
   const [initialRepoUrl, setInitialRepoUrl] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
-  const [browserInfo, setBrowserInfo] = useState<{ hasChrome: boolean; hasEdge: boolean; detectedPath: string | null; engine: string } | null>(null);
+  const [browserInfo, setBrowserInfo] = useState<{
+    browsers: Array<{ id: string; name: string; path: string | null; supportsAppMode: boolean; platform: string }>;
+    platform: string;
+    hasVivaldi: boolean;
+    hasChrome: boolean;
+    hasSafari: boolean;
+    hasEdge: boolean;
+    hasBrave: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -76,11 +88,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleLaunchGoogleSuite = async (appType: 'docs' | 'sheets' | 'slides' | 'drive') => {
     try {
-      showToast('info', 'Launching Session', `Opening local standalone session for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}...`);
-      const mode = settings.googleSuite?.windowMode || 'app_window';
-      const res = await window.api.shell.openGoogleSuite({ appType, windowMode: mode });
+      showToast('info', 'Launching Session', `Opening session for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}...`);
+      const mode = settings.googleSuite?.windowMode || 'station_window';
+      const engine = settings.googleSuite?.engine || 'auto';
+      const res = await window.api.shell.openGoogleSuite({
+        appType,
+        windowMode: mode,
+        preferredEngine: engine
+      });
       if (res && res.message) {
-        showToast('success', 'Google Session Launched', res.message);
+        showToast('success', 'Google Session Active', res.message);
       }
     } catch (err: any) {
       showToast('error', 'Launch Failed', err.message);
@@ -684,50 +701,134 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* TAB: GOOGLE PRODUCTIVITY SUITE */}
           {activeTab === 'googlesuite' && (
             <div className="space-y-4">
-              {/* Description Banner */}
-              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/40 via-amber-950/30 to-emerald-950/30 border border-cyan-500/30 text-slate-200 leading-relaxed font-sans text-xs space-y-2.5">
-                <div className="flex items-center gap-2 font-bold text-white text-sm">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>Google Productivity Suite (Standalone Desktop Sessions)</span>
+              {/* Description Banner & Cross-Platform Engine Detection */}
+              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/40 via-amber-950/30 to-emerald-950/30 border border-cyan-500/30 text-slate-200 leading-relaxed font-sans text-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-bold text-white text-sm">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Google Productivity Suite (Local Desktop Sessions)</span>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase bg-slate-800 border border-slate-700 text-slate-300">
+                    {browserInfo?.platform === 'darwin' ? 'macOS System' : (browserInfo?.platform === 'win32' ? 'Windows System' : 'Desktop System')}
+                  </span>
                 </div>
                 <p className="text-slate-300">
-                  Launch and operate dedicated desktop window sessions of <strong>Google Slides</strong>, <strong>Google Sheets</strong>, <strong>Google Docs</strong>, and <strong>Google Drive</strong> without browser tab clutter or address bars. Sessions run directly in your authenticated local Google profile, exactly like native desktop software (such as PowerPoint or Excel).
+                  Launch and operate dedicated desktop sessions of <strong>Google Slides</strong>, <strong>Google Sheets</strong>, <strong>Google Docs</strong>, and <strong>Google Drive</strong> without browser tab clutter or address bars. Configured for seamless operation across all squad team machines (macOS Safari &amp; Chrome, Windows Vivaldi &amp; Edge).
                 </p>
 
-                {/* Detected Browser Engine */}
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-800 text-[11px] font-mono">
-                  <span className="text-slate-400">Local App Engine:</span>
-                  {browserInfo?.hasChrome ? (
-                    <span className="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-semibold flex items-center gap-1">
-                      <Check className="w-3 h-3 text-emerald-400" />
-                      Google Chrome App Engine Active
-                    </span>
-                  ) : browserInfo?.hasEdge ? (
-                    <span className="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300 font-semibold flex items-center gap-1">
-                      <Check className="w-3 h-3 text-cyan-400" />
-                      Microsoft Edge App Engine Active
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-                      Default OS Browser Mode
-                    </span>
+                {/* Detected Local Browsers Status */}
+                <div className="pt-2 border-t border-slate-800/80 space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400 font-medium">Detected Local Browsers:</span>
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {browserInfo?.hasVivaldi && (
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
+                          <Check className="w-3 h-3 text-emerald-400" /> Vivaldi (App Mode Ready)
+                        </span>
+                      )}
+                      {browserInfo?.hasSafari && (
+                        <span className="px-2 py-0.5 rounded-md bg-blue-950/80 border border-blue-500/40 text-blue-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
+                          <Globe className="w-3 h-3 text-blue-400" /> Safari (macOS Native)
+                        </span>
+                      )}
+                      {browserInfo?.hasChrome && (
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
+                          <Check className="w-3 h-3 text-emerald-400" /> Chrome (App Mode Ready)
+                        </span>
+                      )}
+                      {browserInfo?.hasEdge && (
+                        <span className="px-2 py-0.5 rounded-md bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
+                          <Check className="w-3 h-3 text-cyan-400" /> Edge (App Mode Ready)
+                        </span>
+                      )}
+                      {browserInfo?.hasBrave && (
+                        <span className="px-2 py-0.5 rounded-md bg-amber-950/80 border border-amber-500/40 text-amber-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
+                          <Check className="w-3 h-3 text-amber-400" /> Brave (App Mode Ready)
+                        </span>
+                      )}
+                      {!browserInfo?.hasVivaldi && !browserInfo?.hasSafari && !browserInfo?.hasChrome && !browserInfo?.hasEdge && !browserInfo?.hasBrave && (
+                        <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 font-mono text-[10px]">
+                          Default System Browser
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {browserInfo?.platform === 'darwin' && browserInfo?.hasSafari && !browserInfo?.hasChrome && !browserInfo?.hasVivaldi && (
+                    <div className="flex items-start gap-2 p-2 rounded-lg bg-blue-950/40 border border-blue-500/30 text-[11px] text-blue-200">
+                      <Info className="w-3.5 h-3.5 text-blue-400 mt-0.5 shrink-0" />
+                      <span>
+                        <strong>macOS Safari Notice:</strong> Safari does not support the <code>--app</code> standalone window flag. Use the <strong>Integrated Station Window</strong> mode below to get borderless Google desktop sessions without needing Chrome!
+                      </span>
+                    </div>
+                  )}
+                  {browserInfo?.hasVivaldi && (
+                    <div className="flex items-start gap-2 p-2 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-[11px] text-emerald-200">
+                      <Info className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                      <span>
+                        <strong>Vivaldi Environment:</strong> Standalone App Window and Integrated Station Window are both fully supported on this machine.
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
 
-              {/* Window Mode Toggle */}
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              {/* 3-Way Window Display Mode Selector */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
                 <div>
-                  <div className="font-bold text-slate-200 text-xs">Window Display Mode</div>
-                  <div className="text-[11px] text-slate-400 font-sans">
-                    Standalone App Window runs with isolated window frame &amp; taskbar icon without URL address bar
-                  </div>
+                  <h4 className="font-bold text-slate-200 text-xs">Window Display Mode</h4>
+                  <p className="text-[11px] text-slate-400 font-sans">
+                    Select how Google Suite sessions are launched and displayed on this system:
+                  </p>
                 </div>
-                <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+                  {/* Mode 1: Integrated Station Window */}
                   <button
                     type="button"
                     onClick={() => {
-                      setSettings(prev => prev ? {
+                      setSettings((prev) => prev ? {
+                        ...prev,
+                        googleSuite: {
+                          engine: prev.googleSuite?.engine || 'auto',
+                          windowMode: 'station_window',
+                          docsUrl: prev.googleSuite?.docsUrl,
+                          sheetsUrl: prev.googleSuite?.sheetsUrl,
+                          slidesUrl: prev.googleSuite?.slidesUrl,
+                          driveUrl: prev.googleSuite?.driveUrl
+                        }
+                      } : prev);
+                    }}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
+                      (settings.googleSuite?.windowMode ?? 'station_window') === 'station_window'
+                        ? 'bg-cyan-950/40 border-cyan-500 shadow-md ring-1 ring-cyan-500/50'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                          Station Window
+                        </span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 font-semibold border border-cyan-500/30">
+                          Universal
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Integrated borderless desktop window with isolated Google session partition. Zero external browser dependencies.
+                      </p>
+                    </div>
+                    <div className="text-[9px] font-mono text-cyan-400/90 font-semibold">
+                      {(settings.googleSuite?.windowMode ?? 'station_window') === 'station_window' ? '✓ Currently Active' : 'Select Mode'}
+                    </div>
+                  </button>
+
+                  {/* Mode 2: Standalone App Window */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettings((prev) => prev ? {
                         ...prev,
                         googleSuite: {
                           engine: prev.googleSuite?.engine || 'auto',
@@ -739,18 +840,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         }
                       } : prev);
                     }}
-                    className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
-                      (settings.googleSuite?.windowMode ?? 'app_window') === 'app_window'
-                        ? 'bg-cyan-600 text-slate-950 shadow-sm'
-                        : 'text-slate-400 hover:text-white'
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
+                      settings.googleSuite?.windowMode === 'app_window'
+                        ? 'bg-cyan-950/40 border-cyan-500 shadow-md ring-1 ring-cyan-500/50'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
                     }`}
                   >
-                    Standalone App Window
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                          <Monitor className="w-3.5 h-3.5 text-emerald-400" />
+                          Standalone App
+                        </span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 font-semibold border border-emerald-500/30">
+                          --app Mode
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Spawns via Vivaldi, Chrome, Edge or Brave into an isolated PWA desktop window with taskbar presence.
+                      </p>
+                    </div>
+                    <div className="text-[9px] font-mono text-emerald-400/90 font-semibold">
+                      {settings.googleSuite?.windowMode === 'app_window' ? '✓ Currently Active' : 'Select Mode'}
+                    </div>
                   </button>
+
+                  {/* Mode 3: Browser Tab */}
                   <button
                     type="button"
                     onClick={() => {
-                      setSettings(prev => prev ? {
+                      setSettings((prev) => prev ? {
                         ...prev,
                         googleSuite: {
                           engine: prev.googleSuite?.engine || 'auto',
@@ -762,15 +881,61 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         }
                       } : prev);
                     }}
-                    className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
                       settings.googleSuite?.windowMode === 'browser_tab'
-                        ? 'bg-cyan-600 text-slate-950 shadow-sm'
-                        : 'text-slate-400 hover:text-white'
+                        ? 'bg-cyan-950/40 border-cyan-500 shadow-md ring-1 ring-cyan-500/50'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
                     }`}
                   >
-                    Browser Tab
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                          <Globe className="w-3.5 h-3.5 text-amber-400" />
+                          Browser Tab
+                        </span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 font-semibold border border-amber-500/30">
+                          Default OS
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Opens directly as a standard tab inside your system default browser (Safari, Vivaldi, etc.).
+                      </p>
+                    </div>
+                    <div className="text-[9px] font-mono text-amber-400/90 font-semibold">
+                      {settings.googleSuite?.windowMode === 'browser_tab' ? '✓ Currently Active' : 'Select Mode'}
+                    </div>
                   </button>
                 </div>
+
+                {/* Preferred Engine Selector (when in app_window mode) */}
+                {settings.googleSuite?.windowMode === 'app_window' && browserInfo?.browsers && browserInfo.browsers.filter(b => b.supportsAppMode).length > 0 && (
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
+                    <div className="text-slate-300 font-medium">Preferred App Browser:</div>
+                    <select
+                      value={settings.googleSuite?.engine || 'auto'}
+                      onChange={(e) => {
+                        const newEngine = e.target.value;
+                        setSettings((prev) => prev ? {
+                          ...prev,
+                          googleSuite: {
+                            ...prev.googleSuite,
+                            engine: newEngine
+                          }
+                        } : prev);
+                      }}
+                      className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="auto">Auto Detect (Recommended)</option>
+                      {browserInfo.browsers
+                        .filter((b) => b.supportsAppMode)
+                        .map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* 4 App Cards Grid */}

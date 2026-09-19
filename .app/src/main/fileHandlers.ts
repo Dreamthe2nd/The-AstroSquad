@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import child_process from 'child_process';
 import { dialog, shell, BrowserWindow } from 'electron';
+import { GoogleWindowManager } from './googleWindowManager';
 
 export interface FileNode {
   name: string;
@@ -11,6 +12,14 @@ export interface FileNode {
   size?: number;
   extension?: string;
   children?: FileNode[];
+}
+
+export interface DetectedBrowserInfo {
+  id: string;
+  name: string;
+  path: string | null;
+  supportsAppMode: boolean;
+  platform: 'win32' | 'darwin' | 'linux';
 }
 
 export class FileHandlers {
@@ -130,54 +139,104 @@ export class FileHandlers {
   }
 
   /**
-   * Discovers local browser executable on Windows for standalone app window sessions
+   * Cross-platform browser detection across macOS and Windows
+   * Detects Vivaldi, Chrome, Edge, Brave, and Safari with app-mode capability tracking.
    */
-  public static findBrowserPath(preference: 'auto' | 'chrome' | 'edge' = 'auto'): { path: string | null; engine: 'chrome' | 'edge' | 'none' } {
+  public static detectBrowsers(): DetectedBrowserInfo[] {
     const isWin = process.platform === 'win32';
-    if (!isWin) {
-      return { path: null, engine: 'none' };
-    }
+    const isMac = process.platform === 'darwin';
+    const browsers: DetectedBrowserInfo[] = [];
 
-    const chromeCandidates = [
-      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-      path.join(process.env.LOCALAPPDATA || '', 'Google\\Chrome\\Application\\chrome.exe')
-    ];
+    if (isWin) {
+      // 1. Vivaldi on Windows
+      const vivaldiCandidates = [
+        path.join(process.env.LOCALAPPDATA || '', 'Vivaldi\\Application\\vivaldi.exe'),
+        'C:\\Program Files\\Vivaldi\\Application\\vivaldi.exe',
+        'C:\\Program Files (x86)\\Vivaldi\\Application\\vivaldi.exe'
+      ];
+      for (const p of vivaldiCandidates) {
+        if (p && fs.existsSync(p)) {
+          browsers.push({ id: 'vivaldi', name: 'Vivaldi', path: p, supportsAppMode: true, platform: 'win32' });
+          break;
+        }
+      }
 
-    const edgeCandidates = [
-      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-      'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-      path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Edge\\Application\\msedge.exe')
-    ];
-
-    if (preference === 'chrome') {
+      // 2. Google Chrome on Windows
+      const chromeCandidates = [
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+        path.join(process.env.LOCALAPPDATA || '', 'Google\\Chrome\\Application\\chrome.exe')
+      ];
       for (const p of chromeCandidates) {
-        if (p && fs.existsSync(p)) return { path: p, engine: 'chrome' };
+        if (p && fs.existsSync(p)) {
+          browsers.push({ id: 'chrome', name: 'Google Chrome', path: p, supportsAppMode: true, platform: 'win32' });
+          break;
+        }
       }
-    } else if (preference === 'edge') {
+
+      // 3. Microsoft Edge on Windows
+      const edgeCandidates = [
+        'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+        'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+        path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Edge\\Application\\msedge.exe')
+      ];
       for (const p of edgeCandidates) {
-        if (p && fs.existsSync(p)) return { path: p, engine: 'edge' };
+        if (p && fs.existsSync(p)) {
+          browsers.push({ id: 'edge', name: 'Microsoft Edge', path: p, supportsAppMode: true, platform: 'win32' });
+          break;
+        }
+      }
+
+      // 4. Brave on Windows
+      const braveCandidates = [
+        'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
+        path.join(process.env.LOCALAPPDATA || '', 'BraveSoftware\\Brave-Browser\\Application\\brave.exe')
+      ];
+      for (const p of braveCandidates) {
+        if (p && fs.existsSync(p)) {
+          browsers.push({ id: 'brave', name: 'Brave Browser', path: p, supportsAppMode: true, platform: 'win32' });
+          break;
+        }
+      }
+    } else if (isMac) {
+      // 1. Safari on macOS
+      if (fs.existsSync('/Applications/Safari.app')) {
+        browsers.push({ id: 'safari', name: 'Safari', path: '/Applications/Safari.app', supportsAppMode: false, platform: 'darwin' });
+      }
+
+      // 2. Vivaldi on macOS
+      if (fs.existsSync('/Applications/Vivaldi.app')) {
+        browsers.push({ id: 'vivaldi', name: 'Vivaldi', path: '/Applications/Vivaldi.app', supportsAppMode: true, platform: 'darwin' });
+      }
+
+      // 3. Google Chrome on macOS
+      if (fs.existsSync('/Applications/Google Chrome.app')) {
+        browsers.push({ id: 'chrome', name: 'Google Chrome', path: '/Applications/Google Chrome.app', supportsAppMode: true, platform: 'darwin' });
+      }
+
+      // 4. Brave on macOS
+      if (fs.existsSync('/Applications/Brave Browser.app')) {
+        browsers.push({ id: 'brave', name: 'Brave Browser', path: '/Applications/Brave Browser.app', supportsAppMode: true, platform: 'darwin' });
+      }
+
+      // 5. Microsoft Edge on macOS
+      if (fs.existsSync('/Applications/Microsoft Edge.app')) {
+        browsers.push({ id: 'edge', name: 'Microsoft Edge', path: '/Applications/Microsoft Edge.app', supportsAppMode: true, platform: 'darwin' });
       }
     }
 
-    // Default 'auto': Chrome first, then Edge
-    for (const p of chromeCandidates) {
-      if (p && fs.existsSync(p)) return { path: p, engine: 'chrome' };
-    }
-    for (const p of edgeCandidates) {
-      if (p && fs.existsSync(p)) return { path: p, engine: 'edge' };
-    }
-
-    return { path: null, engine: 'none' };
+    return browsers;
   }
 
   /**
    * Opens local standalone session of Google Productivity Suite (Docs, Sheets, Slides, Drive)
+   * Universal across macOS, Windows, and Linux.
    */
   public static async openGoogleSuiteSession(
     appType: 'docs' | 'sheets' | 'slides' | 'drive',
-    windowMode: 'app_window' | 'browser_tab' = 'app_window',
-    _targetFilePath?: string
+    windowMode: 'station_window' | 'app_window' | 'browser_tab' = 'station_window',
+    _targetFilePath?: string,
+    preferredEngine?: string
   ): Promise<{ success: boolean; message: string }> {
     const urls: Record<string, string> = {
       docs: 'https://docs.google.com/document/u/0/',
@@ -187,27 +246,64 @@ export class FileHandlers {
     };
 
     const targetUrl = urls[appType] || urls.drive;
+    const isMac = process.platform === 'darwin';
+    const isWin = process.platform === 'win32';
 
-    if (windowMode === 'app_window') {
-      const browser = this.findBrowserPath('auto');
-      if (browser.path) {
-        try {
-          const child = child_process.spawn(browser.path, [`--app=${targetUrl}`], {
-            detached: true,
-            stdio: 'ignore'
-          });
-          child.unref();
-          return {
-            success: true,
-            message: `Launched local standalone session for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)} via ${browser.engine.toUpperCase()}.`
-          };
-        } catch (err: any) {
-          console.warn(`Failed to spawn app window for Google ${appType}:`, err);
-        }
-      }
+    // Mode 1: Native AstroSquad Station Window (100% universal across macOS, Windows & Linux, no browser required)
+    if (windowMode === 'station_window') {
+      GoogleWindowManager.openSession(appType, targetUrl);
+      return {
+        success: true,
+        message: `Launched dedicated AstroSquad Station Window for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}.`
+      };
     }
 
-    // Fallback or browser_tab mode
+    // Mode 2: Standalone Browser App Window (Vivaldi, Chrome, Edge, Brave)
+    if (windowMode === 'app_window') {
+      const browsers = this.detectBrowsers();
+      const appBrowser = preferredEngine && preferredEngine !== 'auto'
+        ? browsers.find((b) => b.id === preferredEngine && b.supportsAppMode && b.path)
+        : browsers.find((b) => b.supportsAppMode && b.path);
+
+      if (appBrowser && appBrowser.path) {
+        try {
+          if (isWin) {
+            const child = child_process.spawn(appBrowser.path, [`--app=${targetUrl}`], {
+              detached: true,
+              stdio: 'ignore'
+            });
+            child.unref();
+            return {
+              success: true,
+              message: `Launched standalone session in ${appBrowser.name}.`
+            };
+          } else if (isMac) {
+            const child = child_process.spawn('open', ['-na', appBrowser.path, '--args', `--app=${targetUrl}`], {
+              detached: true,
+              stdio: 'ignore'
+            });
+            child.unref();
+            return {
+              success: true,
+              message: `Launched standalone session in ${appBrowser.name} (macOS).`
+            };
+          }
+        } catch (err: any) {
+          console.warn(`Failed to spawn app window via ${appBrowser.name}:`, err);
+        }
+      }
+
+      // If on macOS with only Safari, or no Chromium browser found:
+      await shell.openExternal(targetUrl);
+      return {
+        success: true,
+        message: isMac
+          ? `Opened Google ${appType} in Safari / Default Browser (switch to Station Window mode for borderless desktop windows).`
+          : `Opened Google ${appType} in default browser.`
+      };
+    }
+
+    // Mode 3: Standard Browser Tab (Safari on Mac, Vivaldi on Windows, etc.)
     await shell.openExternal(targetUrl);
     return {
       success: true,
@@ -218,7 +314,7 @@ export class FileHandlers {
   /**
    * Opens file in local desktop app (LibreOffice, Obsidian, Excel, Google Suite, etc.)
    */
-  public static async openInDesktopApp(filePath: string, customAppPath?: string): Promise<string> {
+  public static async openInDesktopApp(filePath: string, customAppPath?: string, preferredMode: 'station_window' | 'app_window' | 'browser_tab' = 'station_window'): Promise<string> {
     if (!fs.existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
     }
@@ -228,19 +324,19 @@ export class FileHandlers {
 
       // Check if configured for Google Productivity Suite standalone sessions
       if (trimmed === 'google_slides') {
-        await this.openGoogleSuiteSession('slides', 'app_window', filePath);
+        await this.openGoogleSuiteSession('slides', preferredMode, filePath);
         return '';
       }
       if (trimmed === 'google_sheets') {
-        await this.openGoogleSuiteSession('sheets', 'app_window', filePath);
+        await this.openGoogleSuiteSession('sheets', preferredMode, filePath);
         return '';
       }
       if (trimmed === 'google_docs') {
-        await this.openGoogleSuiteSession('docs', 'app_window', filePath);
+        await this.openGoogleSuiteSession('docs', preferredMode, filePath);
         return '';
       }
       if (trimmed === 'google_drive') {
-        await this.openGoogleSuiteSession('drive', 'app_window', filePath);
+        await this.openGoogleSuiteSession('drive', preferredMode, filePath);
         return '';
       }
 
