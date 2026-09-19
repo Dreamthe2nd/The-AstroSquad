@@ -76,6 +76,11 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
     return (isEditing ? editedContent : content).split('\n');
   }, [isEditing, editedContent, content]);
 
+  const displayedLines = useMemo(() => {
+    if (isEditing) return lines;
+    return lines.slice(0, 2000);
+  }, [isEditing, lines]);
+
   const handleSave = async () => {
     if (!onSave) return;
     setIsSaving(true);
@@ -182,24 +187,38 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             />
           </div>
         ) : (
-          <div className="rounded-xl bg-slate-900/80 border border-slate-800 overflow-hidden shadow-inner flex">
-            {/* Line numbers gutter */}
-            <div className="bg-slate-950/60 py-4 px-3 select-none text-right text-slate-600 border-r border-slate-800/80 shrink-0 font-mono text-xs leading-relaxed">
-              {lines.map((_, i) => (
-                <div key={i} className="h-5">
-                  {i + 1}
-                </div>
-              ))}
+          <div className="flex flex-col rounded-xl bg-slate-900/80 border border-slate-800 overflow-hidden shadow-inner">
+            <div className="flex overflow-x-auto">
+              {/* Line numbers gutter */}
+              <div className="bg-slate-950/60 py-4 px-3 select-none text-right text-slate-600 border-r border-slate-800/80 shrink-0 font-mono text-xs leading-relaxed">
+                {displayedLines.map((_, i) => (
+                  <div key={i} className="h-5">
+                    {i + 1}
+                  </div>
+                ))}
+              </div>
+
+              {/* Code content */}
+              <div className="p-4 overflow-x-auto flex-1 font-mono text-xs leading-relaxed text-slate-300">
+                {displayedLines.map((line, i) => (
+                  <div key={i} className="h-5 whitespace-pre">
+                    {line || ' '}
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Code content */}
-            <div className="p-4 overflow-x-auto flex-1 font-mono text-xs leading-relaxed text-slate-300">
-              {lines.map((line, i) => (
-                <div key={i} className="h-5 whitespace-pre">
-                  {line || ' '}
-                </div>
-              ))}
-            </div>
+            {lines.length > 2000 && (
+              <div className="p-3 bg-sky-950/50 border-t border-sky-800/60 text-sky-300 text-xs flex items-center justify-between">
+                <span>Showing first 2,000 of {lines.length.toLocaleString()} lines for optimal performance.</span>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded font-semibold text-xs transition-colors"
+                >
+                  Switch to Editor to view full file
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

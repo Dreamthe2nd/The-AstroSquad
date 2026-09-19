@@ -25,7 +25,7 @@ export class FileHandlers {
       const nodes: FileNode[] = [];
 
       for (const item of items) {
-        if (item.name === '.git' || item.name === 'node_modules' || item.name.startsWith('.')) {
+        if (item.name === '.git' || item.name === 'node_modules' || (item.name.startsWith('.') && item.name !== '.app')) {
           continue;
         }
 

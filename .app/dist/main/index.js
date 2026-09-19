@@ -26028,7 +26028,7 @@ var FileHandlers = class {
       const items = import_fs2.default.readdirSync(currentDir, { withFileTypes: true });
       const nodes = [];
       for (const item of items) {
-        if (item.name === ".git" || item.name === "node_modules" || item.name.startsWith(".")) {
+        if (item.name === ".git" || item.name === "node_modules" || item.name.startsWith(".") && item.name !== ".app") {
           continue;
         }
         const absPath = import_path2.default.join(currentDir, item.name);

@@ -70,7 +70,7 @@ export const FileSidebar: React.FC<FileSidebarProps> = ({
     if (['png', 'jpg', 'jpeg', 'webp'].includes(ext || '')) {
       return <ImageIcon className="w-4 h-4 text-emerald-400 shrink-0" />;
     }
-    if (ext === 'md') {
+    if (ext === 'md' || ['ts', 'tsx', 'js', 'jsx', 'json', 'css', 'html', 'ps1', 'bat', 'sh', 'py', 'toml', 'yaml', 'yml', 'lock'].includes(ext || '')) {
       return <FileCode className="w-4 h-4 text-cyan-400 shrink-0" />;
     }
     return <FileText className="w-4 h-4 text-slate-400 shrink-0" />;

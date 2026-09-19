@@ -37,6 +37,50 @@ if (!isPdf) {
 const readmePath = path.join(mockRepoDir, 'README.md');
 const readmeContent = fs.readFileSync(readmePath, 'utf-8');
 console.log('README.md length:', readmeContent.length, 'characters');
-console.log('First 50 chars of README:', readmeContent.substring(0, 50).trim());
+// 4. Test listFiles logic including .app directory
+const walk = (currentDir, relativeCurrent) => {
+  const items = fs.readdirSync(currentDir, { withFileTypes: true });
+  const nodes = [];
+
+  for (const item of items) {
+    if (item.name === '.git' || item.name === 'node_modules' || (item.name.startsWith('.') && item.name !== '.app')) {
+      continue;
+    }
+
+    const absPath = path.join(currentDir, item.name);
+    const relPath = relativeCurrent ? path.join(relativeCurrent, item.name).replace(/\\/g, '/') : item.name;
+
+    if (item.isDirectory()) {
+      nodes.push({
+        name: item.name,
+        relativePath: relPath,
+        isDirectory: true,
+        children: walk(absPath, relPath)
+      });
+    } else {
+      nodes.push({
+        name: item.name,
+        relativePath: relPath,
+        isDirectory: false
+      });
+    }
+  }
+  return nodes;
+};
+
+const tree = walk(mockRepoDir, '');
+const appNode = tree.find((n) => n.name === '.app');
+if (!appNode) {
+  console.error('❌ .app directory was NOT found in tree!');
+  process.exit(1);
+}
+console.log('✅ .app directory successfully found in tree! Children count:', appNode.children?.length);
+const srcChild = appNode.children?.find((c) => c.name === 'src');
+if (!srcChild) {
+  console.error('❌ .app/src was NOT found inside .app children!');
+  process.exit(1);
+}
+console.log('✅ .app/src found with children count:', srcChild.children?.length);
 
 console.log('✅ ALL file handling tests passed successfully!');
+
