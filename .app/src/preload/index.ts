@@ -1,0 +1,117 @@
+import { contextBridge, ipcRenderer, clipboard } from 'electron';
+
+export interface FileNode {
+  name: string;
+  relativePath: string;
+  absolutePath: string;
+  isDirectory: boolean;
+  size?: number;
+  extension?: string;
+  children?: FileNode[];
+}
+
+export interface StationSettings {
+  fileAssociations: {
+    pptx?: string;
+    pdf?: string;
+    md?: string;
+    csv?: string;
+    images?: string;
+    code?: string;
+  };
+  repository: {
+    url: string;
+    localPath: string;
+    branch: string;
+  };
+  discord: {
+    inviteUrl: string;
+    appUri: string;
+  };
+  meeting: {
+    url: string;
+    platform: 'google_meet' | 'zoom' | 'custom';
+  };
+}
+
+export interface ApiBridge {
+  auth: {
+    requestDeviceCode: (clientId?: string) => Promise<any>;
+    pollDeviceAuth: (deviceCode: string, interval?: number, clientId?: string) => Promise<string>;
+    getAuthStatus: () => Promise<any>;
+    setManualToken: (token: string) => Promise<boolean>;
+    logout: () => Promise<boolean>;
+  };
+  git: {
+    syncRepository: () => Promise<any>;
+    commitAndPush: (notes?: string) => Promise<any>;
+    getStatus: () => Promise<{ dirty: boolean; files: string[] }>;
+    getRepoDir: () => Promise<string>;
+    setRepoDir: (newPath: string) => Promise<string>;
+  };
+  fs: {
+    listFiles: () => Promise<FileNode[]>;
+    readFile: (filePath: string) => Promise<{ content: string; isBinary: boolean; mimeType: string }>;
+    writeFile: (filePath: string, content: string) => Promise<boolean>;
+    importFiles: (targetSubdir?: string) => Promise<any>;
+    importFolder: (targetSubdir?: string) => Promise<any>;
+    createMarkdownNote: (targetSubdir: string, filename: string, title?: string) => Promise<any>;
+    openInDesktopApp: (filePath: string) => Promise<string>;
+  };
+  settings: {
+    getSettings: () => Promise<StationSettings>;
+    saveSettings: (settings: Partial<StationSettings>) => Promise<StationSettings>;
+    browseApp: () => Promise<string | null>;
+    browseRepoDir: () => Promise<string | null>;
+    resetSettings: () => Promise<StationSettings>;
+  };
+  shell: {
+    openExternal: (url: string) => Promise<void>;
+    openDiscord: () => Promise<void>;
+    openMeeting: () => Promise<void>;
+    openRepoFolder: () => Promise<void>;
+    copyToClipboard: (text: string) => void;
+  };
+}
+
+const api: ApiBridge = {
+  auth: {
+    requestDeviceCode: (clientId) => ipcRenderer.invoke('auth:requestDeviceCode', clientId),
+    pollDeviceAuth: (deviceCode, interval, clientId) => ipcRenderer.invoke('auth:pollDeviceAuth', { deviceCode, interval, clientId }),
+    getAuthStatus: () => ipcRenderer.invoke('auth:getAuthStatus'),
+    setManualToken: (token) => ipcRenderer.invoke('auth:setManualToken', token),
+    logout: () => ipcRenderer.invoke('auth:logout')
+  },
+  git: {
+    syncRepository: () => ipcRenderer.invoke('git:syncRepository'),
+    commitAndPush: (notes) => ipcRenderer.invoke('git:commitAndPush', notes),
+    getStatus: () => ipcRenderer.invoke('git:getStatus'),
+    getRepoDir: () => ipcRenderer.invoke('git:getRepoDir'),
+    setRepoDir: (newPath) => ipcRenderer.invoke('git:setRepoDir', newPath)
+  },
+  fs: {
+    listFiles: () => ipcRenderer.invoke('fs:listFiles'),
+    readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
+    writeFile: (filePath, content) => ipcRenderer.invoke('fs:writeFile', { filePath, content }),
+    importFiles: (targetSubdir) => ipcRenderer.invoke('fs:importFiles', targetSubdir),
+    importFolder: (targetSubdir) => ipcRenderer.invoke('fs:importFolder', targetSubdir),
+    createMarkdownNote: (targetSubdir, filename, title) => ipcRenderer.invoke('fs:createMarkdownNote', { targetSubdir, filename, title }),
+    openInDesktopApp: (filePath) => ipcRenderer.invoke('fs:openInDesktopApp', filePath)
+  },
+  settings: {
+    getSettings: () => ipcRenderer.invoke('settings:get'),
+    saveSettings: (settings) => ipcRenderer.invoke('settings:save', settings),
+    browseApp: () => ipcRenderer.invoke('settings:browseApp'),
+    browseRepoDir: () => ipcRenderer.invoke('settings:browseRepoDir'),
+    resetSettings: () => ipcRenderer.invoke('settings:reset')
+  },
+  shell: {
+    openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+    openDiscord: () => ipcRenderer.invoke('shell:openDiscord'),
+    openMeeting: () => ipcRenderer.invoke('shell:openMeeting'),
+    openRepoFolder: () => ipcRenderer.invoke('shell:openRepoFolder'),
+    copyToClipboard: (text) => clipboard.writeText(text)
+  }
+};
+
+contextBridge.exposeInMainWorld('api', api);

@@ -1,0 +1,345 @@
+import React, { useState, useEffect } from 'react';
+import { FileSidebar } from './FileSidebar';
+import { TopActionBar } from './TopActionBar';
+import { PdfViewer } from './viewers/PdfViewer';
+import { PptxViewer } from './viewers/PptxViewer';
+import { MarkdownViewer } from './viewers/MarkdownViewer';
+import { ImageViewer } from './viewers/ImageViewer';
+import { CsvViewer } from './viewers/CsvViewer';
+import { CodeViewer } from './viewers/CodeViewer';
+import { FileNode } from '../types';
+import { Orbit, FileQuestion, RefreshCw } from 'lucide-react';
+import { ErrorBoundary } from './ErrorBoundary';
+
+interface WorkspaceProps {
+  files: FileNode[];
+  initialSelectedFile?: string | null;
+  onReturnToHub: () => void;
+  onRefreshFiles: () => Promise<void>;
+  onOpenSettings?: () => void;
+  showToast: (type: 'info' | 'success' | 'warning' | 'error' | 'conflict', title: string, message: string) => void;
+}
+
+export const Workspace: React.FC<WorkspaceProps> = ({
+  files,
+  initialSelectedFile,
+  onReturnToHub,
+  onRefreshFiles,
+  onOpenSettings,
+  showToast
+}) => {
+  const [selectedFile, setSelectedFile] = useState<string | null>(initialSelectedFile || 'README.md');
+  const [fileContent, setFileContent] = useState<string>('');
+  const [isBinary, setIsBinary] = useState<boolean>(false);
+  const [mimeType, setMimeType] = useState<string>('text/plain');
+  const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+  const [isEditMorphed, setIsEditMorphed] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+
+  // Sync selected file when initialSelectedFile changes from parent (e.g. View Proposal)
+  useEffect(() => {
+    if (initialSelectedFile) {
+      setSelectedFile(initialSelectedFile);
+    }
+  }, [initialSelectedFile]);
+
+  // Load selected file
+  useEffect(() => {
+    if (selectedFile) {
+      loadFile(selectedFile);
+    } else {
+      // Default to root README.md
+      const hasReadme = files && files.some((f) => f.name.toLowerCase() === 'readme.md');
+      if (hasReadme) {
+        setSelectedFile('README.md');
+      }
+    }
+  }, [selectedFile]);
+
+  const loadFile = async (filePath: string) => {
+    setIsLoadingFile(true);
+    try {
+      const res = await window.api.fs.readFile(filePath);
+      setFileContent(res.content);
+      setIsBinary(res.isBinary);
+      setMimeType(res.mimeType);
+    } catch (err: any) {
+      showToast('error', 'File Read Error', err.message);
+      setFileContent('');
+    } finally {
+      setIsLoadingFile(false);
+    }
+  };
+
+  const handleSelectFile = (node: FileNode) => {
+    if (!node.isDirectory) {
+      setSelectedFile(node.relativePath);
+      setIsEditMorphed(false); // Reset morph state on new file selection
+    }
+  };
+
+  /* ---------------- Actions: + New Dropdown ---------------- */
+
+  const handleImportFiles = async () => {
+    try {
+      const currentDir = selectedFile ? selectedFile.split(/[/\\]/).slice(0, -1).join('/') : '';
+      const res = await window.api.fs.importFiles(currentDir || undefined);
+      if (res.success) {
+        showToast('success', 'Files Imported', res.message);
+        await onRefreshFiles();
+      }
+    } catch (err: any) {
+      showToast('error', 'Import Failed', err.message);
+    }
+  };
+
+  const handleImportFolder = async () => {
+    try {
+      const currentDir = selectedFile ? selectedFile.split(/[/\\]/).slice(0, -1).join('/') : '';
+      const res = await window.api.fs.importFolder(currentDir || undefined);
+      if (res.success) {
+        showToast('success', 'Folder Imported', res.message);
+        await onRefreshFiles();
+      }
+    } catch (err: any) {
+      showToast('error', 'Import Failed', err.message);
+    }
+  };
+
+  const handleCreateNote = async (filename: string, title?: string) => {
+    try {
+      const currentDir = selectedFile ? selectedFile.split(/[/\\]/).slice(0, -1).join('/') : '';
+      const res = await window.api.fs.createMarkdownNote(currentDir, filename, title);
+      if (res.success) {
+        showToast('success', 'Note Created', `Created ${res.relativePath}`);
+        await onRefreshFiles();
+        setSelectedFile(res.relativePath);
+      }
+    } catch (err: any) {
+      showToast('error', 'Note Creation Failed', err.message);
+    }
+  };
+
+  /* ---------------- Actions: Edit in Desktop & Save/Share ---------------- */
+
+  const handleEditInDesktop = async () => {
+    if (!selectedFile) return;
+
+    setIsSyncing(true);
+    try {
+      // 1. Pull remote changes to ensure fresh data
+      showToast('info', 'Pre-Edit Sync', 'Checking mission control for latest remote updates...');
+      const syncRes = await window.api.git.syncRepository();
+      if (syncRes.conflictsResolved && syncRes.conflictsResolved.length > 0) {
+        showToast('conflict', 'Guardrail Alert', `Conflict resolved: Local edits backed up to preserve work.`);
+      }
+
+      // 2. Launch file in local desktop app
+      showToast('info', 'Opening Desktop App', `Launching ${selectedFile.split(/[/\\]/).pop()} in system default app...`);
+      const openResult = await window.api.fs.openInDesktopApp(selectedFile);
+      if (openResult) {
+        showToast('warning', 'App Launch Notice', openResult);
+      }
+
+      // 3. Temporarily morph button into glowing "Save & Share"
+      setIsEditMorphed(true);
+    } catch (err: any) {
+      showToast('error', 'Edit Launch Failed', err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleSaveAndShare = async () => {
+    setIsSyncing(true);
+    try {
+      showToast('info', 'Sharing Station Updates', 'Staging modifications, generating commit, and pushing to main...');
+      
+      const fileName = selectedFile ? selectedFile.split(/[/\\]/).pop() : 'files';
+      const notes = `Updated ${fileName}`;
+      const result = await window.api.git.commitAndPush(notes);
+
+      if (result.success) {
+        showToast('success', 'Shared with Team', result.message);
+        setIsEditMorphed(false); // Reset button back to normal
+        await onRefreshFiles();
+        if (selectedFile) {
+          await loadFile(selectedFile);
+        }
+      } else {
+        if (result.conflictsResolved && result.conflictsResolved.length > 0) {
+          showToast('conflict', 'Guardrail Protected Data', result.message);
+        } else {
+          showToast('warning', 'Sync Notice', result.message);
+        }
+      }
+    } catch (err: any) {
+      showToast('error', 'Push Failed', err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleSaveMarkdownNote = async (newContent: string) => {
+    if (!selectedFile) return;
+    try {
+      await window.api.fs.writeFile(selectedFile, newContent);
+      setFileContent(newContent);
+      showToast('success', 'Saved Locally', `Saved changes to ${selectedFile}. Click "Save & Share" when ready to push.`);
+      setIsEditMorphed(true); // Morph to Save & Share
+    } catch (err: any) {
+      showToast('error', 'Save Failed', err.message);
+    }
+  };
+
+  /* ---------------- Viewport Dispatcher ---------------- */
+
+  const renderActiveViewer = () => {
+    if (!selectedFile) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-3">
+          <Orbit className="w-12 h-12 text-slate-700 animate-spin" style={{ animationDuration: '20s' }} />
+          <p className="text-xs font-mono">Select a file from the repository sidebar to view spectra or documents.</p>
+        </div>
+      );
+    }
+
+    if (isLoadingFile) {
+      return (
+        <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
+          <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
+          <p className="text-xs font-mono">Loading telemetry payload...</p>
+        </div>
+      );
+    }
+
+    const lower = selectedFile.toLowerCase();
+
+    // 1. PDF Documents
+    if (lower.endsWith('.pdf') || lower.endsWith('proposal')) {
+      return (
+        <PdfViewer
+          filePath={selectedFile}
+          base64Data={isBinary ? fileContent : undefined}
+          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+        />
+      );
+    }
+
+    // 2. PPTX Slide Decks
+    if (lower.endsWith('.pptx')) {
+      return (
+        <PptxViewer
+          filePath={selectedFile}
+          base64Data={fileContent}
+          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+        />
+      );
+    }
+
+    // 3. CSV Tabular Catalogs
+    if (lower.endsWith('.csv')) {
+      return (
+        <CsvViewer
+          filePath={selectedFile}
+          csvContent={fileContent}
+          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+        />
+      );
+    }
+
+    // 4. Astronomical Images
+    if (['png', 'jpg', 'jpeg', 'webp'].some((ext) => lower.endsWith(`.${ext}`))) {
+      return (
+        <ImageViewer
+          filePath={selectedFile}
+          base64Data={fileContent}
+          mimeType={mimeType}
+          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+        />
+      );
+    }
+
+    // 5. Markdown Notes (with LaTeX Doppler math)
+    if (lower.endsWith('.md')) {
+      return (
+        <MarkdownViewer
+          filePath={selectedFile}
+          content={fileContent}
+          onSave={handleSaveMarkdownNote}
+          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+        />
+      );
+    }
+
+    // 6. Source Code, JSON, TOML, YAML, Scripts, Configs & Plain Text
+    if (!isBinary) {
+      return (
+        <CodeViewer
+          filePath={selectedFile}
+          content={fileContent}
+          onSave={handleSaveMarkdownNote}
+          onOpenInDesktop={() => window.api.fs.openInDesktopApp(selectedFile)}
+        />
+      );
+    }
+
+    // Fallback for unknown file types
+    return (
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">
+        <FileQuestion className="w-12 h-12 text-slate-600" />
+        <div>
+          <h3 className="text-sm font-bold text-slate-300">{selectedFile}</h3>
+          <p className="text-xs text-slate-500 mt-1">Binary format. Launch in desktop app to inspect.</p>
+        </div>
+        <button
+          onClick={() => window.api.fs.openInDesktopApp(selectedFile)}
+          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono"
+        >
+          Open with System Default App
+        </button>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex h-screen w-full bg-slate-950 overflow-hidden">
+      {/* Collapsible Left Sidebar */}
+      <FileSidebar
+        files={files}
+        selectedFile={selectedFile}
+        onSelectFile={handleSelectFile}
+        onReturnToHub={onReturnToHub}
+        onRefresh={onRefreshFiles}
+        isSyncing={isSyncing}
+        isOpen={isSidebarOpen}
+        onToggleOpen={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
+
+      {/* Main Workspace Column */}
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+        {/* Top Action Bar */}
+        <TopActionBar
+          currentPath={selectedFile ? selectedFile.split(/[/\\]/).slice(0, -1).join('/') : ''}
+          selectedFile={selectedFile}
+          isEditMorphed={isEditMorphed}
+          onImportFiles={handleImportFiles}
+          onImportFolder={handleImportFolder}
+          onCreateNote={handleCreateNote}
+          onEditInDesktop={handleEditInDesktop}
+          onSaveAndShare={handleSaveAndShare}
+          onOpenSettings={onOpenSettings}
+          isSyncing={isSyncing}
+        />
+
+        {/* Central Document Viewer Viewport */}
+        <div className="flex-1 w-full h-full overflow-hidden relative">
+          <ErrorBoundary onReset={() => selectedFile && loadFile(selectedFile)}>
+            {renderActiveViewer()}
+          </ErrorBoundary>
+        </div>
+      </div>
+    </div>
+  );
+};
