@@ -407,25 +407,35 @@ export class GitEngine {
       const statusMatrix = await git.statusMatrix({
         fs,
         dir: this.repoDir,
-        filter: (p) => !p.startsWith('.git')
+        filter: (p) =>
+          !p.startsWith('.git') &&
+          !p.startsWith('.app') &&
+          !p.includes('node_modules') &&
+          !p.includes('dist') &&
+          !p.includes('_conflict_')
       });
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
-      for (const [filepath, head, workdir, stage] of statusMatrix) {
+      for (const [filepath, head, workdir] of statusMatrix) {
         // workdir !== head means locally modified or added
         if (workdir !== head && workdir !== 0) {
+          if (filepath.includes('_conflict_')) continue;
           const fullPath = path.join(this.repoDir, filepath);
-          if (fs.existsSync(fullPath) && fs.statSync(fullPath).isFile()) {
-            const parsed = path.parse(fullPath);
-            const backupFilename = `${parsed.name}_conflict_${timestamp}${parsed.ext}`;
-            const backupPath = path.join(parsed.dir, backupFilename);
+          if (fs.existsSync(fullPath)) {
+            const stat = fs.statSync(fullPath);
+            // Only back up regular files <= 10MB to avoid copying large binaries
+            if (stat.isFile() && stat.size <= 10 * 1024 * 1024) {
+              const parsed = path.parse(fullPath);
+              const backupFilename = `${parsed.name}_conflict_${timestamp}${parsed.ext}`;
+              const backupPath = path.join(parsed.dir, backupFilename);
 
-            fs.copyFileSync(fullPath, backupPath);
-            backedUp.push({
-              original: filepath,
-              backup: path.relative(this.repoDir, backupPath)
-            });
+              fs.copyFileSync(fullPath, backupPath);
+              backedUp.push({
+                original: filepath,
+                backup: path.relative(this.repoDir, backupPath)
+              });
+            }
           }
         }
       }

@@ -952,6 +952,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </button>
                 </div>
 
+                {settings.googleSuite?.windowMode === 'station_window' && (
+                  <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/40 text-[11px] text-amber-200">
+                    <Info className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
+                    <span>
+                      <strong>Google Security Policy:</strong> Google blocks account sign-in inside embedded Electron windows (<em>&quot;This browser or app may not be secure&quot;</em>). If you need to log into Google, select <strong>Standalone App</strong> (Vivaldi, Chrome, Edge) or <strong>Browser Tab</strong> (Safari, Vivaldi) for unrestricted authentication.
+                    </span>
+                  </div>
+                )}
+
                 {/* Preferred Engine Selector (when in app_window mode) */}
                 {settings.googleSuite?.windowMode === 'app_window' && browserInfo?.browsers && browserInfo.browsers.filter(b => b.supportsAppMode).length > 0 && (
                   <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">

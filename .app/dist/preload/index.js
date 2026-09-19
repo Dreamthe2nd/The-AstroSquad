@@ -52,7 +52,9 @@ var api = {
     openDiscord: (customInviteUrl, customAppUri) => import_electron.ipcRenderer.invoke("shell:openDiscord", { customInviteUrl, customAppUri }),
     openMeeting: (customUrl) => import_electron.ipcRenderer.invoke("shell:openMeeting", customUrl),
     openRepoFolder: () => import_electron.ipcRenderer.invoke("shell:openRepoFolder"),
-    copyToClipboard: (text) => import_electron.clipboard.writeText(text)
+    copyToClipboard: (text) => import_electron.clipboard.writeText(text),
+    openGoogleSuite: (args) => import_electron.ipcRenderer.invoke("shell:openGoogleSuite", args),
+    getDetectedBrowsers: () => import_electron.ipcRenderer.invoke("shell:getDetectedBrowsers")
   }
 };
 import_electron.contextBridge.exposeInMainWorld("api", api);

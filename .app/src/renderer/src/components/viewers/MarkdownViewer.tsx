@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -14,6 +14,93 @@ import {
   Eye, 
   Sparkles 
 } from 'lucide-react';
+
+// Static plugin arrays to avoid re-instantiating unified processor on every render
+const REMARK_PLUGINS = [remarkMath, remarkGfm];
+const REHYPE_PLUGINS: any[] = [[rehypeKatex, { throwOnError: false, strict: false }]];
+
+const MARKDOWN_COMPONENTS: Record<string, React.FC<any>> = {
+  h1: ({ children }) => (
+    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white border-b border-slate-800 pb-3 flex items-center gap-3">
+      <Sparkles className="w-6 h-6 text-cyan-400 shrink-0" />
+      <span>{children}</span>
+    </h1>
+  ),
+  h2: ({ children }) => (
+    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-cyan-300 mt-8 mb-3 border-b border-slate-800/60 pb-2">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="text-lg font-bold text-slate-200 mt-6 mb-2">
+      {children}
+    </h3>
+  ),
+  p: ({ children }) => (
+    <p className="text-sm sm:text-base text-slate-300 leading-relaxed my-3 font-sans">
+      {children}
+    </p>
+  ),
+  ul: ({ children }) => (
+    <ul className="list-disc list-inside space-y-1.5 text-slate-300 text-sm sm:text-base pl-2">
+      {children}
+    </ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="list-decimal list-inside space-y-1.5 text-slate-300 text-sm sm:text-base pl-2">
+      {children}
+    </ol>
+  ),
+  li: ({ children }) => (
+    <li className="leading-relaxed text-slate-300">
+      {children}
+    </li>
+  ),
+  blockquote: ({ children }) => (
+    <blockquote className="border-l-4 border-cyan-400 bg-cyan-950/20 px-4 py-2 rounded-r-lg text-slate-300 italic my-4 text-sm font-sans">
+      {children}
+    </blockquote>
+  ),
+  table: ({ children }) => (
+    <div className="overflow-x-auto my-6 rounded-xl border border-slate-800 bg-slate-900/60 shadow-md">
+      <table className="min-w-full divide-y divide-slate-800 text-left text-xs font-mono">
+        {children}
+      </table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead className="bg-slate-900 text-cyan-400 uppercase tracking-wider font-semibold">
+      {children}
+    </thead>
+  ),
+  tbody: ({ children }) => (
+    <tbody className="divide-y divide-slate-800/60">
+      {children}
+    </tbody>
+  ),
+  th: ({ children }) => (
+    <th className="px-4 py-3 text-xs font-bold tracking-wider">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="px-4 py-3 text-xs text-slate-300 whitespace-nowrap">
+      {children}
+    </td>
+  ),
+  code: ({ className, children }: any) => {
+    const isInline = !className;
+    return isInline ? (
+      <code className="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono text-xs border border-slate-700">
+        {children}
+      </code>
+    ) : (
+      <pre className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 font-mono text-xs overflow-x-auto">
+        <code>{children}</code>
+      </pre>
+    );
+  }
+};
 
 interface MarkdownViewerProps {
   filePath: string;
@@ -33,7 +120,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
 
-  // Sync state when file changes
+  // Sync state when content or filePath changes
   React.useEffect(() => {
     setEditedContent(content);
     setIsEditing(false);
@@ -143,90 +230,9 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
         ) : (
           <div className="max-w-4xl mx-auto prose prose-invert prose-cyan max-w-none space-y-6">
             <ReactMarkdown
-              remarkPlugins={[remarkMath, remarkGfm]}
-              rehypePlugins={[[rehypeKatex, { throwOnError: false, strict: false }]]}
-              components={{
-                h1: ({ children }) => (
-                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white border-b border-slate-800 pb-3 flex items-center gap-3">
-                    <Sparkles className="w-6 h-6 text-cyan-400 shrink-0" />
-                    <span>{children}</span>
-                  </h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-cyan-300 mt-8 mb-3 border-b border-slate-800/60 pb-2">
-                    {children}
-                  </h2>
-                ),
-                h3: ({ children }) => (
-                  <h3 className="text-lg font-bold text-slate-200 mt-6 mb-2">
-                    {children}
-                  </h3>
-                ),
-                p: ({ children }) => (
-                  <p className="text-sm sm:text-base text-slate-300 leading-relaxed my-3 font-sans">
-                    {children}
-                  </p>
-                ),
-                ul: ({ children }) => (
-                  <ul className="list-disc list-inside space-y-1.5 text-slate-300 text-sm sm:text-base pl-2">
-                    {children}
-                  </ul>
-                ),
-                ol: ({ children }) => (
-                  <ol className="list-decimal list-inside space-y-1.5 text-slate-300 text-sm sm:text-base pl-2">
-                    {children}
-                  </ol>
-                ),
-                li: ({ children }) => (
-                  <li className="leading-relaxed text-slate-300">
-                    {children}
-                  </li>
-                ),
-                blockquote: ({ children }) => (
-                  <blockquote className="border-l-4 border-cyan-400 bg-cyan-950/20 px-4 py-2 rounded-r-lg text-slate-300 italic my-4 text-sm font-sans">
-                    {children}
-                  </blockquote>
-                ),
-                table: ({ children }) => (
-                  <div className="overflow-x-auto my-6 rounded-xl border border-slate-800 bg-slate-900/60 shadow-md">
-                    <table className="min-w-full divide-y divide-slate-800 text-left text-xs font-mono">
-                      {children}
-                    </table>
-                  </div>
-                ),
-                thead: ({ children }) => (
-                  <thead className="bg-slate-900 text-cyan-400 uppercase tracking-wider font-semibold">
-                    {children}
-                  </thead>
-                ),
-                tbody: ({ children }) => (
-                  <tbody className="divide-y divide-slate-800/60">
-                    {children}
-                  </tbody>
-                ),
-                th: ({ children }) => (
-                  <th className="px-4 py-3 text-xs font-bold tracking-wider">
-                    {children}
-                  </th>
-                ),
-                td: ({ children }) => (
-                  <td className="px-4 py-3 text-xs text-slate-300 whitespace-nowrap">
-                    {children}
-                  </td>
-                ),
-                code: ({ className, children, ...props }: any) => {
-                  const isInline = !className;
-                  return isInline ? (
-                    <code className="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono text-xs border border-slate-700">
-                      {children}
-                    </code>
-                  ) : (
-                    <pre className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 font-mono text-xs overflow-x-auto">
-                      <code>{children}</code>
-                    </pre>
-                  );
-                }
-              }}
+              remarkPlugins={REMARK_PLUGINS}
+              rehypePlugins={REHYPE_PLUGINS}
+              components={MARKDOWN_COMPONENTS}
             >
               {editedContent}
             </ReactMarkdown>

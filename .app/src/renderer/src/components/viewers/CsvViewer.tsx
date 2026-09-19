@@ -25,8 +25,20 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({ filePath, csvContent, onOp
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(25);
 
-  // Parse CSV
+  // Reset filter and pagination state when switching files
+  React.useEffect(() => {
+    setSearchQuery('');
+    setSortColumn(null);
+    setSortAsc(true);
+    setCurrentPage(1);
+  }, [filePath]);
+
+  // Parse CSV (short-circuit for empty content to guarantee 0ms execution)
   const { data, headers } = useMemo(() => {
+    if (!csvContent || !csvContent.trim()) {
+      return { data: [], headers: [] };
+    }
+
     const parsed = Papa.parse<string[]>(csvContent, {
       skipEmptyLines: true
     });
@@ -37,8 +49,8 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({ filePath, csvContent, onOp
 
     const [headerRow, ...dataRows] = parsed.data;
     return {
-      headers: headerRow,
-      data: dataRows
+      headers: headerRow || [],
+      data: dataRows || []
     };
   }, [csvContent]);
 

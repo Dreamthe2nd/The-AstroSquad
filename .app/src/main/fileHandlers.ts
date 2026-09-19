@@ -83,6 +83,13 @@ export class FileHandlers {
     }
 
     const stats = fs.statSync(filePath);
+    if (stats.isDirectory()) {
+      return {
+        content: '',
+        isBinary: false,
+        mimeType: 'text/plain'
+      };
+    }
     const ext = path.extname(filePath).toLowerCase();
     const binaryExts = [
       '.pdf', '.png', '.jpg', '.jpeg', '.webp', '.pptx', '.ico',

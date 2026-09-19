@@ -6600,17 +6600,17 @@ var require_ignore = __commonJS({
     var throwError = (message, Ctor) => {
       throw new Ctor(message);
     };
-    var checkPath = (path5, originalPath, doThrow) => {
-      if (!isString(path5)) {
+    var checkPath = (path6, originalPath, doThrow) => {
+      if (!isString(path6)) {
         return doThrow(
           `path must be a string, but got \`${originalPath}\``,
           TypeError
         );
       }
-      if (!path5) {
+      if (!path6) {
         return doThrow(`path must not be empty`, TypeError);
       }
-      if (checkPath.isNotRelative(path5)) {
+      if (checkPath.isNotRelative(path6)) {
         const r = "`path.relative()`d";
         return doThrow(
           `path should be a ${r} string, but got "${originalPath}"`,
@@ -6619,7 +6619,7 @@ var require_ignore = __commonJS({
       }
       return true;
     };
-    var isNotRelative = (path5) => REGEX_TEST_INVALID_PATH.test(path5);
+    var isNotRelative = (path6) => REGEX_TEST_INVALID_PATH.test(path6);
     checkPath.isNotRelative = isNotRelative;
     checkPath.convert = (p) => p;
     var Ignore = class {
@@ -6678,7 +6678,7 @@ var require_ignore = __commonJS({
       //   setting `checkUnignored` to `false` could reduce additional
       //   path matching.
       // @returns {TestResult} true if a file is ignored
-      _testOne(path5, checkUnignored) {
+      _testOne(path6, checkUnignored) {
         let ignored = false;
         let unignored = false;
         this._rules.forEach((rule) => {
@@ -6686,7 +6686,7 @@ var require_ignore = __commonJS({
           if (unignored === negative && ignored !== unignored || negative && !ignored && !unignored && !checkUnignored) {
             return;
           }
-          const matched = rule.regex.test(path5);
+          const matched = rule.regex.test(path6);
           if (matched) {
             ignored = !negative;
             unignored = negative;
@@ -6699,24 +6699,24 @@ var require_ignore = __commonJS({
       }
       // @returns {TestResult}
       _test(originalPath, cache, checkUnignored, slices) {
-        const path5 = originalPath && checkPath.convert(originalPath);
+        const path6 = originalPath && checkPath.convert(originalPath);
         checkPath(
-          path5,
+          path6,
           originalPath,
           this._allowRelativePaths ? RETURN_FALSE : throwError
         );
-        return this._t(path5, cache, checkUnignored, slices);
+        return this._t(path6, cache, checkUnignored, slices);
       }
-      _t(path5, cache, checkUnignored, slices) {
-        if (path5 in cache) {
-          return cache[path5];
+      _t(path6, cache, checkUnignored, slices) {
+        if (path6 in cache) {
+          return cache[path6];
         }
         if (!slices) {
-          slices = path5.split(SLASH);
+          slices = path6.split(SLASH);
         }
         slices.pop();
         if (!slices.length) {
-          return cache[path5] = this._testOne(path5, checkUnignored);
+          return cache[path6] = this._testOne(path6, checkUnignored);
         }
         const parent = this._t(
           slices.join(SLASH) + SLASH,
@@ -6724,24 +6724,24 @@ var require_ignore = __commonJS({
           checkUnignored,
           slices
         );
-        return cache[path5] = parent.ignored ? parent : this._testOne(path5, checkUnignored);
+        return cache[path6] = parent.ignored ? parent : this._testOne(path6, checkUnignored);
       }
-      ignores(path5) {
-        return this._test(path5, this._ignoreCache, false).ignored;
+      ignores(path6) {
+        return this._test(path6, this._ignoreCache, false).ignored;
       }
       createFilter() {
-        return (path5) => !this.ignores(path5);
+        return (path6) => !this.ignores(path6);
       }
       filter(paths) {
         return makeArray(paths).filter(this.createFilter());
       }
       // @returns {TestResult}
-      test(path5) {
-        return this._test(path5, this._testCache, true);
+      test(path6) {
+        return this._test(path6, this._testCache, true);
       }
     };
     var factory = (options) => new Ignore(options);
-    var isPathValid = (path5) => checkPath(path5 && checkPath.convert(path5), path5, RETURN_FALSE);
+    var isPathValid = (path6) => checkPath(path6 && checkPath.convert(path6), path6, RETURN_FALSE);
     factory.isPathValid = isPathValid;
     factory.default = factory;
     module2.exports = factory;
@@ -6752,7 +6752,7 @@ var require_ignore = __commonJS({
       const makePosix = (str) => /^\\\\\?\\/.test(str) || /["<>|\u0000-\u001F]+/u.test(str) ? str : str.replace(/\\/g, "/");
       checkPath.convert = makePosix;
       const REGIX_IS_WINDOWS_PATH_ABSOLUTE = /^[a-z]:\//i;
-      checkPath.isNotRelative = (path5) => REGIX_IS_WINDOWS_PATH_ABSOLUTE.test(path5) || isNotRelative(path5);
+      checkPath.isNotRelative = (path6) => REGIX_IS_WINDOWS_PATH_ABSOLUTE.test(path6) || isNotRelative(path6);
     }
   }
 });
@@ -6761,7 +6761,7 @@ var require_ignore = __commonJS({
 var require_onp = __commonJS({
   "node_modules/diff3/onp.js"(exports2, module2) {
     module2.exports = function(a_, b_) {
-      var a = a_, b = b_, m = a.length, n = b.length, reverse = false, ed = null, offset = m + 1, path5 = [], pathposi = [], ses = [], lcs = "", SES_DELETE = -1, SES_COMMON = 0, SES_ADD = 1;
+      var a = a_, b = b_, m = a.length, n = b.length, reverse = false, ed = null, offset = m + 1, path6 = [], pathposi = [], ses = [], lcs = "", SES_DELETE = -1, SES_COMMON = 0, SES_ADD = 1;
       var tmp1, tmp2;
       var init = function() {
         if (m >= n) {
@@ -6791,9 +6791,9 @@ var require_onp = __commonJS({
       var snake = function(k, p, pp) {
         var r, x, y;
         if (p > pp) {
-          r = path5[k - 1 + offset];
+          r = path6[k - 1 + offset];
         } else {
-          r = path5[k + 1 + offset];
+          r = path6[k + 1 + offset];
         }
         y = Math.max(p, pp);
         x = y - k;
@@ -6801,7 +6801,7 @@ var require_onp = __commonJS({
           ++x;
           ++y;
         }
-        path5[k + offset] = pathposi.length;
+        path6[k + offset] = pathposi.length;
         pathposi[pathposi.length] = new P(x, y, r);
         return y;
       };
@@ -6859,7 +6859,7 @@ var require_onp = __commonJS({
           fp = {};
           for (i = 0; i < size; ++i) {
             fp[i] = -1;
-            path5[i] = -1;
+            path6[i] = -1;
           }
           p = -1;
           do {
@@ -6873,7 +6873,7 @@ var require_onp = __commonJS({
             fp[delta + offset] = snake(delta, fp[delta - 1 + offset] + 1, fp[delta + 1 + offset]);
           } while (fp[delta + offset] !== n);
           ed = delta + 2 * p;
-          r = path5[delta + offset];
+          r = path6[delta + offset];
           epc = [];
           while (r !== -1) {
             epc[epc.length] = new P(pathposi[r].x, pathposi[r].y, null);
@@ -7650,18 +7650,18 @@ If you're a developer and you believe this is a bug in isomorphic-git, please fi
         return result;
       }
     };
-    function basename(path5) {
-      const last = Math.max(path5.lastIndexOf("/"), path5.lastIndexOf("\\"));
+    function basename(path6) {
+      const last = Math.max(path6.lastIndexOf("/"), path6.lastIndexOf("\\"));
       if (last > -1) {
-        path5 = path5.slice(last + 1);
+        path6 = path6.slice(last + 1);
       }
-      return path5;
+      return path6;
     }
-    function dirname(path5) {
-      const last = Math.max(path5.lastIndexOf("/"), path5.lastIndexOf("\\"));
+    function dirname(path6) {
+      const last = Math.max(path6.lastIndexOf("/"), path6.lastIndexOf("\\"));
       if (last === -1) return ".";
       if (last === 0) return "/";
-      return path5.slice(0, last);
+      return path6.slice(0, last);
     }
     function flatFileListToDirectoryStructure(files) {
       const inodes = /* @__PURE__ */ new Map();
@@ -8022,14 +8022,14 @@ If you're a developer and you believe this is a bug in isomorphic-git, please fi
         throw new TypeError("Reference name must be a string");
       return !bad.test(name) && (!!onelevel || name.includes("/"));
     }
-    function normalizeString(path5, aar) {
+    function normalizeString(path6, aar) {
       let res = "";
       let lastSegmentLength = 0;
       let lastSlash = -1;
       let dots = 0;
       let char = "\0";
-      for (let i = 0; i <= path5.length; ++i) {
-        if (i < path5.length) char = path5[i];
+      for (let i = 0; i <= path6.length; ++i) {
+        if (i < path6.length) char = path6[i];
         else if (char === "/") break;
         else char = "/";
         if (char === "/") {
@@ -8061,8 +8061,8 @@ If you're a developer and you believe this is a bug in isomorphic-git, please fi
               lastSegmentLength = 2;
             }
           } else {
-            if (res.length > 0) res += "/" + path5.slice(lastSlash + 1, i);
-            else res = path5.slice(lastSlash + 1, i);
+            if (res.length > 0) res += "/" + path6.slice(lastSlash + 1, i);
+            else res = path6.slice(lastSlash + 1, i);
             lastSegmentLength = i - lastSlash - 1;
           }
           lastSlash = i;
@@ -8075,19 +8075,19 @@ If you're a developer and you believe this is a bug in isomorphic-git, please fi
       }
       return res;
     }
-    function getWindowsDrivePrefix(path5) {
-      if (path5.length >= 2 && /^[a-zA-Z]:/.test(path5)) {
-        return path5.slice(0, 2);
+    function getWindowsDrivePrefix(path6) {
+      if (path6.length >= 2 && /^[a-zA-Z]:/.test(path6)) {
+        return path6.slice(0, 2);
       }
       return null;
     }
-    function normalize(path5) {
-      if (!path5.length) return ".";
-      path5 = path5.replace(/\\/g, "/");
-      const drivePrefix = getWindowsDrivePrefix(path5);
-      const isAbsolute2 = path5[0] === "/" || drivePrefix !== null && path5[2] === "/";
-      const trailingSeparator = path5.at(-1) === "/";
-      const pathBody = drivePrefix ? path5.slice(2) : path5;
+    function normalize(path6) {
+      if (!path6.length) return ".";
+      path6 = path6.replace(/\\/g, "/");
+      const drivePrefix = getWindowsDrivePrefix(path6);
+      const isAbsolute2 = path6[0] === "/" || drivePrefix !== null && path6[2] === "/";
+      const trailingSeparator = path6.at(-1) === "/";
+      const pathBody = drivePrefix ? path6.slice(2) : path6;
       let normalized = normalizeString(pathBody, !isAbsolute2);
       if (!normalized.length) {
         const root = drivePrefix ? isAbsolute2 ? drivePrefix + "/" : drivePrefix : isAbsolute2 ? "/" : ".";
@@ -8201,8 +8201,8 @@ If you're a developer and you believe this is a bug in isomorphic-git, please fi
     var getPath = (section, subsection, name) => {
       return [lower(section), subsection, lower(name)].filter((a) => a != null).join(".");
     };
-    var normalizePath = (path5) => {
-      const pathSegments = path5.split(".");
+    var normalizePath = (path6) => {
+      const pathSegments = path6.split(".");
       const section = pathSegments.shift();
       const name = pathSegments.pop();
       const subsection = pathSegments.length ? pathSegments.join(".") : void 0;
@@ -8241,23 +8241,23 @@ If you're a developer and you believe this is a bug in isomorphic-git, please fi
               [name, value] = extractedVariable;
             }
           }
-          const path5 = getPath(section, subsection, name);
-          return { line, isSection, section, subsection, name, value, path: path5 };
+          const path6 = getPath(section, subsection, name);
+          return { line, isSection, section, subsection, name, value, path: path6 };
         }) : [];
       }
       static from(text) {
         return new _GitConfig(text);
       }
-      async get(path5, getall = false) {
-        const normalizedPath = normalizePath(path5).path;
+      async get(path6, getall = false) {
+        const normalizedPath = normalizePath(path6).path;
         const allValues = this.parsedConfig.filter((config) => config.path === normalizedPath).map(({ section, name, value }) => {
           const fn = schema[section] && schema[section][name];
           return fn ? fn(value) : value;
         });
         return getall ? allValues : allValues.pop();
       }
-      async getall(path5) {
-        return this.get(path5, true);
+      async getall(path6) {
+        return this.get(path6, true);
       }
       async getSubsections(section) {
         return this.parsedConfig.filter((config) => config.isSection && config.section === section).map((config) => config.subsection);
@@ -8267,10 +8267,10 @@ If you're a developer and you believe this is a bug in isomorphic-git, please fi
           (config) => !(config.section === section && config.subsection === subsection)
         );
       }
-      async append(path5, value) {
-        return this.set(path5, value, true);
+      async append(path6, value) {
+        return this.set(path6, value, true);
       }
-      async set(path5, value, append = false) {
+      async set(path6, value, append = false) {
         const {
           section,
           subsection,
@@ -8278,7 +8278,7 @@ If you're a developer and you believe this is a bug in isomorphic-git, please fi
           path: normalizedPath,
           sectionPath,
           isSection
-        } = normalizePath(path5);
+        } = normalizePath(path6);
         const configIndex = findLastIndex(
           this.parsedConfig,
           (config) => config.path === normalizedPath
@@ -8892,19 +8892,19 @@ If you're a developer and you believe this is a bug in isomorphic-git, please fi
         let mode = buffer.slice(cursor, space).toString("utf8");
         if (mode === "40000") mode = "040000";
         const type = mode2type$1(mode);
-        const path5 = buffer.slice(space + 1, nullchar).toString("utf8");
-        const hfsClean = path5.replace(
+        const path6 = buffer.slice(space + 1, nullchar).toString("utf8");
+        const hfsClean = path6.replace(
           /[\u200C-\u200F\u202A-\u202E\u206A-\u206F\uFEFF]/g,
           ""
         );
         const ntfsClean = hfsClean.split(":")[0];
         const normalized = ntfsClean.toLowerCase().replace(/[. ]+$/, "");
-        if (path5.includes("\\") || path5.includes("/") || hfsClean === "." || hfsClean === ".." || normalized === ".git" || /^\.?git~[1-9]$/.test(normalized)) {
-          throw new UnsafeFilepathError(path5);
+        if (path6.includes("\\") || path6.includes("/") || hfsClean === "." || hfsClean === ".." || normalized === ".git" || /^\.?git~[1-9]$/.test(normalized)) {
+          throw new UnsafeFilepathError(path6);
         }
         const oid = buffer.slice(nullchar + 1, nullchar + 21).toString("hex");
         cursor = nullchar + 21;
-        _entries.push({ mode, path: path5, oid, type });
+        _entries.push({ mode, path: path6, oid, type });
       }
       return _entries;
     }
@@ -8953,10 +8953,10 @@ If you're a developer and you believe this is a bug in isomorphic-git, please fi
           entries.map((entry) => {
             const mode = Buffer.from(entry.mode.replace(/^0/, ""));
             const space = Buffer.from(" ");
-            const path5 = Buffer.from(entry.path, "utf8");
+            const path6 = Buffer.from(entry.path, "utf8");
             const nullchar = Buffer.from([0]);
             const oid = Buffer.from(entry.oid, "hex");
-            return Buffer.concat([mode, space, path5, nullchar, oid]);
+            return Buffer.concat([mode, space, path6, nullchar, oid]);
           })
         );
       }
@@ -11195,13 +11195,13 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
           dir,
           gitdir: updatedGitdir,
           trees,
-          map: async function(path5, [head, workdir, index3]) {
+          map: async function(path6, [head, workdir, index3]) {
             const staged = !await modified(workdir, index3);
-            const unmerged = unmergedPaths.includes(path5);
+            const unmerged = unmergedPaths.includes(path6);
             const unmodified = !await modified(index3, head);
             if (staged || unmerged) {
               return head ? {
-                path: path5,
+                path: path6,
                 mode: await head.mode(),
                 oid: await head.oid(),
                 type: await head.type(),
@@ -11209,7 +11209,7 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
               } : void 0;
             }
             if (unmodified) return false;
-            else throw new IndexResetError(path5);
+            else throw new IndexResetError(path6);
           }
         });
         await GitIndexManager.acquire(
@@ -11472,9 +11472,9 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
       const fulfilledPromises = settledPromises.filter((settle) => settle.status === "fulfilled" && settle.value).map((settle) => settle.value);
       return fulfilledPromises;
     }
-    async function _getConfig({ fs: fs5, gitdir, path: path5 }) {
+    async function _getConfig({ fs: fs5, gitdir, path: path6 }) {
       const config = await GitConfigManager.get({ fs: fs5, gitdir });
-      return config.get(path5);
+      return config.get(path6);
     }
     function assignDefined(target, ...sources) {
       for (const source of sources) {
@@ -12881,14 +12881,14 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
         gitdir,
         trees: [ourTree, baseTree, theirTree],
         map: async function(filepath, [ours, base, theirs]) {
-          const path5 = basename(filepath);
+          const path6 = basename(filepath);
           const ourChange = await modified(ours, base);
           const theirChange = await modified(theirs, base);
           switch (`${ourChange}-${theirChange}`) {
             case "false-false": {
               return {
                 mode: await base.mode(),
-                path: path5,
+                path: path6,
                 oid: await base.oid(),
                 type: await base.type()
               };
@@ -12897,14 +12897,14 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
               if (!theirs && await ours.type() === "tree") {
                 return {
                   mode: await ours.mode(),
-                  path: path5,
+                  path: path6,
                   oid: await ours.oid(),
                   type: await ours.type()
                 };
               }
               return theirs ? {
                 mode: await theirs.mode(),
-                path: path5,
+                path: path6,
                 oid: await theirs.oid(),
                 type: await theirs.type()
               } : void 0;
@@ -12913,14 +12913,14 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
               if (!ours && await theirs.type() === "tree") {
                 return {
                   mode: await theirs.mode(),
-                  path: path5,
+                  path: path6,
                   oid: await theirs.oid(),
                   type: await theirs.type()
                 };
               }
               return ours ? {
                 mode: await ours.mode(),
-                path: path5,
+                path: path6,
                 oid: await ours.oid(),
                 type: await ours.type()
               } : void 0;
@@ -12929,7 +12929,7 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
               if (ours && theirs && await ours.type() === "tree" && await theirs.type() === "tree") {
                 return {
                   mode: await ours.mode(),
-                  path: path5,
+                  path: path6,
                   oid: await ours.oid(),
                   type: "tree"
                 };
@@ -12938,7 +12938,7 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
                 return mergeBlobs({
                   fs: fs5,
                   gitdir,
-                  path: path5,
+                  path: path6,
                   ours,
                   base,
                   theirs,
@@ -12984,7 +12984,7 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
                   mode: await theirs.mode(),
                   oid: await theirs.oid(),
                   type: "blob",
-                  path: path5
+                  path: path6
                 };
               }
               if (base && ours && !theirs && await base.type() === "blob" && await ours.type() === "blob") {
@@ -13001,7 +13001,7 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
                   mode: await ours.mode(),
                   oid: await ours.oid(),
                   type: "blob",
-                  path: path5
+                  path: path6
                 };
               }
               if (base && !ours && !theirs && (await base.type() === "blob" || await base.type() === "tree")) {
@@ -13044,11 +13044,11 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
             gitdir,
             trees: [TREE({ ref: results.oid })],
             map: async function(filepath, [entry]) {
-              const path5 = `${dir}/${filepath}`;
+              const path6 = `${dir}/${filepath}`;
               if (await entry.type() === "blob") {
                 const mode = await entry.mode();
                 const content = await entry.content();
-                await fs5.write(path5, content, { mode });
+                await fs5.write(path6, content, { mode });
               }
               return true;
             }
@@ -13066,7 +13066,7 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
     async function mergeBlobs({
       fs: fs5,
       gitdir,
-      path: path5,
+      path: path6,
       ours,
       base,
       theirs,
@@ -13089,19 +13089,19 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
       if (await ours.oid() === await theirs.oid()) {
         return {
           cleanMerge: true,
-          mergeResult: { mode, path: path5, oid: await ours.oid(), type }
+          mergeResult: { mode, path: path6, oid: await ours.oid(), type }
         };
       }
       if (await ours.oid() === baseOid) {
         return {
           cleanMerge: true,
-          mergeResult: { mode, path: path5, oid: await theirs.oid(), type }
+          mergeResult: { mode, path: path6, oid: await theirs.oid(), type }
         };
       }
       if (await theirs.oid() === baseOid) {
         return {
           cleanMerge: true,
-          mergeResult: { mode, path: path5, oid: await ours.oid(), type }
+          mergeResult: { mode, path: path6, oid: await ours.oid(), type }
         };
       }
       const ourContent = Buffer.from(await ours.content()).toString("utf8");
@@ -13109,7 +13109,7 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
       const { mergedText, cleanMerge } = await mergeDriver({
         branches: [baseName, ourName, theirName],
         contents: [baseContent, ourContent, theirContent],
-        path: path5
+        path: path6
       });
       const oid = await _writeObject({
         fs: fs5,
@@ -13118,7 +13118,7 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
         object: Buffer.from(mergedText, "utf8"),
         dryRun
       });
-      return { cleanMerge, mergeResult: { mode, path: path5, oid, type } };
+      return { cleanMerge, mergeResult: { mode, path: path6, oid, type } };
     }
     var _TreeMap = {
       stage: STAGE,
@@ -15467,51 +15467,51 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
         throw err;
       }
     }
-    async function getConfig({ fs: fs5, dir, gitdir = join(dir, ".git"), path: path5 }) {
+    async function getConfig({ fs: fs5, dir, gitdir = join(dir, ".git"), path: path6 }) {
       try {
         assertParameter("fs", fs5);
         assertParameter("gitdir", gitdir);
-        assertParameter("path", path5);
+        assertParameter("path", path6);
         const fsp = new FileSystem(fs5);
         const updatedGitdir = await discoverGitdir({ fsp, dotgit: gitdir });
         return await _getConfig({
           fs: fsp,
           gitdir: updatedGitdir,
-          path: path5
+          path: path6
         });
       } catch (err) {
         err.caller = "git.getConfig";
         throw err;
       }
     }
-    async function _getConfigAll({ fs: fs5, gitdir, path: path5 }) {
+    async function _getConfigAll({ fs: fs5, gitdir, path: path6 }) {
       const config = await GitConfigManager.get({ fs: fs5, gitdir });
-      return config.getall(path5);
+      return config.getall(path6);
     }
     async function getConfigAll({
       fs: fs5,
       dir,
       gitdir = join(dir, ".git"),
-      path: path5
+      path: path6
     }) {
       try {
         assertParameter("fs", fs5);
         assertParameter("gitdir", gitdir);
-        assertParameter("path", path5);
+        assertParameter("path", path6);
         const fsp = new FileSystem(fs5);
         const updatedGitdir = await discoverGitdir({ fsp, dotgit: gitdir });
         return await _getConfigAll({
           fs: fsp,
           gitdir: updatedGitdir,
-          path: path5
+          path: path6
         });
       } catch (err) {
         err.caller = "git.getConfigAll";
         throw err;
       }
     }
-    function assignRefPath(root, path5, value) {
-      const parts = path5.split("/");
+    function assignRefPath(root, path6, value) {
+      const parts = path6.split("/");
       const last = parts.pop();
       if (last === "__proto__" || parts.includes("__proto__")) return;
       let o = root;
@@ -17583,21 +17583,21 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
       fs: _fs,
       dir,
       gitdir = join(dir, ".git"),
-      path: path5,
+      path: path6,
       value,
       append = false
     }) {
       try {
         assertParameter("fs", _fs);
         assertParameter("gitdir", gitdir);
-        assertParameter("path", path5);
+        assertParameter("path", path6);
         const fs5 = new FileSystem(_fs);
         const updatedGitdir = await discoverGitdir({ fsp: fs5, dotgit: gitdir });
         const config = await GitConfigManager.get({ fs: fs5, gitdir: updatedGitdir });
         if (append) {
-          await config.append(path5, value);
+          await config.append(path6, value);
         } else {
-          await config.set(path5, value);
+          await config.set(path6, value);
         }
         await GitConfigManager.save({ fs: fs5, gitdir: updatedGitdir, config });
       } catch (err) {
@@ -17979,9 +17979,9 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
       const stashRefPath = [stashMgr.refStashPath, stashMgr.refLogsStashPath];
       await acquireLock(stashRefPath, async () => {
         await Promise.all(
-          stashRefPath.map(async (path5) => {
-            if (await fs5.exists(path5)) {
-              return fs5.rm(path5);
+          stashRefPath.map(async (path6) => {
+            if (await fs5.exists(path6)) {
+              return fs5.rm(path6);
             }
           })
         );
@@ -18143,12 +18143,12 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
         throw err;
       }
     }
-    async function getOidAtPath({ fs: fs5, cache, gitdir: updatedGitdir, tree, path: path5 }) {
-      if (typeof path5 === "string") path5 = path5.split("/");
-      const dirname2 = path5.shift();
+    async function getOidAtPath({ fs: fs5, cache, gitdir: updatedGitdir, tree, path: path6 }) {
+      if (typeof path6 === "string") path6 = path6.split("/");
+      const dirname2 = path6.shift();
       for (const entry of tree) {
         if (entry.path === dirname2) {
-          if (path5.length === 0) {
+          if (path6.length === 0) {
             return entry.oid;
           }
           const { type, object } = await _readObject({
@@ -18159,10 +18159,10 @@ ${obj.gpgsig ? obj.gpgsig : ""}`;
           });
           if (type === "tree") {
             const tree2 = GitTree.from(object);
-            return getOidAtPath({ fs: fs5, cache, gitdir: updatedGitdir, tree: tree2, path: path5 });
+            return getOidAtPath({ fs: fs5, cache, gitdir: updatedGitdir, tree: tree2, path: path6 });
           }
           if (type === "blob") {
-            throw new ObjectTypeError(entry.oid, type, "blob", path5.join("/"));
+            throw new ObjectTypeError(entry.oid, type, "blob", path6.join("/"));
           }
         }
       }
@@ -18976,10 +18976,10 @@ var require_simple_get = __commonJS({
       opts = Object.assign({ maxRedirects: 10 }, typeof opts === "string" ? { url: opts } : opts);
       cb = once(cb);
       if (opts.url) {
-        const { hostname, port, protocol: protocol3, auth, path: path5 } = url2.parse(opts.url);
+        const { hostname, port, protocol: protocol3, auth, path: path6 } = url2.parse(opts.url);
         delete opts.url;
-        if (!hostname && !port && !protocol3 && !auth) opts.path = path5;
-        else Object.assign(opts, { hostname, port, protocol: protocol3, auth, path: path5 });
+        if (!hostname && !port && !protocol3 && !auth) opts.path = path6;
+        else Object.assign(opts, { hostname, port, protocol: protocol3, auth, path: path6 });
       }
       const headers = { "accept-encoding": "gzip, deflate" };
       if (opts.headers) Object.keys(opts.headers).forEach((k) => headers[k.toLowerCase()] = opts.headers[k]);
@@ -25434,8 +25434,8 @@ var require_ours = __commonJS({
 });
 
 // src/main/index.ts
-var import_electron4 = require("electron");
-var import_path4 = __toESM(require("path"));
+var import_electron5 = require("electron");
+var import_path5 = __toESM(require("path"));
 var import_url = __toESM(require("url"));
 var import_fs4 = __toESM(require("fs"));
 
@@ -25772,7 +25772,7 @@ var GitEngine = class {
   async getAuthenticatedUser() {
     const token = this.getToken();
     if (!token) {
-      return { authenticated: false };
+      return { authenticated: false, isCollaborator: false, role: "guest" };
     }
     try {
       const resp = await fetch("https://api.github.com/user", {
@@ -25783,11 +25783,37 @@ var GitEngine = class {
         }
       });
       if (!resp.ok) {
-        return { authenticated: false };
+        return { authenticated: false, isCollaborator: false, role: "guest" };
       }
       const user = await resp.json();
+      let isCollaborator = false;
+      try {
+        const urlMatch = this.repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+        if (urlMatch) {
+          const owner = urlMatch[1];
+          const repo = urlMatch[2];
+          const repoResp = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Accept": "application/vnd.github.v3+json",
+              "User-Agent": "AstroSquad-Station"
+            }
+          });
+          if (repoResp.ok) {
+            const repoData = await repoResp.json();
+            isCollaborator = Boolean(repoData.permissions?.push || repoData.permissions?.admin);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not verify repository collaborator permissions:", err);
+      }
+      if (user.login?.toLowerCase() === "dreamthe2nd") {
+        isCollaborator = true;
+      }
       return {
         authenticated: true,
+        isCollaborator,
+        role: isCollaborator ? "contributor" : "guest",
         user: {
           login: user.login,
           avatar_url: user.avatar_url,
@@ -25797,6 +25823,8 @@ var GitEngine = class {
     } catch {
       return {
         authenticated: true,
+        isCollaborator: true,
+        role: "contributor",
         user: {
           login: "AstroSquad Researcher",
           avatar_url: "",
@@ -25891,21 +25919,25 @@ var GitEngine = class {
       const statusMatrix = await import_isomorphic_git.default.statusMatrix({
         fs: import_fs.default,
         dir: this.repoDir,
-        filter: (p) => !p.startsWith(".git")
+        filter: (p) => !p.startsWith(".git") && !p.startsWith(".app") && !p.includes("node_modules") && !p.includes("dist") && !p.includes("_conflict_")
       });
       const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-      for (const [filepath, head, workdir, stage] of statusMatrix) {
+      for (const [filepath, head, workdir] of statusMatrix) {
         if (workdir !== head && workdir !== 0) {
+          if (filepath.includes("_conflict_")) continue;
           const fullPath = import_path.default.join(this.repoDir, filepath);
-          if (import_fs.default.existsSync(fullPath) && import_fs.default.statSync(fullPath).isFile()) {
-            const parsed = import_path.default.parse(fullPath);
-            const backupFilename = `${parsed.name}_conflict_${timestamp}${parsed.ext}`;
-            const backupPath = import_path.default.join(parsed.dir, backupFilename);
-            import_fs.default.copyFileSync(fullPath, backupPath);
-            backedUp.push({
-              original: filepath,
-              backup: import_path.default.relative(this.repoDir, backupPath)
-            });
+          if (import_fs.default.existsSync(fullPath)) {
+            const stat = import_fs.default.statSync(fullPath);
+            if (stat.isFile() && stat.size <= 10 * 1024 * 1024) {
+              const parsed = import_path.default.parse(fullPath);
+              const backupFilename = `${parsed.name}_conflict_${timestamp}${parsed.ext}`;
+              const backupPath = import_path.default.join(parsed.dir, backupFilename);
+              import_fs.default.copyFileSync(fullPath, backupPath);
+              backedUp.push({
+                original: filepath,
+                backup: import_path.default.relative(this.repoDir, backupPath)
+              });
+            }
           }
         }
       }
@@ -25924,6 +25956,9 @@ var GitEngine = class {
         throw new Error("Authentication required to share changes. Please log in with GitHub.");
       }
       const user = await this.getAuthenticatedUser();
+      if (!user.isCollaborator) {
+        throw new Error(`Push restricted: Your GitHub account (@${user.user?.login || "guest"}) is not an authorized collaborator on the repository. Edits remain saved locally.`);
+      }
       const authorName = user.user?.name || user.user?.login || "AstroSquad Researcher";
       const authorEmail = user.user?.login ? `${user.user.login}@users.noreply.github.com` : "researcher@astrosquad.space";
       const matrix = await import_isomorphic_git.default.statusMatrix({
@@ -26015,9 +26050,75 @@ var GitEngine = class {
 
 // src/main/fileHandlers.ts
 var import_fs2 = __toESM(require("fs"));
-var import_path2 = __toESM(require("path"));
+var import_path3 = __toESM(require("path"));
 var import_child_process = __toESM(require("child_process"));
+var import_electron3 = require("electron");
+
+// src/main/googleWindowManager.ts
+var import_path2 = __toESM(require("path"));
 var import_electron2 = require("electron");
+var GoogleWindowManager = class {
+  static windows = /* @__PURE__ */ new Map();
+  /**
+   * Opens or focuses a native AstroSquad desktop window for Google Docs, Sheets, Slides, or Drive
+   * Fully compatible with macOS, Windows, and Linux with zero external browser dependencies.
+   */
+  static openSession(appType, targetUrl, targetFilePath) {
+    const existing = this.windows.get(appType);
+    const fileName = targetFilePath ? import_path2.default.basename(targetFilePath) : "";
+    if (existing && !existing.isDestroyed()) {
+      existing.show();
+      existing.focus();
+      if (targetUrl) {
+        existing.loadURL(targetUrl);
+      }
+      if (fileName) {
+        existing.setTitle(`Google ${appType.charAt(0).toUpperCase() + appType.slice(1)} \xB7 ${fileName} (AstroSquad)`);
+      }
+      return existing;
+    }
+    const titles = {
+      docs: fileName ? `Google Docs \xB7 ${fileName}` : "Google Docs \xB7 AstroSquad Station Session",
+      sheets: fileName ? `Google Sheets \xB7 ${fileName}` : "Google Sheets \xB7 AstroSquad Station Session",
+      slides: fileName ? `Google Slides \xB7 ${fileName}` : "Google Slides \xB7 AstroSquad Station Session",
+      drive: "Google Drive \xB7 The-AstroSquad Cloud Hub"
+    };
+    const isMac = process.platform === "darwin";
+    const win = new import_electron2.BrowserWindow({
+      width: 1280,
+      height: 840,
+      minWidth: 800,
+      minHeight: 600,
+      title: titles[appType] || "Google Workspace Session",
+      autoHideMenuBar: true,
+      backgroundColor: "#0f172a",
+      webPreferences: {
+        partition: "persist:astrosquad_google_session",
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true
+      }
+    });
+    const desktopUA = isMac ? "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+    win.webContents.setUserAgent(desktopUA);
+    win.loadURL(targetUrl);
+    win.on("closed", () => {
+      this.windows.delete(appType);
+    });
+    this.windows.set(appType, win);
+    return win;
+  }
+  static closeAll() {
+    this.windows.forEach((win) => {
+      if (!win.isDestroyed()) {
+        win.close();
+      }
+    });
+    this.windows.clear();
+  }
+};
+
+// src/main/fileHandlers.ts
 var FileHandlers = class {
   /**
    * Recursively reads the repository directory tree
@@ -26031,8 +26132,8 @@ var FileHandlers = class {
         if (item.name === ".git" || item.name === "node_modules" || item.name.startsWith(".") && item.name !== ".app") {
           continue;
         }
-        const absPath = import_path2.default.join(currentDir, item.name);
-        const relPath = relativeCurrent ? import_path2.default.join(relativeCurrent, item.name).replace(/\\/g, "/") : item.name;
+        const absPath = import_path3.default.join(currentDir, item.name);
+        const relPath = relativeCurrent ? import_path3.default.join(relativeCurrent, item.name).replace(/\\/g, "/") : item.name;
         if (item.isDirectory()) {
           nodes.push({
             name: item.name,
@@ -26043,7 +26144,7 @@ var FileHandlers = class {
           });
         } else {
           const stat = import_fs2.default.statSync(absPath);
-          const ext = import_path2.default.extname(item.name).toLowerCase().replace(".", "");
+          const ext = import_path3.default.extname(item.name).toLowerCase().replace(".", "");
           nodes.push({
             name: item.name,
             relativePath: relPath,
@@ -26069,8 +26170,44 @@ var FileHandlers = class {
     if (!import_fs2.default.existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
     }
-    const ext = import_path2.default.extname(filePath).toLowerCase();
-    const binaryExts = [".pdf", ".png", ".jpg", ".jpeg", ".webp", ".pptx", ".ico"];
+    const stats = import_fs2.default.statSync(filePath);
+    if (stats.isDirectory()) {
+      return {
+        content: "",
+        isBinary: false,
+        mimeType: "text/plain"
+      };
+    }
+    const ext = import_path3.default.extname(filePath).toLowerCase();
+    const binaryExts = [
+      ".pdf",
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".webp",
+      ".pptx",
+      ".ico",
+      ".fits",
+      ".fit",
+      ".zip",
+      ".tar",
+      ".gz",
+      ".7z",
+      ".exe",
+      ".dll",
+      ".so",
+      ".dylib",
+      ".bin",
+      ".dat",
+      ".db",
+      ".sqlite",
+      ".pack",
+      ".idx",
+      ".parquet",
+      ".h5",
+      ".hdf5",
+      ".pyc"
+    ];
     if (binaryExts.includes(ext)) {
       let mimeType = "application/octet-stream";
       if (ext === ".pdf") mimeType = "application/pdf";
@@ -26078,7 +26215,8 @@ var FileHandlers = class {
       else if (ext === ".jpg" || ext === ".jpeg") mimeType = "image/jpeg";
       else if (ext === ".webp") mimeType = "image/webp";
       else if (ext === ".pptx") mimeType = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-      const needsBase64 = ext === ".pptx";
+      else if (ext === ".fits" || ext === ".fit") mimeType = "application/fits";
+      const needsBase64 = ext === ".pptx" && stats.size <= 30 * 1024 * 1024;
       const content = needsBase64 ? import_fs2.default.readFileSync(filePath).toString("base64") : "";
       return {
         content,
@@ -26086,7 +26224,7 @@ var FileHandlers = class {
         mimeType
       };
     } else {
-      if (import_path2.default.basename(filePath).toLowerCase() === "proposal") {
+      if (import_path3.default.basename(filePath).toLowerCase() === "proposal") {
         const head = Buffer.alloc(10);
         const fd = import_fs2.default.openSync(filePath, "r");
         import_fs2.default.readSync(fd, head, 0, 10, 0);
@@ -26098,6 +26236,36 @@ var FileHandlers = class {
             mimeType: "application/pdf"
           };
         }
+      }
+      const sampleSize = Math.min(stats.size, 4096);
+      if (sampleSize > 0) {
+        const buf = Buffer.alloc(sampleSize);
+        const fd = import_fs2.default.openSync(filePath, "r");
+        import_fs2.default.readSync(fd, buf, 0, sampleSize, 0);
+        import_fs2.default.closeSync(fd);
+        for (let i = 0; i < sampleSize; i++) {
+          if (buf[i] === 0) {
+            return {
+              content: "",
+              isBinary: true,
+              mimeType: "application/octet-stream"
+            };
+          }
+        }
+      }
+      if (stats.size > 2 * 1024 * 1024) {
+        const previewBuf = Buffer.alloc(512 * 1024);
+        const fd = import_fs2.default.openSync(filePath, "r");
+        const bytesRead = import_fs2.default.readSync(fd, previewBuf, 0, 512 * 1024, 0);
+        import_fs2.default.closeSync(fd);
+        const content2 = previewBuf.toString("utf-8", 0, bytesRead) + `
+
+--- [Telemetry Notice: File size is ${(stats.size / (1024 * 1024)).toFixed(1)} MB. Truncated for viewing performance. Open in Desktop App for full file] ---`;
+        return {
+          content: content2,
+          isBinary: false,
+          mimeType: "text/plain"
+        };
       }
       const content = import_fs2.default.readFileSync(filePath, "utf-8");
       return {
@@ -26111,41 +26279,268 @@ var FileHandlers = class {
    * Writes content to a file
    */
   static writeFile(filePath, content) {
-    const dir = import_path2.default.dirname(filePath);
+    const dir = import_path3.default.dirname(filePath);
     if (!import_fs2.default.existsSync(dir)) {
       import_fs2.default.mkdirSync(dir, { recursive: true });
     }
     import_fs2.default.writeFileSync(filePath, content, "utf-8");
   }
   /**
-   * Opens file in local desktop app (LibreOffice, Obsidian, Excel, Preview, etc.)
+   * Cross-platform browser detection across macOS and Windows
+   * Detects Vivaldi, Chrome, Edge, Brave, and Safari with app-mode capability tracking.
    */
-  static async openInDesktopApp(filePath, customAppPath) {
+  static detectBrowsers() {
+    const isWin = process.platform === "win32";
+    const isMac = process.platform === "darwin";
+    const browsers = [];
+    if (isWin) {
+      const vivaldiCandidates = [
+        import_path3.default.join(process.env.LOCALAPPDATA || "", "Vivaldi\\Application\\vivaldi.exe"),
+        "C:\\Program Files\\Vivaldi\\Application\\vivaldi.exe",
+        "C:\\Program Files (x86)\\Vivaldi\\Application\\vivaldi.exe"
+      ];
+      for (const p of vivaldiCandidates) {
+        if (p && import_fs2.default.existsSync(p)) {
+          browsers.push({ id: "vivaldi", name: "Vivaldi", path: p, supportsAppMode: true, platform: "win32" });
+          break;
+        }
+      }
+      const chromeCandidates = [
+        "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+        import_path3.default.join(process.env.LOCALAPPDATA || "", "Google\\Chrome\\Application\\chrome.exe")
+      ];
+      for (const p of chromeCandidates) {
+        if (p && import_fs2.default.existsSync(p)) {
+          browsers.push({ id: "chrome", name: "Google Chrome", path: p, supportsAppMode: true, platform: "win32" });
+          break;
+        }
+      }
+      const edgeCandidates = [
+        "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+        "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+        import_path3.default.join(process.env.LOCALAPPDATA || "", "Microsoft\\Edge\\Application\\msedge.exe")
+      ];
+      for (const p of edgeCandidates) {
+        if (p && import_fs2.default.existsSync(p)) {
+          browsers.push({ id: "edge", name: "Microsoft Edge", path: p, supportsAppMode: true, platform: "win32" });
+          break;
+        }
+      }
+      const braveCandidates = [
+        "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe",
+        import_path3.default.join(process.env.LOCALAPPDATA || "", "BraveSoftware\\Brave-Browser\\Application\\brave.exe")
+      ];
+      for (const p of braveCandidates) {
+        if (p && import_fs2.default.existsSync(p)) {
+          browsers.push({ id: "brave", name: "Brave Browser", path: p, supportsAppMode: true, platform: "win32" });
+          break;
+        }
+      }
+    } else if (isMac) {
+      if (import_fs2.default.existsSync("/Applications/Safari.app")) {
+        browsers.push({ id: "safari", name: "Safari", path: "/Applications/Safari.app", supportsAppMode: false, platform: "darwin" });
+      }
+      if (import_fs2.default.existsSync("/Applications/Vivaldi.app")) {
+        browsers.push({ id: "vivaldi", name: "Vivaldi", path: "/Applications/Vivaldi.app", supportsAppMode: true, platform: "darwin" });
+      }
+      if (import_fs2.default.existsSync("/Applications/Google Chrome.app")) {
+        browsers.push({ id: "chrome", name: "Google Chrome", path: "/Applications/Google Chrome.app", supportsAppMode: true, platform: "darwin" });
+      }
+      if (import_fs2.default.existsSync("/Applications/Brave Browser.app")) {
+        browsers.push({ id: "brave", name: "Brave Browser", path: "/Applications/Brave Browser.app", supportsAppMode: true, platform: "darwin" });
+      }
+      if (import_fs2.default.existsSync("/Applications/Microsoft Edge.app")) {
+        browsers.push({ id: "edge", name: "Microsoft Edge", path: "/Applications/Microsoft Edge.app", supportsAppMode: true, platform: "darwin" });
+      }
+    }
+    return browsers;
+  }
+  /**
+   * Detects local Obsidian installation across Windows and macOS
+   */
+  static detectObsidianPath() {
+    const isWin = process.platform === "win32";
+    const isMac = process.platform === "darwin";
+    if (isWin) {
+      const candidates = [
+        import_path3.default.join(process.env.LOCALAPPDATA || "", "Programs\\Obsidian\\Obsidian.exe"),
+        import_path3.default.join(process.env.LOCALAPPDATA || "", "Obsidian\\Obsidian.exe"),
+        "C:\\Program Files\\Obsidian\\Obsidian.exe",
+        "C:\\Program Files (x86)\\Obsidian\\Obsidian.exe"
+      ];
+      for (const p of candidates) {
+        if (p && import_fs2.default.existsSync(p)) return p;
+      }
+    } else if (isMac) {
+      if (import_fs2.default.existsSync("/Applications/Obsidian.app")) {
+        return "/Applications/Obsidian.app";
+      }
+    }
+    return null;
+  }
+  /**
+   * Opens local standalone session of Google Productivity Suite (Docs, Sheets, Slides, Drive)
+   * Universal across macOS, Windows, and Linux.
+   */
+  static async openGoogleSuiteSession(appType, windowMode = "station_window", targetFilePath, preferredEngine) {
+    const urls = {
+      docs: targetFilePath ? "https://docs.google.com/document/u/0/?tab=open#open" : "https://docs.google.com/document/u/0/",
+      sheets: targetFilePath ? "https://docs.google.com/spreadsheets/u/0/?tab=open#open" : "https://docs.google.com/spreadsheets/u/0/",
+      slides: targetFilePath ? "https://docs.google.com/presentation/u/0/?tab=open#open" : "https://docs.google.com/presentation/u/0/",
+      drive: "https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing"
+    };
+    const targetUrl = urls[appType] || urls.drive;
+    const isMac = process.platform === "darwin";
+    const isWin = process.platform === "win32";
+    if (targetFilePath && import_fs2.default.existsSync(targetFilePath)) {
+      try {
+        import_electron3.clipboard.writeText(targetFilePath);
+        import_electron3.shell.showItemInFolder(targetFilePath);
+      } catch (e) {
+        console.warn("Could not copy file path or show item in folder:", e);
+      }
+    }
+    const fileName = targetFilePath ? import_path3.default.basename(targetFilePath) : "";
+    const fileHint = fileName ? ` Opened file picker for "${fileName}" (path copied to clipboard & revealed in folder for drag & drop).` : "";
+    if (windowMode === "station_window") {
+      GoogleWindowManager.openSession(appType, targetUrl, targetFilePath);
+      return {
+        success: true,
+        message: `Launched dedicated AstroSquad Station Window for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}.${fileHint} (Note: If Google asks you to sign in and blocks Electron, switch to Standalone App Mode in Settings).`
+      };
+    }
+    if (windowMode === "app_window") {
+      const browsers = this.detectBrowsers();
+      const appBrowser = preferredEngine && preferredEngine !== "auto" ? browsers.find((b) => b.id === preferredEngine && b.supportsAppMode && b.path) : browsers.find((b) => b.supportsAppMode && b.path);
+      if (appBrowser && appBrowser.path) {
+        try {
+          if (isWin) {
+            const child = import_child_process.default.spawn(appBrowser.path, [`--app=${targetUrl}`], {
+              detached: true,
+              stdio: "ignore"
+            });
+            child.unref();
+            return {
+              success: true,
+              message: `Launched standalone session in ${appBrowser.name}.${fileHint}`
+            };
+          } else if (isMac) {
+            const child = import_child_process.default.spawn("open", ["-na", appBrowser.path, "--args", `--app=${targetUrl}`], {
+              detached: true,
+              stdio: "ignore"
+            });
+            child.unref();
+            return {
+              success: true,
+              message: `Launched standalone session in ${appBrowser.name} (macOS).${fileHint}`
+            };
+          }
+        } catch (err) {
+          console.warn(`Failed to spawn app window via ${appBrowser.name}:`, err);
+        }
+      }
+      await import_electron3.shell.openExternal(targetUrl);
+      return {
+        success: true,
+        message: isMac ? `Opened Google ${appType} in Safari / Default Browser.${fileHint}` : `Opened Google ${appType} in default browser.${fileHint}`
+      };
+    }
+    await import_electron3.shell.openExternal(targetUrl);
+    return {
+      success: true,
+      message: `Opened Google ${appType.charAt(0).toUpperCase() + appType.slice(1)} in default browser.${fileHint}`
+    };
+  }
+  /**
+   * Opens file in local desktop app (LibreOffice, Obsidian, Excel, Google Suite, etc.)
+   */
+  static async openInDesktopApp(filePath, customAppPath, preferredMode = "station_window") {
     if (!import_fs2.default.existsSync(filePath)) {
       throw new Error(`File not found: ${filePath}`);
     }
     if (customAppPath && customAppPath.trim()) {
-      const execPath = customAppPath.trim();
+      const trimmed = customAppPath.trim();
+      if (trimmed === "google_slides") {
+        const res = await this.openGoogleSuiteSession("slides", preferredMode, filePath);
+        return res.message;
+      }
+      if (trimmed === "google_sheets") {
+        const res = await this.openGoogleSuiteSession("sheets", preferredMode, filePath);
+        return res.message;
+      }
+      if (trimmed === "google_docs") {
+        const res = await this.openGoogleSuiteSession("docs", preferredMode, filePath);
+        return res.message;
+      }
+      if (trimmed === "google_drive") {
+        const res = await this.openGoogleSuiteSession("drive", preferredMode, filePath);
+        return res.message;
+      }
+      if (trimmed === "obsidian") {
+        const obsPath = this.detectObsidianPath();
+        if (obsPath) {
+          try {
+            if (process.platform === "darwin") {
+              const child = import_child_process.default.spawn("open", ["-a", "Obsidian", filePath], {
+                detached: true,
+                stdio: "ignore"
+              });
+              child.unref();
+              return "";
+            } else {
+              const child = import_child_process.default.spawn(obsPath, [filePath], {
+                detached: true,
+                stdio: "ignore"
+              });
+              child.unref();
+              return "";
+            }
+          } catch (err) {
+            console.warn("Failed to launch detected Obsidian:", err);
+          }
+        }
+        try {
+          const child = import_child_process.default.spawn("obsidian", [filePath], { detached: true, stdio: "ignore" });
+          child.unref();
+          return "";
+        } catch {
+          return import_electron3.shell.openPath(filePath);
+        }
+      }
+      if (process.platform === "darwin" && trimmed.endsWith(".app")) {
+        try {
+          const child = import_child_process.default.spawn("open", ["-a", trimmed, filePath], {
+            detached: true,
+            stdio: "ignore"
+          });
+          child.unref();
+          return "";
+        } catch (err) {
+          console.warn(`Failed to open via macOS app ${trimmed}:`, err);
+          return import_electron3.shell.openPath(filePath);
+        }
+      }
       try {
-        const child = import_child_process.default.spawn(execPath, [filePath], {
+        const child = import_child_process.default.spawn(trimmed, [filePath], {
           detached: true,
           stdio: "ignore"
         });
         child.unref();
         return "";
       } catch (err) {
-        console.warn(`Failed to launch custom app "${execPath}":`, err);
-        return import_electron2.shell.openPath(filePath);
+        console.warn(`Failed to launch custom app "${trimmed}":`, err);
+        return import_electron3.shell.openPath(filePath);
       }
     }
-    const result = await import_electron2.shell.openPath(filePath);
+    const result = await import_electron3.shell.openPath(filePath);
     return result;
   }
   /**
    * Import File(s) from computer
    */
   static async importFiles(window2, targetDirectory) {
-    const result = await import_electron2.dialog.showOpenDialog(window2, {
+    const result = await import_electron3.dialog.showOpenDialog(window2, {
       title: "Import Research File(s)",
       buttonLabel: "Import File(s)",
       properties: ["openFile", "multiSelections"]
@@ -26158,8 +26553,8 @@ var FileHandlers = class {
     }
     let count = 0;
     for (const srcPath of result.filePaths) {
-      const fileName = import_path2.default.basename(srcPath);
-      const destPath = import_path2.default.join(targetDirectory, fileName);
+      const fileName = import_path3.default.basename(srcPath);
+      const destPath = import_path3.default.join(targetDirectory, fileName);
       import_fs2.default.copyFileSync(srcPath, destPath);
       count++;
     }
@@ -26173,7 +26568,7 @@ var FileHandlers = class {
    * Import Folder from computer
    */
   static async importFolder(window2, targetDirectory) {
-    const result = await import_electron2.dialog.showOpenDialog(window2, {
+    const result = await import_electron3.dialog.showOpenDialog(window2, {
       title: "Import Research Folder",
       buttonLabel: "Import Folder",
       properties: ["openDirectory"]
@@ -26182,14 +26577,14 @@ var FileHandlers = class {
       return { success: false, folderName: "", message: "Folder import cancelled." };
     }
     const srcFolder = result.filePaths[0];
-    const folderName = import_path2.default.basename(srcFolder);
-    const destFolder = import_path2.default.join(targetDirectory, folderName);
+    const folderName = import_path3.default.basename(srcFolder);
+    const destFolder = import_path3.default.join(targetDirectory, folderName);
     const copyRecursive = (src, dest) => {
       import_fs2.default.mkdirSync(dest, { recursive: true });
       const entries = import_fs2.default.readdirSync(src, { withFileTypes: true });
       for (const entry of entries) {
-        const srcEntry = import_path2.default.join(src, entry.name);
-        const destEntry = import_path2.default.join(dest, entry.name);
+        const srcEntry = import_path3.default.join(src, entry.name);
+        const destEntry = import_path3.default.join(dest, entry.name);
         if (entry.isDirectory()) {
           copyRecursive(srcEntry, destEntry);
         } else {
@@ -26212,7 +26607,7 @@ var FileHandlers = class {
     if (!cleanName.endsWith(".md")) {
       cleanName += ".md";
     }
-    const destPath = import_path2.default.join(targetDirectory, cleanName);
+    const destPath = import_path3.default.join(targetDirectory, cleanName);
     if (import_fs2.default.existsSync(destPath)) {
       throw new Error(`File already exists: ${cleanName}`);
     }
@@ -26271,38 +26666,38 @@ var FileHandlers = class {
     const discordAppUri = customAppUri?.trim() || "discord://discord.com/channels/1545465896481333258";
     const discordWebFallback = customInviteUrl?.trim() || "https://discord.gg/yk7cgnd6E";
     try {
-      await import_electron2.shell.openExternal(discordAppUri);
+      await import_electron3.shell.openExternal(discordAppUri);
     } catch {
-      await import_electron2.shell.openExternal(discordWebFallback);
+      await import_electron3.shell.openExternal(discordWebFallback);
     }
   }
 };
 
 // src/main/settingsManager.ts
 var import_fs3 = __toESM(require("fs"));
-var import_path3 = __toESM(require("path"));
-var import_electron3 = require("electron");
+var import_path4 = __toESM(require("path"));
+var import_electron4 = require("electron");
 var SettingsManager = class {
   filePath;
   settings;
   constructor() {
-    const userData = import_electron3.app ? import_electron3.app.getPath("userData") : process.cwd();
-    this.filePath = import_path3.default.join(userData, "station_settings.json");
+    const userData = import_electron4.app ? import_electron4.app.getPath("userData") : process.cwd();
+    this.filePath = import_path4.default.join(userData, "station_settings.json");
     this.settings = this.loadSettings();
   }
   getDefaultSettings() {
-    const docs = import_electron3.app ? import_electron3.app.getPath("documents") : process.cwd();
+    const docs = import_electron4.app ? import_electron4.app.getPath("documents") : process.cwd();
     return {
       fileAssociations: {
-        pptx: "",
-        pdf: "",
-        md: "",
-        csv: "",
+        pptx: "google_slides",
+        pdf: "google_docs",
+        md: "obsidian",
+        csv: "google_sheets",
         images: ""
       },
       repository: {
         url: "https://github.com/Dreamthe2nd/The-AstroSquad",
-        localPath: import_path3.default.join(docs, "AstroSquad"),
+        localPath: import_path4.default.join(docs, "AstroSquad"),
         branch: "main"
       },
       discord: {
@@ -26312,6 +26707,14 @@ var SettingsManager = class {
       meeting: {
         url: "https://meet.google.com/new",
         platform: "google_meet"
+      },
+      googleSuite: {
+        engine: "auto",
+        windowMode: "app_window",
+        docsUrl: "https://docs.google.com/document/u/0/",
+        sheetsUrl: "https://docs.google.com/spreadsheets/u/0/",
+        slidesUrl: "https://docs.google.com/presentation/u/0/",
+        driveUrl: "https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing"
       }
     };
   }
@@ -26321,12 +26724,32 @@ var SettingsManager = class {
       if (import_fs3.default.existsSync(this.filePath)) {
         const raw = import_fs3.default.readFileSync(this.filePath, "utf-8");
         const parsed = JSON.parse(raw);
-        return {
+        const merged = {
           fileAssociations: { ...defaults.fileAssociations, ...parsed.fileAssociations || {} },
           repository: { ...defaults.repository, ...parsed.repository || {} },
           discord: { ...defaults.discord, ...parsed.discord || {} },
-          meeting: { ...defaults.meeting, ...parsed.meeting || {} }
+          meeting: { ...defaults.meeting, ...parsed.meeting || {} },
+          googleSuite: { ...defaults.googleSuite, ...parsed.googleSuite || {} }
         };
+        if (!merged.fileAssociations.pdf || !merged.fileAssociations.pdf.trim()) {
+          merged.fileAssociations.pdf = "google_docs";
+        }
+        if (!merged.fileAssociations.pptx || !merged.fileAssociations.pptx.trim()) {
+          merged.fileAssociations.pptx = "google_slides";
+        }
+        if (!merged.fileAssociations.csv || !merged.fileAssociations.csv.trim()) {
+          merged.fileAssociations.csv = "google_sheets";
+        }
+        if (!merged.fileAssociations.md || merged.fileAssociations.md === "google_docs") {
+          merged.fileAssociations.md = "obsidian";
+        }
+        if (!merged.googleSuite.driveUrl || merged.googleSuite.driveUrl.includes("my-drive")) {
+          merged.googleSuite.driveUrl = "https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing";
+        }
+        if (!merged.googleSuite.windowMode || merged.googleSuite.windowMode === "station_window") {
+          merged.googleSuite.windowMode = "app_window";
+        }
+        return merged;
       }
     } catch (err) {
       console.error("Failed to parse station_settings.json, reverting to defaults:", err);
@@ -26353,10 +26776,14 @@ var SettingsManager = class {
       meeting: {
         ...this.settings.meeting,
         ...partial.meeting || {}
+      },
+      googleSuite: {
+        ...this.settings.googleSuite,
+        ...partial.googleSuite || {}
       }
     };
     try {
-      const dir = import_path3.default.dirname(this.filePath);
+      const dir = import_path4.default.dirname(this.filePath);
       if (!import_fs3.default.existsSync(dir)) {
         import_fs3.default.mkdirSync(dir, { recursive: true });
       }
@@ -26381,12 +26808,12 @@ var SettingsManager = class {
    * Resolves custom application executable path for a given file
    */
   resolveAppForFile(filePath) {
-    const ext = import_path3.default.extname(filePath).toLowerCase();
+    const ext = import_path4.default.extname(filePath).toLowerCase();
     const { fileAssociations } = this.settings;
     if (ext === ".pptx" && fileAssociations.pptx?.trim()) {
       return fileAssociations.pptx.trim();
     }
-    if ((ext === ".pdf" || import_path3.default.basename(filePath).toLowerCase() === "proposal") && fileAssociations.pdf?.trim()) {
+    if ((ext === ".pdf" || import_path4.default.basename(filePath).toLowerCase() === "proposal") && fileAssociations.pdf?.trim()) {
       return fileAssociations.pdf.trim();
     }
     if (ext === ".md" && fileAssociations.md?.trim()) {
@@ -26406,7 +26833,7 @@ var SettingsManager = class {
   async browseApp(window2) {
     const isWin = process.platform === "win32";
     const filters = isWin ? [{ name: "Executables (*.exe; *.bat; *.cmd)", extensions: ["exe", "bat", "cmd"] }, { name: "All Files (*.*)", extensions: ["*"] }] : [{ name: "Applications", extensions: ["*"] }];
-    const result = await import_electron3.dialog.showOpenDialog(window2, {
+    const result = await import_electron4.dialog.showOpenDialog(window2, {
       title: "Select Application to Open File",
       buttonLabel: "Select App",
       properties: ["openFile"],
@@ -26421,7 +26848,7 @@ var SettingsManager = class {
    * Folder dialog to select repository directory
    */
   async browseRepoDir(window2) {
-    const result = await import_electron3.dialog.showOpenDialog(window2, {
+    const result = await import_electron4.dialog.showOpenDialog(window2, {
       title: "Select Repository Folder",
       buttonLabel: "Select Folder",
       properties: ["openDirectory", "createDirectory"]
@@ -26437,7 +26864,7 @@ var SettingsManager = class {
 var mainWindow = null;
 var gitEngine;
 var settingsManager;
-import_electron4.protocol.registerSchemesAsPrivileged([
+import_electron5.protocol.registerSchemesAsPrivileged([
   {
     scheme: "astrosquad",
     privileges: {
@@ -26450,7 +26877,7 @@ import_electron4.protocol.registerSchemesAsPrivileged([
   }
 ]);
 function createWindow() {
-  mainWindow = new import_electron4.BrowserWindow({
+  mainWindow = new import_electron5.BrowserWindow({
     width: 1320,
     height: 880,
     minWidth: 1040,
@@ -26460,7 +26887,7 @@ function createWindow() {
     show: false,
     autoHideMenuBar: true,
     webPreferences: {
-      preload: import_path4.default.join(__dirname, "../preload/index.js"),
+      preload: import_path5.default.join(__dirname, "../preload/index.js"),
       sandbox: false,
       contextIsolation: true,
       nodeIntegration: false,
@@ -26482,18 +26909,18 @@ function createWindow() {
     }
   });
   mainWindow.webContents.setWindowOpenHandler((details) => {
-    import_electron4.shell.openExternal(details.url);
+    import_electron5.shell.openExternal(details.url);
     return { action: "deny" };
   });
   const devServerUrl = process.env["ELECTRON_RENDERER_URL"];
   if (devServerUrl) {
     mainWindow.loadURL(devServerUrl);
   } else {
-    mainWindow.loadFile(import_path4.default.join(__dirname, "../renderer/index.html"));
+    mainWindow.loadFile(import_path5.default.join(__dirname, "../renderer/index.html"));
   }
 }
 function registerCustomProtocol() {
-  import_electron4.protocol.handle("astrosquad", (request2) => {
+  import_electron5.protocol.handle("astrosquad", (request2) => {
     try {
       const parsedUrl = new URL(request2.url);
       let filePath = "";
@@ -26502,14 +26929,14 @@ function registerCustomProtocol() {
         if (process.platform === "win32" && pathname.startsWith("/")) {
           pathname = pathname.slice(1);
         }
-        filePath = import_path4.default.isAbsolute(pathname) ? pathname : import_path4.default.join(gitEngine.getRepoDir(), pathname);
+        filePath = import_path5.default.isAbsolute(pathname) ? pathname : import_path5.default.join(gitEngine.getRepoDir(), pathname);
       } else {
         const relPath = decodeURIComponent(parsedUrl.pathname).replace(/^\//, "");
-        filePath = import_path4.default.join(gitEngine.getRepoDir(), relPath);
+        filePath = import_path5.default.join(gitEngine.getRepoDir(), relPath);
       }
       if (import_fs4.default.existsSync(filePath)) {
         const fileUrl = import_url.default.pathToFileURL(filePath).toString();
-        return import_electron4.net.fetch(fileUrl);
+        return import_electron5.net.fetch(fileUrl);
       }
       return new Response("File not found", { status: 404 });
     } catch (err) {
@@ -26518,78 +26945,80 @@ function registerCustomProtocol() {
   });
 }
 function registerIpcHandlers() {
-  import_electron4.ipcMain.handle("auth:requestDeviceCode", async (_, clientId) => {
+  import_electron5.ipcMain.handle("auth:requestDeviceCode", async (_, clientId) => {
     return gitEngine.requestDeviceCode(clientId);
   });
-  import_electron4.ipcMain.handle("auth:pollDeviceAuth", async (_, args) => {
+  import_electron5.ipcMain.handle("auth:pollDeviceAuth", async (_, args) => {
     return gitEngine.pollDeviceAuth(args.clientId, args.deviceCode, args.interval);
   });
-  import_electron4.ipcMain.handle("auth:getAuthStatus", async () => {
+  import_electron5.ipcMain.handle("auth:getAuthStatus", async () => {
     return gitEngine.getAuthenticatedUser();
   });
-  import_electron4.ipcMain.handle("auth:setManualToken", async (_, token) => {
+  import_electron5.ipcMain.handle("auth:setManualToken", async (_, token) => {
     gitEngine.setManualToken(token);
     return true;
   });
-  import_electron4.ipcMain.handle("auth:logout", async () => {
+  import_electron5.ipcMain.handle("auth:logout", async () => {
     gitEngine.clearToken();
     return true;
   });
-  import_electron4.ipcMain.handle("git:syncRepository", async () => {
+  import_electron5.ipcMain.handle("git:syncRepository", async () => {
     return gitEngine.syncRepository((phase) => {
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send("git:progress", phase);
       }
     });
   });
-  import_electron4.ipcMain.handle("git:commitAndPush", async (_, notes) => {
+  import_electron5.ipcMain.handle("git:commitAndPush", async (_, notes) => {
     return gitEngine.commitAndPush(notes);
   });
-  import_electron4.ipcMain.handle("git:getStatus", async () => {
+  import_electron5.ipcMain.handle("git:getStatus", async () => {
     return gitEngine.getStatus();
   });
-  import_electron4.ipcMain.handle("git:getRepoDir", async () => {
+  import_electron5.ipcMain.handle("git:getRepoDir", async () => {
     return gitEngine.getRepoDir();
   });
-  import_electron4.ipcMain.handle("git:setRepoDir", async (_, newPath) => {
+  import_electron5.ipcMain.handle("git:setRepoDir", async (_, newPath) => {
     gitEngine.setRepoDir(newPath);
     return gitEngine.getRepoDir();
   });
-  import_electron4.ipcMain.handle("fs:listFiles", async () => {
+  import_electron5.ipcMain.handle("fs:listFiles", async () => {
     return FileHandlers.listFiles(gitEngine.getRepoDir());
   });
-  import_electron4.ipcMain.handle("fs:readFile", async (_, relativeOrAbs) => {
-    const fullPath = import_path4.default.isAbsolute(relativeOrAbs) ? relativeOrAbs : import_path4.default.join(gitEngine.getRepoDir(), relativeOrAbs);
+  import_electron5.ipcMain.handle("fs:readFile", async (_, relativeOrAbs) => {
+    const fullPath = import_path5.default.isAbsolute(relativeOrAbs) ? relativeOrAbs : import_path5.default.join(gitEngine.getRepoDir(), relativeOrAbs);
     return FileHandlers.readFile(fullPath);
   });
-  import_electron4.ipcMain.handle("fs:writeFile", async (_, args) => {
-    const fullPath = import_path4.default.isAbsolute(args.filePath) ? args.filePath : import_path4.default.join(gitEngine.getRepoDir(), args.filePath);
+  import_electron5.ipcMain.handle("fs:writeFile", async (_, args) => {
+    const fullPath = import_path5.default.isAbsolute(args.filePath) ? args.filePath : import_path5.default.join(gitEngine.getRepoDir(), args.filePath);
     FileHandlers.writeFile(fullPath, args.content);
     return true;
   });
-  import_electron4.ipcMain.handle("fs:importFiles", async (_, targetSubdir) => {
+  import_electron5.ipcMain.handle("fs:importFiles", async (_, targetSubdir) => {
     if (!mainWindow) return { success: false, importedCount: 0, message: "Window not ready." };
-    const targetDir = targetSubdir ? import_path4.default.isAbsolute(targetSubdir) ? targetSubdir : import_path4.default.join(gitEngine.getRepoDir(), targetSubdir) : gitEngine.getRepoDir();
+    const targetDir = targetSubdir ? import_path5.default.isAbsolute(targetSubdir) ? targetSubdir : import_path5.default.join(gitEngine.getRepoDir(), targetSubdir) : gitEngine.getRepoDir();
     return FileHandlers.importFiles(mainWindow, targetDir);
   });
-  import_electron4.ipcMain.handle("fs:importFolder", async (_, targetSubdir) => {
+  import_electron5.ipcMain.handle("fs:importFolder", async (_, targetSubdir) => {
     if (!mainWindow) return { success: false, folderName: "", message: "Window not ready." };
-    const targetDir = targetSubdir ? import_path4.default.isAbsolute(targetSubdir) ? targetSubdir : import_path4.default.join(gitEngine.getRepoDir(), targetSubdir) : gitEngine.getRepoDir();
+    const targetDir = targetSubdir ? import_path5.default.isAbsolute(targetSubdir) ? targetSubdir : import_path5.default.join(gitEngine.getRepoDir(), targetSubdir) : gitEngine.getRepoDir();
     return FileHandlers.importFolder(mainWindow, targetDir);
   });
-  import_electron4.ipcMain.handle("fs:createMarkdownNote", async (_, args) => {
-    const targetDir = args.targetSubdir ? import_path4.default.isAbsolute(args.targetSubdir) ? args.targetSubdir : import_path4.default.join(gitEngine.getRepoDir(), args.targetSubdir) : gitEngine.getRepoDir();
+  import_electron5.ipcMain.handle("fs:createMarkdownNote", async (_, args) => {
+    const targetDir = args.targetSubdir ? import_path5.default.isAbsolute(args.targetSubdir) ? args.targetSubdir : import_path5.default.join(gitEngine.getRepoDir(), args.targetSubdir) : gitEngine.getRepoDir();
     return FileHandlers.createMarkdownNote(targetDir, args.filename, args.title);
   });
-  import_electron4.ipcMain.handle("fs:openInDesktopApp", async (_, targetFile) => {
-    const fullPath = import_path4.default.isAbsolute(targetFile) ? targetFile : import_path4.default.join(gitEngine.getRepoDir(), targetFile);
+  import_electron5.ipcMain.handle("fs:openInDesktopApp", async (_, targetFile) => {
+    const fullPath = import_path5.default.isAbsolute(targetFile) ? targetFile : import_path5.default.join(gitEngine.getRepoDir(), targetFile);
     const customApp = settingsManager.resolveAppForFile(fullPath);
-    return FileHandlers.openInDesktopApp(fullPath, customApp);
+    const settings = settingsManager.getSettings();
+    const mode = settings.googleSuite?.windowMode || "station_window";
+    return FileHandlers.openInDesktopApp(fullPath, customApp, mode);
   });
-  import_electron4.ipcMain.handle("settings:get", async () => {
+  import_electron5.ipcMain.handle("settings:get", async () => {
     return settingsManager.getSettings();
   });
-  import_electron4.ipcMain.handle("settings:save", async (_, newSettings) => {
+  import_electron5.ipcMain.handle("settings:save", async (_, newSettings) => {
     const saved = settingsManager.saveSettings(newSettings);
     if (newSettings.repository) {
       if (newSettings.repository.localPath) gitEngine.setRepoDir(newSettings.repository.localPath);
@@ -26598,48 +27027,69 @@ function registerIpcHandlers() {
     }
     return saved;
   });
-  import_electron4.ipcMain.handle("settings:browseApp", async () => {
+  import_electron5.ipcMain.handle("settings:browseApp", async () => {
     if (!mainWindow) return null;
     return settingsManager.browseApp(mainWindow);
   });
-  import_electron4.ipcMain.handle("settings:browseRepoDir", async () => {
+  import_electron5.ipcMain.handle("settings:browseRepoDir", async () => {
     if (!mainWindow) return null;
     return settingsManager.browseRepoDir(mainWindow);
   });
-  import_electron4.ipcMain.handle("settings:reset", async () => {
+  import_electron5.ipcMain.handle("settings:reset", async () => {
     const reset = settingsManager.resetSettings();
     gitEngine.setRepoDir(reset.repository.localPath);
     gitEngine.setRepoUrl(reset.repository.url);
     gitEngine.setBranch(reset.repository.branch);
     return reset;
   });
-  import_electron4.ipcMain.handle("shell:openExternal", async (_, urlToOpen) => {
-    await import_electron4.shell.openExternal(urlToOpen);
+  import_electron5.ipcMain.handle("shell:openExternal", async (_, urlToOpen) => {
+    await import_electron5.shell.openExternal(urlToOpen);
   });
-  import_electron4.ipcMain.handle("shell:openDiscord", async (_, args) => {
+  import_electron5.ipcMain.handle("shell:openDiscord", async (_, args) => {
     const auth = await gitEngine.getAuthenticatedUser();
-    if (!auth.authenticated) {
-      throw new Error("Authentication required to access Squad Comms. Please sign in with GitHub.");
+    if (!auth.authenticated || !auth.isCollaborator) {
+      throw new Error("Access restricted: Only verified AstroSquad repository collaborators can access Squad Comms.");
     }
     const settings = settingsManager.getSettings();
     const inviteUrl = args?.customInviteUrl || settings.discord.inviteUrl;
     const appUri = args?.customAppUri || settings.discord.appUri;
     await FileHandlers.openDiscord(inviteUrl, appUri);
   });
-  import_electron4.ipcMain.handle("shell:openMeeting", async (_, customUrl) => {
+  import_electron5.ipcMain.handle("shell:openMeeting", async (_, customUrl) => {
     const auth = await gitEngine.getAuthenticatedUser();
-    if (!auth.authenticated) {
-      throw new Error("Authentication required to access Team Video Briefings. Please sign in with GitHub.");
+    if (!auth.authenticated || !auth.isCollaborator) {
+      throw new Error("Access restricted: Only verified AstroSquad repository collaborators can access Team Video Briefings.");
     }
     const settings = settingsManager.getSettings();
     const url2 = customUrl || settings.meeting?.url || "https://meet.google.com/new";
-    await import_electron4.shell.openExternal(url2);
+    await import_electron5.shell.openExternal(url2);
   });
-  import_electron4.ipcMain.handle("shell:openRepoFolder", async () => {
-    await import_electron4.shell.openPath(gitEngine.getRepoDir());
+  import_electron5.ipcMain.handle("shell:openRepoFolder", async () => {
+    await import_electron5.shell.openPath(gitEngine.getRepoDir());
+  });
+  import_electron5.ipcMain.handle("shell:openGoogleSuite", async (_, args) => {
+    const settings = settingsManager.getSettings();
+    const mode = args.windowMode || settings.googleSuite?.windowMode || "station_window";
+    const engine = args.preferredEngine || settings.googleSuite?.engine || "auto";
+    return FileHandlers.openGoogleSuiteSession(args.appType, mode, args.targetFilePath, engine);
+  });
+  import_electron5.ipcMain.handle("shell:getDetectedBrowsers", async () => {
+    const browsers = FileHandlers.detectBrowsers();
+    const obsidianPath = FileHandlers.detectObsidianPath();
+    return {
+      browsers,
+      platform: process.platform,
+      hasVivaldi: browsers.some((b) => b.id === "vivaldi"),
+      hasChrome: browsers.some((b) => b.id === "chrome"),
+      hasSafari: browsers.some((b) => b.id === "safari"),
+      hasEdge: browsers.some((b) => b.id === "edge"),
+      hasBrave: browsers.some((b) => b.id === "brave"),
+      hasObsidian: !!obsidianPath,
+      obsidianPath
+    };
   });
 }
-import_electron4.app.whenReady().then(() => {
+import_electron5.app.whenReady().then(() => {
   settingsManager = new SettingsManager();
   const initialSettings = settingsManager.getSettings();
   gitEngine = new GitEngine(
@@ -26650,15 +27100,15 @@ import_electron4.app.whenReady().then(() => {
   registerCustomProtocol();
   registerIpcHandlers();
   createWindow();
-  import_electron4.app.on("activate", () => {
-    if (import_electron4.BrowserWindow.getAllWindows().length === 0) {
+  import_electron5.app.on("activate", () => {
+    if (import_electron5.BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
 });
-import_electron4.app.on("window-all-closed", () => {
+import_electron5.app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
-    import_electron4.app.quit();
+    import_electron5.app.quit();
   }
 });
 /*! Bundled license information:

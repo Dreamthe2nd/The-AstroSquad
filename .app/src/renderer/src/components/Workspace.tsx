@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FileSidebar } from './FileSidebar';
 import { TopActionBar } from './TopActionBar';
 import { PdfViewer } from './viewers/PdfViewer';
@@ -37,45 +37,60 @@ export const Workspace: React.FC<WorkspaceProps> = ({
   const [isEditMorphed, setIsEditMorphed] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
-  // Sync selected file when initialSelectedFile changes from parent (e.g. View Proposal)
-  useEffect(() => {
-    if (initialSelectedFile) {
-      setSelectedFile(initialSelectedFile);
-    }
-  }, [initialSelectedFile]);
-
-  // Load selected file
-  useEffect(() => {
-    if (selectedFile) {
-      loadFile(selectedFile);
-    } else {
-      // Default to root README.md
-      const hasReadme = files && files.some((f) => f.name.toLowerCase() === 'readme.md');
-      if (hasReadme) {
-        setSelectedFile('README.md');
-      }
-    }
-  }, [selectedFile]);
+  // Request cancellation ref to prevent out-of-order state updates during fast clicks
+  const activeRequestIdRef = useRef<number>(0);
 
   const loadFile = async (filePath: string) => {
+    const requestId = ++activeRequestIdRef.current;
     setIsLoadingFile(true);
+    // Explicitly reset content so viewers never receive old data during fetch
+    setFileContent('');
     try {
       const res = await window.api.fs.readFile(filePath);
+      // Discard obsolete response if a newer file was selected
+      if (activeRequestIdRef.current !== requestId) return;
       setFileContent(res.content);
       setIsBinary(res.isBinary);
       setMimeType(res.mimeType);
     } catch (err: any) {
+      if (activeRequestIdRef.current !== requestId) return;
       showToast('error', 'File Read Error', err.message);
       setFileContent('');
     } finally {
-      setIsLoadingFile(false);
+      if (activeRequestIdRef.current === requestId) {
+        setIsLoadingFile(false);
+      }
     }
   };
 
+  // Initial load on mount
+  useEffect(() => {
+    const target = initialSelectedFile || selectedFile;
+    if (target) {
+      loadFile(target);
+    } else {
+      const hasReadme = files && files.some((f) => f.name.toLowerCase() === 'readme.md');
+      if (hasReadme) {
+        setSelectedFile('README.md');
+        loadFile('README.md');
+      }
+    }
+  }, []);
+
+  // Sync selected file when initialSelectedFile changes from parent (e.g. View Proposal)
+  useEffect(() => {
+    if (initialSelectedFile && initialSelectedFile !== selectedFile) {
+      setSelectedFile(initialSelectedFile);
+      loadFile(initialSelectedFile);
+    }
+  }, [initialSelectedFile]);
+
   const handleSelectFile = (node: FileNode) => {
     if (!node.isDirectory) {
+      if (node.relativePath === selectedFile && !isLoadingFile) return;
       setSelectedFile(node.relativePath);
       setIsEditMorphed(false); // Reset morph state on new file selection
+      loadFile(node.relativePath);
     }
   };
 
@@ -217,6 +232,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
     if (lower.endsWith('.pdf') || lower.endsWith('proposal')) {
       return (
         <PdfViewer
+          key={selectedFile}
           filePath={selectedFile}
           base64Data={isBinary ? fileContent : undefined}
           onOpenInDesktop={handleEditInDesktop}
@@ -228,6 +244,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
     if (lower.endsWith('.pptx')) {
       return (
         <PptxViewer
+          key={selectedFile}
           filePath={selectedFile}
           base64Data={fileContent}
           onOpenInDesktop={handleEditInDesktop}
@@ -239,6 +256,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
     if (lower.endsWith('.csv')) {
       return (
         <CsvViewer
+          key={selectedFile}
           filePath={selectedFile}
           csvContent={fileContent}
           onOpenInDesktop={handleEditInDesktop}
@@ -250,6 +268,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
     if (['png', 'jpg', 'jpeg', 'webp'].some((ext) => lower.endsWith(`.${ext}`))) {
       return (
         <ImageViewer
+          key={selectedFile}
           filePath={selectedFile}
           base64Data={fileContent}
           mimeType={mimeType}
@@ -262,6 +281,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
     if (lower.endsWith('.md')) {
       return (
         <MarkdownViewer
+          key={selectedFile}
           filePath={selectedFile}
           content={fileContent}
           onSave={handleSaveMarkdownNote}
@@ -274,6 +294,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
     if (!isBinary) {
       return (
         <CodeViewer
+          key={selectedFile}
           filePath={selectedFile}
           content={fileContent}
           onSave={handleSaveMarkdownNote}
