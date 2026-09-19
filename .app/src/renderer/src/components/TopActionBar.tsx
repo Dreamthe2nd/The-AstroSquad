@@ -25,6 +25,7 @@ interface TopActionBarProps {
   onSaveAndShare: () => Promise<void>;
   onOpenSettings?: () => void;
   isSyncing: boolean;
+  showToast?: (type: 'info' | 'success' | 'warning' | 'error' | 'conflict', title: string, message: string) => void;
 }
 
 export const TopActionBar: React.FC<TopActionBarProps> = ({
@@ -37,7 +38,8 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
   onEditInDesktop,
   onSaveAndShare,
   onOpenSettings,
-  isSyncing
+  isSyncing,
+  showToast
 }) => {
   const [showNewDropdown, setShowNewDropdown] = useState<boolean>(false);
   const [showNewNoteModal, setShowNewNoteModal] = useState<boolean>(false);
@@ -202,7 +204,24 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
         )}
 
         <button
-          onClick={() => window.api.shell.openGoogleSuite({ appType: 'drive', windowMode: 'app_window' })}
+          onClick={async () => {
+            if (showToast) {
+              showToast('info', 'Opening Google Drive', 'Launching The-AstroSquad Cloud Hub in default browser...');
+            }
+            try {
+              const res = await window.api.shell.openGoogleSuite({
+                appType: 'drive',
+                windowMode: 'browser_tab'
+              });
+              if (res && res.message && showToast) {
+                showToast('success', 'Google Drive Active', res.message);
+              }
+            } catch (err: any) {
+              if (showToast) {
+                showToast('error', 'Google Drive Error', err.message);
+              }
+            }
+          }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-500/30 bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 hover:text-white transition-colors text-xs font-mono shadow-sm"
           title="Open The-AstroSquad Shared Cloud Hub (Google Drive)"
         >

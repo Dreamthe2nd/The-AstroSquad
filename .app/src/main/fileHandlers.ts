@@ -195,7 +195,7 @@ export class FileHandlers {
     const browsers: DetectedBrowserInfo[] = [];
 
     if (isWin) {
-      // 1. Vivaldi on Windows
+      // 1. Vivaldi on Windows (Vivaldi ignores --app when running, so launch in browser tab mode)
       const vivaldiCandidates = [
         path.join(process.env.LOCALAPPDATA || '', 'Vivaldi\\Application\\vivaldi.exe'),
         'C:\\Program Files\\Vivaldi\\Application\\vivaldi.exe',
@@ -203,7 +203,7 @@ export class FileHandlers {
       ];
       for (const p of vivaldiCandidates) {
         if (p && fs.existsSync(p)) {
-          browsers.push({ id: 'vivaldi', name: 'Vivaldi', path: p, supportsAppMode: true, platform: 'win32' });
+          browsers.push({ id: 'vivaldi', name: 'Vivaldi', path: p, supportsAppMode: false, platform: 'win32' });
           break;
         }
       }
@@ -253,7 +253,7 @@ export class FileHandlers {
 
       // 2. Vivaldi on macOS
       if (fs.existsSync('/Applications/Vivaldi.app')) {
-        browsers.push({ id: 'vivaldi', name: 'Vivaldi', path: '/Applications/Vivaldi.app', supportsAppMode: true, platform: 'darwin' });
+        browsers.push({ id: 'vivaldi', name: 'Vivaldi', path: '/Applications/Vivaldi.app', supportsAppMode: false, platform: 'darwin' });
       }
 
       // 3. Google Chrome on macOS
@@ -336,6 +336,15 @@ export class FileHandlers {
       ? ` Opened The-AstroSquad Google Drive Cloud Hub for "${fileName}" (path copied & revealed in folder for drag-and-drop).`
       : '';
 
+    // Google Drive is a collaborative cloud storage hub: always launch directly in default browser for 100% session fidelity
+    if (appType === 'drive') {
+      await shell.openExternal(targetUrl);
+      return {
+        success: true,
+        message: `Opened The-AstroSquad Google Drive Cloud Hub in your default browser.${fileHint}`
+      };
+    }
+
     // Mode 1: Native AstroSquad Station Window (100% universal across macOS, Windows & Linux, no browser required)
     if (windowMode === 'station_window') {
       GoogleWindowManager.openSession(appType, targetUrl, targetFilePath);
@@ -345,7 +354,7 @@ export class FileHandlers {
       };
     }
 
-    // Mode 2: Standalone Browser App Window (Vivaldi, Chrome, Edge, Brave)
+    // Mode 2: Standalone Browser App Window (Chrome, Edge, Brave with --app support)
     if (windowMode === 'app_window') {
       const browsers = this.detectBrowsers();
       const appBrowser = preferredEngine && preferredEngine !== 'auto'
@@ -380,7 +389,7 @@ export class FileHandlers {
         }
       }
 
-      // If on macOS with only Safari, or no Chromium browser found:
+      // If no Chromium browser with --app support found (e.g. Vivaldi, Safari):
       await shell.openExternal(targetUrl);
       return {
         success: true,

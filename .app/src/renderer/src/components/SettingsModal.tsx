@@ -649,11 +649,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <input
                     type="text"
                     readOnly
-                    placeholder="System Default"
+                    placeholder="In-App Editor (Built-in — No Excel Required)"
                     value={
                       settings.fileAssociations.csv === 'google_sheets'
-                        ? '⚡ Google Sheets (Dedicated Standalone Session via Local App Engine)'
-                        : settings.fileAssociations.csv || ''
+                        ? '⚡ Google Sheets (Cloud Hub Session via Browser)'
+                        : settings.fileAssociations.csv || 'In-App Editor (Built-in — No Excel Required)'
                     }
                     className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate font-mono"
                   />
@@ -678,7 +678,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                     }`}
                   >
-                    Default (Excel / Calc)
+                    In-App Editor (Recommended)
                   </button>
                   <button
                     type="button"
@@ -689,14 +689,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         : 'bg-slate-900 text-slate-400 hover:text-teal-300 border border-slate-800'
                     }`}
                   >
-                    <span>⚡ Google Sheets (Local Session)</span>
+                    <span>⚡ Google Sheets (Cloud Hub)</span>
                   </button>
                   {settings.fileAssociations.csv === 'google_sheets' && (
                     <button
                       type="button"
                       onClick={() => handleLaunchGoogleSuite('sheets')}
                       className="ml-auto text-[11px] text-teal-400 hover:text-teal-300 flex items-center gap-1 underline"
-                      title="Test launch standalone Google Sheets session"
+                      title="Test launch Google Sheets session"
                     >
                       <span>▶ Test Launch</span>
                     </button>
@@ -768,7 +768,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="flex flex-wrap gap-1.5 items-center">
                       {browserInfo?.hasVivaldi && (
                         <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
-                          <Check className="w-3 h-3 text-emerald-400" /> Vivaldi (App Mode Ready)
+                          <Check className="w-3 h-3 text-emerald-400" /> Vivaldi (Browser Mode Ready)
                         </span>
                       )}
                       {browserInfo?.hasSafari && (
@@ -803,7 +803,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="flex items-start gap-2 p-2 rounded-lg bg-blue-950/40 border border-blue-500/30 text-[11px] text-blue-200">
                       <Info className="w-3.5 h-3.5 text-blue-400 mt-0.5 shrink-0" />
                       <span>
-                        <strong>macOS Safari Notice:</strong> Safari does not support the <code>--app</code> standalone window flag. Use the <strong>Integrated Station Window</strong> mode below to get borderless Google desktop sessions without needing Chrome!
+                        <strong>macOS Safari Notice:</strong> Safari does not support the <code>--app</code> standalone window flag. Google Drive and Google Suite open directly in your active Safari session with complete authentication cookies.
                       </span>
                     </div>
                   )}
@@ -811,7 +811,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <div className="flex items-start gap-2 p-2 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-[11px] text-emerald-200">
                       <Info className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
                       <span>
-                        <strong>Vivaldi Environment:</strong> Standalone App Window and Integrated Station Window are both fully supported on this machine.
+                        <strong>Vivaldi Environment:</strong> Google Drive and Google Workspace launch directly in your active Vivaldi session with all team accounts and permissions intact.
                       </span>
                     </div>
                   )}

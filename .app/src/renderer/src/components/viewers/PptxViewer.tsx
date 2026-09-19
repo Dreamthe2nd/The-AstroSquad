@@ -53,7 +53,8 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
   const handleOpenGoogleDrive = () => {
     window.api.shell.openGoogleSuite({
       appType: 'drive',
-      windowMode: 'app_window'
+      windowMode: 'browser_tab',
+      targetFilePath: filePath
     });
   };
 
@@ -76,19 +77,19 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleOpenGoogleDrive}
-            className="px-3 py-1.5 rounded-lg bg-indigo-950/60 hover:bg-indigo-900/60 text-xs text-indigo-300 hover:text-white border border-indigo-500/30 flex items-center gap-1.5 transition-colors shadow-sm"
-            title="Open The-AstroSquad Shared Cloud Drive in Standalone Session"
+            className="px-3 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-xs text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm"
+            title="Reveal presentation in Explorer and open The-AstroSquad Google Drive to edit in Google Slides online"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="hidden sm:inline">Google Drive Hub</span>
+            <span>Edit in Google Drive</span>
           </button>
 
           <button
             onClick={onOpenInDesktop}
-            className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-doppler-blue"
+            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
             title="Launch presentation in PowerPoint, Keynote, or system presentation editor"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
+            <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
             <span>Open in Desktop App</span>
           </button>
         </div>

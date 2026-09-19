@@ -259,6 +259,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           key={selectedFile}
           filePath={selectedFile}
           csvContent={fileContent}
+          onSave={handleSaveMarkdownNote}
           onOpenInDesktop={handleEditInDesktop}
         />
       );
@@ -349,6 +350,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           onSaveAndShare={handleSaveAndShare}
           onOpenSettings={onOpenSettings}
           isSyncing={isSyncing}
+          showToast={showToast}
         />
 
         {/* Central Document Viewer Viewport */}

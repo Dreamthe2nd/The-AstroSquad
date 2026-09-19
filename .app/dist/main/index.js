@@ -26301,7 +26301,7 @@ var FileHandlers = class {
       ];
       for (const p of vivaldiCandidates) {
         if (p && import_fs2.default.existsSync(p)) {
-          browsers.push({ id: "vivaldi", name: "Vivaldi", path: p, supportsAppMode: true, platform: "win32" });
+          browsers.push({ id: "vivaldi", name: "Vivaldi", path: p, supportsAppMode: false, platform: "win32" });
           break;
         }
       }
@@ -26342,7 +26342,7 @@ var FileHandlers = class {
         browsers.push({ id: "safari", name: "Safari", path: "/Applications/Safari.app", supportsAppMode: false, platform: "darwin" });
       }
       if (import_fs2.default.existsSync("/Applications/Vivaldi.app")) {
-        browsers.push({ id: "vivaldi", name: "Vivaldi", path: "/Applications/Vivaldi.app", supportsAppMode: true, platform: "darwin" });
+        browsers.push({ id: "vivaldi", name: "Vivaldi", path: "/Applications/Vivaldi.app", supportsAppMode: false, platform: "darwin" });
       }
       if (import_fs2.default.existsSync("/Applications/Google Chrome.app")) {
         browsers.push({ id: "chrome", name: "Google Chrome", path: "/Applications/Google Chrome.app", supportsAppMode: true, platform: "darwin" });
@@ -26404,6 +26404,13 @@ var FileHandlers = class {
     }
     const fileName = targetFilePath ? import_path3.default.basename(targetFilePath) : "";
     const fileHint = fileName ? ` Opened The-AstroSquad Google Drive Cloud Hub for "${fileName}" (path copied & revealed in folder for drag-and-drop).` : "";
+    if (appType === "drive") {
+      await import_electron3.shell.openExternal(targetUrl);
+      return {
+        success: true,
+        message: `Opened The-AstroSquad Google Drive Cloud Hub in your default browser.${fileHint}`
+      };
+    }
     if (windowMode === "station_window") {
       GoogleWindowManager.openSession(appType, targetUrl, targetFilePath);
       return {
