@@ -29,7 +29,7 @@ interface SettingsModalProps {
   authStatus?: AuthStatus | null;
 }
 
-type TabType = 'apps' | 'repo' | 'discord' | 'meeting';
+type TabType = 'apps' | 'googlesuite' | 'repo' | 'discord' | 'meeting';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
@@ -43,12 +43,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [initialRepoPath, setInitialRepoPath] = useState<string>('');
   const [initialRepoUrl, setInitialRepoUrl] = useState<string>('');
   const [saving, setSaving] = useState<boolean>(false);
+  const [browserInfo, setBrowserInfo] = useState<{ hasChrome: boolean; hasEdge: boolean; detectedPath: string | null; engine: string } | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       loadSettings();
+      loadBrowserInfo();
     }
   }, [isOpen]);
+
+  const loadBrowserInfo = async () => {
+    try {
+      const info = await window.api.shell.getDetectedBrowsers();
+      setBrowserInfo(info);
+    } catch (err) {
+      console.warn('Could not detect local browsers:', err);
+    }
+  };
 
   const loadSettings = async () => {
     try {
@@ -62,6 +73,38 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   if (!isOpen || !settings) return null;
+
+  const handleLaunchGoogleSuite = async (appType: 'docs' | 'sheets' | 'slides' | 'drive') => {
+    try {
+      showToast('info', 'Launching Session', `Opening local standalone session for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}...`);
+      const mode = settings.googleSuite?.windowMode || 'app_window';
+      const res = await window.api.shell.openGoogleSuite({ appType, windowMode: mode });
+      if (res && res.message) {
+        showToast('success', 'Google Session Launched', res.message);
+      }
+    } catch (err: any) {
+      showToast('error', 'Launch Failed', err.message);
+    }
+  };
+
+  const handleSetGoogleApp = (filetypeKey: keyof StationSettings['fileAssociations'], googleKey: string) => {
+    setSettings((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        fileAssociations: {
+          ...prev.fileAssociations,
+          [filetypeKey]: googleKey
+        }
+      };
+    });
+    if (googleKey) {
+      const appName = googleKey.replace('google_', '');
+      showToast('success', 'Association Updated', `Assigned .${filetypeKey} to Google ${appName.charAt(0).toUpperCase() + appName.slice(1)} (Standalone Session).`);
+    } else {
+      showToast('info', 'Association Reset', `Reset .${filetypeKey} to system default.`);
+    }
+  };
 
   const handleBrowseApp = async (filetypeKey: keyof StationSettings['fileAssociations']) => {
     try {
@@ -262,6 +305,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('googlesuite')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 font-semibold transition-all ${
+              activeTab === 'googlesuite'
+                ? 'border-cyan-400 text-cyan-300 bg-slate-850/60'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Google Suite</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('repo')}
             className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 font-semibold transition-all ${
               activeTab === 'repo'
@@ -304,7 +359,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {activeTab === 'apps' && (
             <div className="space-y-4">
               <div className="p-3 rounded-xl bg-cyan-950/20 border border-cyan-500/30 text-slate-300 leading-relaxed font-sans text-xs">
-                Configure which desktop program opens when clicking <span className="font-mono text-cyan-300 font-bold">Edit</span> or <span className="font-mono text-cyan-300 font-bold">Open in Desktop App</span>. If unassigned, the station defaults to your operating system's registered handler.
+                Configure which desktop program opens when clicking <span className="font-mono text-cyan-300 font-bold">Edit</span> or <span className="font-mono text-cyan-300 font-bold">Open in Desktop App</span>. You can choose your default desktop app (PowerPoint / Excel), standalone local sessions of the <strong className="text-amber-300 font-semibold">Google Productivity Suite</strong>, or any custom <code className="text-cyan-400 font-mono">.exe</code>.
               </div>
 
               {/* PPTX Association */}
@@ -316,7 +371,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                     <span className="font-bold text-slate-200">Presentation Decks (.pptx)</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-                      e.g. LibreOffice Impress / WPS / Keynote
+                      PowerPoint / Google Slides
                     </span>
                   </div>
                   {settings.fileAssociations.pptx && (
@@ -334,8 +389,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="text"
                     readOnly
                     placeholder="System Default (e.g. PowerPoint or OS association)"
-                    value={settings.fileAssociations.pptx || ''}
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate"
+                    value={
+                      settings.fileAssociations.pptx === 'google_slides'
+                        ? '⚡ Google Slides (Dedicated Standalone Session via Local App Engine)'
+                        : settings.fileAssociations.pptx || ''
+                    }
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate font-mono"
                   />
                   <button
                     onClick={() => handleBrowseApp('pptx')}
@@ -344,6 +403,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <FolderOpen className="w-3.5 h-3.5" />
                     <span>Browse .exe...</span>
                   </button>
+                </div>
+
+                {/* Quick Presets for PPTX */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] text-slate-400 font-sans">Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleClearApp('pptx')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-sans transition-colors ${
+                      !settings.fileAssociations.pptx
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold'
+                        : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    Default (PowerPoint)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetGoogleApp('pptx', 'google_slides')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-sans flex items-center gap-1 transition-colors ${
+                      settings.fileAssociations.pptx === 'google_slides'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-semibold'
+                        : 'bg-slate-900 text-slate-400 hover:text-amber-300 border border-slate-800'
+                    }`}
+                  >
+                    <span>⚡ Google Slides (Local Session)</span>
+                  </button>
+                  {settings.fileAssociations.pptx === 'google_slides' && (
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchGoogleSuite('slides')}
+                      className="ml-auto text-[11px] text-amber-400 hover:text-amber-300 flex items-center gap-1 underline"
+                      title="Test launch standalone Google Slides session"
+                    >
+                      <span>▶ Test Launch</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -393,7 +489,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                     <span className="font-bold text-slate-200">Markdown Notes (.md)</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-                      e.g. Obsidian, VS Code, Typora
+                      Obsidian / Google Docs / VS Code
                     </span>
                   </div>
                   {settings.fileAssociations.md && (
@@ -411,8 +507,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="text"
                     readOnly
                     placeholder="System Default"
-                    value={settings.fileAssociations.md || ''}
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate"
+                    value={
+                      settings.fileAssociations.md === 'google_docs'
+                        ? '⚡ Google Docs (Dedicated Standalone Session via Local App Engine)'
+                        : settings.fileAssociations.md || ''
+                    }
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate font-mono"
                   />
                   <button
                     onClick={() => handleBrowseApp('md')}
@@ -421,6 +521,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Browse .exe...</span>
                   </button>
+                </div>
+
+                {/* Quick Presets for Markdown */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] text-slate-400 font-sans">Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleClearApp('md')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-sans transition-colors ${
+                      !settings.fileAssociations.md
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold'
+                        : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    Default (Editor)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetGoogleApp('md', 'google_docs')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-sans flex items-center gap-1 transition-colors ${
+                      settings.fileAssociations.md === 'google_docs'
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold'
+                        : 'bg-slate-900 text-slate-400 hover:text-cyan-300 border border-slate-800'
+                    }`}
+                  >
+                    <span>⚡ Google Docs (Local Session)</span>
+                  </button>
+                  {settings.fileAssociations.md === 'google_docs' && (
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchGoogleSuite('docs')}
+                      className="ml-auto text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 underline"
+                      title="Test launch standalone Google Docs session"
+                    >
+                      <span>▶ Test Launch</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -433,7 +570,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </span>
                     <span className="font-bold text-slate-200">Data Catalogs (.csv)</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-                      e.g. LibreOffice Calc, Excel
+                      Excel / Google Sheets / Calc
                     </span>
                   </div>
                   {settings.fileAssociations.csv && (
@@ -451,8 +588,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="text"
                     readOnly
                     placeholder="System Default"
-                    value={settings.fileAssociations.csv || ''}
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate"
+                    value={
+                      settings.fileAssociations.csv === 'google_sheets'
+                        ? '⚡ Google Sheets (Dedicated Standalone Session via Local App Engine)'
+                        : settings.fileAssociations.csv || ''
+                    }
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate font-mono"
                   />
                   <button
                     onClick={() => handleBrowseApp('csv')}
@@ -461,6 +602,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Browse .exe...</span>
                   </button>
+                </div>
+
+                {/* Quick Presets for CSV */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] text-slate-400 font-sans">Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleClearApp('csv')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-sans transition-colors ${
+                      !settings.fileAssociations.csv
+                        ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 font-semibold'
+                        : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    Default (Excel / Calc)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetGoogleApp('csv', 'google_sheets')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-sans flex items-center gap-1 transition-colors ${
+                      settings.fileAssociations.csv === 'google_sheets'
+                        ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 font-semibold'
+                        : 'bg-slate-900 text-slate-400 hover:text-teal-300 border border-slate-800'
+                    }`}
+                  >
+                    <span>⚡ Google Sheets (Local Session)</span>
+                  </button>
+                  {settings.fileAssociations.csv === 'google_sheets' && (
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchGoogleSuite('sheets')}
+                      className="ml-auto text-[11px] text-teal-400 hover:text-teal-300 flex items-center gap-1 underline"
+                      title="Test launch standalone Google Sheets session"
+                    >
+                      <span>▶ Test Launch</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -498,6 +676,278 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Browse .exe...</span>
                   </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: GOOGLE PRODUCTIVITY SUITE */}
+          {activeTab === 'googlesuite' && (
+            <div className="space-y-4">
+              {/* Description Banner */}
+              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/40 via-amber-950/30 to-emerald-950/30 border border-cyan-500/30 text-slate-200 leading-relaxed font-sans text-xs space-y-2.5">
+                <div className="flex items-center gap-2 font-bold text-white text-sm">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>Google Productivity Suite (Standalone Desktop Sessions)</span>
+                </div>
+                <p className="text-slate-300">
+                  Launch and operate dedicated desktop window sessions of <strong>Google Slides</strong>, <strong>Google Sheets</strong>, <strong>Google Docs</strong>, and <strong>Google Drive</strong> without browser tab clutter or address bars. Sessions run directly in your authenticated local Google profile, exactly like native desktop software (such as PowerPoint or Excel).
+                </p>
+
+                {/* Detected Browser Engine */}
+                <div className="flex items-center gap-2 pt-2 border-t border-slate-800 text-[11px] font-mono">
+                  <span className="text-slate-400">Local App Engine:</span>
+                  {browserInfo?.hasChrome ? (
+                    <span className="px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-emerald-300 font-semibold flex items-center gap-1">
+                      <Check className="w-3 h-3 text-emerald-400" />
+                      Google Chrome App Engine Active
+                    </span>
+                  ) : browserInfo?.hasEdge ? (
+                    <span className="px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/40 text-cyan-300 font-semibold flex items-center gap-1">
+                      <Check className="w-3 h-3 text-cyan-400" />
+                      Microsoft Edge App Engine Active
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+                      Default OS Browser Mode
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Window Mode Toggle */}
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="font-bold text-slate-200 text-xs">Window Display Mode</div>
+                  <div className="text-[11px] text-slate-400 font-sans">
+                    Standalone App Window runs with isolated window frame &amp; taskbar icon without URL address bar
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettings(prev => prev ? {
+                        ...prev,
+                        googleSuite: {
+                          engine: prev.googleSuite?.engine || 'auto',
+                          windowMode: 'app_window',
+                          docsUrl: prev.googleSuite?.docsUrl,
+                          sheetsUrl: prev.googleSuite?.sheetsUrl,
+                          slidesUrl: prev.googleSuite?.slidesUrl,
+                          driveUrl: prev.googleSuite?.driveUrl
+                        }
+                      } : prev);
+                    }}
+                    className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+                      (settings.googleSuite?.windowMode ?? 'app_window') === 'app_window'
+                        ? 'bg-cyan-600 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Standalone App Window
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettings(prev => prev ? {
+                        ...prev,
+                        googleSuite: {
+                          engine: prev.googleSuite?.engine || 'auto',
+                          windowMode: 'browser_tab',
+                          docsUrl: prev.googleSuite?.docsUrl,
+                          sheetsUrl: prev.googleSuite?.sheetsUrl,
+                          slidesUrl: prev.googleSuite?.slidesUrl,
+                          driveUrl: prev.googleSuite?.driveUrl
+                        }
+                      } : prev);
+                    }}
+                    className={`px-2.5 py-1 rounded text-xs font-semibold transition-all ${
+                      settings.googleSuite?.windowMode === 'browser_tab'
+                        ? 'bg-cyan-600 text-slate-950 shadow-sm'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Browser Tab
+                  </button>
+                </div>
+              </div>
+
+              {/* 4 App Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                {/* Google Slides Card */}
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 space-y-3 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="p-1.5 rounded-lg bg-amber-950/80 border border-amber-500/30 text-amber-400">
+                        <Presentation className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <h4 className="font-bold text-white text-xs">Google Slides</h4>
+                        <p className="text-[10px] text-slate-400">Presentation Decks &amp; Pitch Slides</p>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
+                      settings.fileAssociations.pptx === 'google_slides'
+                        ? 'bg-emerald-950 border border-emerald-500/40 text-emerald-400'
+                        : 'bg-slate-900 border border-slate-800 text-slate-500'
+                    }`}>
+                      {settings.fileAssociations.pptx === 'google_slides' ? 'Active (.pptx)' : 'Not Default'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+                    Open and design collaborative team presentation decks for symposium talks and progress reviews.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchGoogleSuite('slides')}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Launch Local Session</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSetGoogleApp('pptx', settings.fileAssociations.pptx === 'google_slides' ? '' : 'google_slides');
+                      }}
+                      className={`py-1.5 px-3 rounded-lg border text-xs font-semibold transition-colors ${
+                        settings.fileAssociations.pptx === 'google_slides'
+                          ? 'bg-rose-950/50 border-rose-500/40 text-rose-300 hover:bg-rose-900/50'
+                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      {settings.fileAssociations.pptx === 'google_slides' ? 'Unlink .pptx' : 'Use for .pptx'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Google Sheets Card */}
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-teal-500/40 space-y-3 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="p-1.5 rounded-lg bg-teal-950/80 border border-teal-500/30 text-teal-400">
+                        <FileSpreadsheet className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <h4 className="font-bold text-white text-xs">Google Sheets</h4>
+                        <p className="text-[10px] text-slate-400">Spectroscopy Tables &amp; CSV Data</p>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
+                      settings.fileAssociations.csv === 'google_sheets'
+                        ? 'bg-emerald-950 border border-emerald-500/40 text-emerald-400'
+                        : 'bg-slate-900 border border-slate-800 text-slate-500'
+                    }`}>
+                      {settings.fileAssociations.csv === 'google_sheets' ? 'Active (.csv)' : 'Not Default'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+                    Open M82 &amp; M31 spectroscopy datasets, wavelength calibrations, and photometric catalogs.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchGoogleSuite('sheets')}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 border border-teal-500/40 text-teal-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Launch Local Session</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSetGoogleApp('csv', settings.fileAssociations.csv === 'google_sheets' ? '' : 'google_sheets');
+                      }}
+                      className={`py-1.5 px-3 rounded-lg border text-xs font-semibold transition-colors ${
+                        settings.fileAssociations.csv === 'google_sheets'
+                          ? 'bg-rose-950/50 border-rose-500/40 text-rose-300 hover:bg-rose-900/50'
+                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      {settings.fileAssociations.csv === 'google_sheets' ? 'Unlink .csv' : 'Use for .csv'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Google Docs Card */}
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500/40 space-y-3 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/30 text-cyan-400">
+                        <FileText className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <h4 className="font-bold text-white text-xs">Google Docs</h4>
+                        <p className="text-[10px] text-slate-400">Research Manuscripts &amp; Logs</p>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
+                      settings.fileAssociations.md === 'google_docs'
+                        ? 'bg-emerald-950 border border-emerald-500/40 text-emerald-400'
+                        : 'bg-slate-900 border border-slate-800 text-slate-500'
+                    }`}>
+                      {settings.fileAssociations.md === 'google_docs' ? 'Active (.md)' : 'Not Default'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+                    Draft and edit collaborative observation writeups, hypotheses, and telescope run summaries.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchGoogleSuite('docs')}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Launch Local Session</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleSetGoogleApp('md', settings.fileAssociations.md === 'google_docs' ? '' : 'google_docs');
+                      }}
+                      className={`py-1.5 px-3 rounded-lg border text-xs font-semibold transition-colors ${
+                        settings.fileAssociations.md === 'google_docs'
+                          ? 'bg-rose-950/50 border-rose-500/40 text-rose-300 hover:bg-rose-900/50'
+                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
+                      }`}
+                    >
+                      {settings.fileAssociations.md === 'google_docs' ? 'Unlink .md' : 'Use for .md'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Google Drive Card */}
+                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 space-y-3 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className="p-1.5 rounded-lg bg-indigo-950/80 border border-indigo-500/30 text-indigo-400">
+                        <FolderGit2 className="w-4 h-4 text-indigo-400" />
+                      </span>
+                      <div>
+                        <h4 className="font-bold text-white text-xs">Google Drive</h4>
+                        <p className="text-[10px] text-slate-400">AstroSquad Shared Cloud Storage</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-950 border border-indigo-500/40 text-indigo-300 font-semibold">
+                      CLOUD HUB
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
+                    Access the squad's shared telescope drive, raw FITS spectra images, and calibration archives.
+                  </p>
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchGoogleSuite('drive')}
+                      className="w-full py-1.5 px-3 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-indigo-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Launch Local Drive Session</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

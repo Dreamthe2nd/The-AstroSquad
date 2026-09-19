@@ -130,7 +130,93 @@ export class FileHandlers {
   }
 
   /**
-   * Opens file in local desktop app (LibreOffice, Obsidian, Excel, Preview, etc.)
+   * Discovers local browser executable on Windows for standalone app window sessions
+   */
+  public static findBrowserPath(preference: 'auto' | 'chrome' | 'edge' = 'auto'): { path: string | null; engine: 'chrome' | 'edge' | 'none' } {
+    const isWin = process.platform === 'win32';
+    if (!isWin) {
+      return { path: null, engine: 'none' };
+    }
+
+    const chromeCandidates = [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      path.join(process.env.LOCALAPPDATA || '', 'Google\\Chrome\\Application\\chrome.exe')
+    ];
+
+    const edgeCandidates = [
+      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+      'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+      path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Edge\\Application\\msedge.exe')
+    ];
+
+    if (preference === 'chrome') {
+      for (const p of chromeCandidates) {
+        if (p && fs.existsSync(p)) return { path: p, engine: 'chrome' };
+      }
+    } else if (preference === 'edge') {
+      for (const p of edgeCandidates) {
+        if (p && fs.existsSync(p)) return { path: p, engine: 'edge' };
+      }
+    }
+
+    // Default 'auto': Chrome first, then Edge
+    for (const p of chromeCandidates) {
+      if (p && fs.existsSync(p)) return { path: p, engine: 'chrome' };
+    }
+    for (const p of edgeCandidates) {
+      if (p && fs.existsSync(p)) return { path: p, engine: 'edge' };
+    }
+
+    return { path: null, engine: 'none' };
+  }
+
+  /**
+   * Opens local standalone session of Google Productivity Suite (Docs, Sheets, Slides, Drive)
+   */
+  public static async openGoogleSuiteSession(
+    appType: 'docs' | 'sheets' | 'slides' | 'drive',
+    windowMode: 'app_window' | 'browser_tab' = 'app_window',
+    _targetFilePath?: string
+  ): Promise<{ success: boolean; message: string }> {
+    const urls: Record<string, string> = {
+      docs: 'https://docs.google.com/document/u/0/',
+      sheets: 'https://docs.google.com/spreadsheets/u/0/',
+      slides: 'https://docs.google.com/presentation/u/0/',
+      drive: 'https://drive.google.com/drive/u/0/my-drive'
+    };
+
+    const targetUrl = urls[appType] || urls.drive;
+
+    if (windowMode === 'app_window') {
+      const browser = this.findBrowserPath('auto');
+      if (browser.path) {
+        try {
+          const child = child_process.spawn(browser.path, [`--app=${targetUrl}`], {
+            detached: true,
+            stdio: 'ignore'
+          });
+          child.unref();
+          return {
+            success: true,
+            message: `Launched local standalone session for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)} via ${browser.engine.toUpperCase()}.`
+          };
+        } catch (err: any) {
+          console.warn(`Failed to spawn app window for Google ${appType}:`, err);
+        }
+      }
+    }
+
+    // Fallback or browser_tab mode
+    await shell.openExternal(targetUrl);
+    return {
+      success: true,
+      message: `Opened Google ${appType.charAt(0).toUpperCase() + appType.slice(1)} in default browser.`
+    };
+  }
+
+  /**
+   * Opens file in local desktop app (LibreOffice, Obsidian, Excel, Google Suite, etc.)
    */
   public static async openInDesktopApp(filePath: string, customAppPath?: string): Promise<string> {
     if (!fs.existsSync(filePath)) {
@@ -138,16 +224,35 @@ export class FileHandlers {
     }
 
     if (customAppPath && customAppPath.trim()) {
-      const execPath = customAppPath.trim();
+      const trimmed = customAppPath.trim();
+
+      // Check if configured for Google Productivity Suite standalone sessions
+      if (trimmed === 'google_slides') {
+        await this.openGoogleSuiteSession('slides', 'app_window', filePath);
+        return '';
+      }
+      if (trimmed === 'google_sheets') {
+        await this.openGoogleSuiteSession('sheets', 'app_window', filePath);
+        return '';
+      }
+      if (trimmed === 'google_docs') {
+        await this.openGoogleSuiteSession('docs', 'app_window', filePath);
+        return '';
+      }
+      if (trimmed === 'google_drive') {
+        await this.openGoogleSuiteSession('drive', 'app_window', filePath);
+        return '';
+      }
+
       try {
-        const child = child_process.spawn(execPath, [filePath], {
+        const child = child_process.spawn(trimmed, [filePath], {
           detached: true,
           stdio: 'ignore'
         });
         child.unref();
         return '';
       } catch (err: any) {
-        console.warn(`Failed to launch custom app "${execPath}":`, err);
+        console.warn(`Failed to launch custom app "${trimmed}":`, err);
         return shell.openPath(filePath);
       }
     }

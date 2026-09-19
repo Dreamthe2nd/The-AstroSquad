@@ -32,6 +32,14 @@ export interface StationSettings {
     url: string;
     platform: 'google_meet' | 'zoom' | 'custom';
   };
+  googleSuite?: {
+    engine: 'auto' | 'chrome' | 'edge';
+    windowMode: 'app_window' | 'browser_tab';
+    docsUrl?: string;
+    sheetsUrl?: string;
+    slidesUrl?: string;
+    driveUrl?: string;
+  };
 }
 
 export interface ApiBridge {
@@ -71,6 +79,8 @@ export interface ApiBridge {
     openMeeting: (customUrl?: string) => Promise<void>;
     openRepoFolder: () => Promise<void>;
     copyToClipboard: (text: string) => void;
+    openGoogleSuite: (args: { appType: 'docs' | 'sheets' | 'slides' | 'drive'; windowMode?: 'app_window' | 'browser_tab'; targetFilePath?: string }) => Promise<{ success: boolean; message: string }>;
+    getDetectedBrowsers: () => Promise<{ hasChrome: boolean; hasEdge: boolean; detectedPath: string | null; engine: string }>;
   };
 }
 
@@ -110,7 +120,9 @@ const api: ApiBridge = {
     openDiscord: (customInviteUrl?: string, customAppUri?: string) => ipcRenderer.invoke('shell:openDiscord', { customInviteUrl, customAppUri }),
     openMeeting: (customUrl?: string) => ipcRenderer.invoke('shell:openMeeting', customUrl),
     openRepoFolder: () => ipcRenderer.invoke('shell:openRepoFolder'),
-    copyToClipboard: (text) => clipboard.writeText(text)
+    copyToClipboard: (text) => clipboard.writeText(text),
+    openGoogleSuite: (args) => ipcRenderer.invoke('shell:openGoogleSuite', args),
+    getDetectedBrowsers: () => ipcRenderer.invoke('shell:getDetectedBrowsers')
   }
 };
 

@@ -51,4 +51,12 @@ export interface StationSettings {
     url: string;
     platform: 'google_meet' | 'zoom' | 'custom';
   };
+  googleSuite?: {
+    engine: 'auto' | 'chrome' | 'edge';
+    windowMode: 'app_window' | 'browser_tab';
+    docsUrl?: string;
+    sheetsUrl?: string;
+    slidesUrl?: string;
+    driveUrl?: string;
+  };
 }

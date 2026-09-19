@@ -23,6 +23,14 @@ export interface StationSettings {
     url: string;
     platform: 'google_meet' | 'zoom' | 'custom';
   };
+  googleSuite: {
+    engine: 'auto' | 'chrome' | 'edge';
+    windowMode: 'app_window' | 'browser_tab';
+    docsUrl?: string;
+    sheetsUrl?: string;
+    slidesUrl?: string;
+    driveUrl?: string;
+  };
 }
 
 export class SettingsManager {
@@ -57,6 +65,14 @@ export class SettingsManager {
       meeting: {
         url: 'https://meet.google.com/new',
         platform: 'google_meet'
+      },
+      googleSuite: {
+        engine: 'auto',
+        windowMode: 'app_window',
+        docsUrl: 'https://docs.google.com/document/u/0/',
+        sheetsUrl: 'https://docs.google.com/spreadsheets/u/0/',
+        slidesUrl: 'https://docs.google.com/presentation/u/0/',
+        driveUrl: 'https://drive.google.com/drive/u/0/my-drive'
       }
     };
   }
@@ -71,7 +87,8 @@ export class SettingsManager {
           fileAssociations: { ...defaults.fileAssociations, ...(parsed.fileAssociations || {}) },
           repository: { ...defaults.repository, ...(parsed.repository || {}) },
           discord: { ...defaults.discord, ...(parsed.discord || {}) },
-          meeting: { ...defaults.meeting, ...(parsed.meeting || {}) }
+          meeting: { ...defaults.meeting, ...(parsed.meeting || {}) },
+          googleSuite: { ...defaults.googleSuite, ...(parsed.googleSuite || {}) }
         };
       }
     } catch (err) {
@@ -101,6 +118,10 @@ export class SettingsManager {
       meeting: {
         ...this.settings.meeting,
         ...(partial.meeting || {})
+      },
+      googleSuite: {
+        ...this.settings.googleSuite,
+        ...(partial.googleSuite || {})
       }
     };
 

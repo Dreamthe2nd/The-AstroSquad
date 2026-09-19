@@ -273,6 +273,28 @@ function registerIpcHandlers(): void {
   ipcMain.handle('shell:openRepoFolder', async () => {
     await shell.openPath(gitEngine.getRepoDir());
   });
+
+  ipcMain.handle('shell:openGoogleSuite', async (_, args: {
+    appType: 'docs' | 'sheets' | 'slides' | 'drive';
+    windowMode?: 'app_window' | 'browser_tab';
+    targetFilePath?: string;
+  }) => {
+    const settings = settingsManager.getSettings();
+    const mode = args.windowMode || settings.googleSuite?.windowMode || 'app_window';
+    return FileHandlers.openGoogleSuiteSession(args.appType, mode, args.targetFilePath);
+  });
+
+  ipcMain.handle('shell:getDetectedBrowsers', async () => {
+    const browser = FileHandlers.findBrowserPath('auto');
+    const chrome = FileHandlers.findBrowserPath('chrome');
+    const edge = FileHandlers.findBrowserPath('edge');
+    return {
+      hasChrome: Boolean(chrome.path),
+      hasEdge: Boolean(edge.path),
+      detectedPath: browser.path,
+      engine: browser.engine
+    };
+  });
 }
 
 /* ---------------- App Lifecycle ---------------- */
