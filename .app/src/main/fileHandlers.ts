@@ -82,8 +82,14 @@ export class FileHandlers {
       throw new Error(`File not found: ${filePath}`);
     }
 
+    const stats = fs.statSync(filePath);
     const ext = path.extname(filePath).toLowerCase();
-    const binaryExts = ['.pdf', '.png', '.jpg', '.jpeg', '.webp', '.pptx', '.ico'];
+    const binaryExts = [
+      '.pdf', '.png', '.jpg', '.jpeg', '.webp', '.pptx', '.ico',
+      '.fits', '.fit', '.zip', '.tar', '.gz', '.7z', '.exe', '.dll',
+      '.so', '.dylib', '.bin', '.dat', '.db', '.sqlite', '.pack',
+      '.idx', '.parquet', '.h5', '.hdf5', '.pyc'
+    ];
 
     if (binaryExts.includes(ext)) {
       let mimeType = 'application/octet-stream';
@@ -92,9 +98,10 @@ export class FileHandlers {
       else if (ext === '.jpg' || ext === '.jpeg') mimeType = 'image/jpeg';
       else if (ext === '.webp') mimeType = 'image/webp';
       else if (ext === '.pptx') mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      else if (ext === '.fits' || ext === '.fit') mimeType = 'application/fits';
 
-      // PPTX requires raw bytes for JSZip parsing; PDFs and images stream directly via protocol
-      const needsBase64 = ext === '.pptx';
+      // PPTX requires raw bytes for JSZip parsing (guarded up to 30MB)
+      const needsBase64 = ext === '.pptx' && stats.size <= 30 * 1024 * 1024;
       const content = needsBase64 ? fs.readFileSync(filePath).toString('base64') : '';
 
       return {
@@ -116,6 +123,39 @@ export class FileHandlers {
             mimeType: 'application/pdf'
           };
         }
+      }
+
+      // Check for binary content by scanning first 4KB for null bytes
+      const sampleSize = Math.min(stats.size, 4096);
+      if (sampleSize > 0) {
+        const buf = Buffer.alloc(sampleSize);
+        const fd = fs.openSync(filePath, 'r');
+        fs.readSync(fd, buf, 0, sampleSize, 0);
+        fs.closeSync(fd);
+        for (let i = 0; i < sampleSize; i++) {
+          if (buf[i] === 0) {
+            return {
+              content: '',
+              isBinary: true,
+              mimeType: 'application/octet-stream'
+            };
+          }
+        }
+      }
+
+      // Guard large text files (> 2 MB) from freezing React DOM
+      if (stats.size > 2 * 1024 * 1024) {
+        const previewBuf = Buffer.alloc(512 * 1024);
+        const fd = fs.openSync(filePath, 'r');
+        const bytesRead = fs.readSync(fd, previewBuf, 0, 512 * 1024, 0);
+        fs.closeSync(fd);
+        const content = previewBuf.toString('utf-8', 0, bytesRead) +
+          `\n\n--- [Telemetry Notice: File size is ${(stats.size / (1024 * 1024)).toFixed(1)} MB. Truncated for viewing performance. Open in Desktop App for full file] ---`;
+        return {
+          content,
+          isBinary: false,
+          mimeType: 'text/plain'
+        };
       }
 
       const content = fs.readFileSync(filePath, 'utf-8');
@@ -291,7 +331,7 @@ export class FileHandlers {
       GoogleWindowManager.openSession(appType, targetUrl, targetFilePath);
       return {
         success: true,
-        message: `Launched dedicated AstroSquad Station Window for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}.${fileHint}`
+        message: `Launched dedicated AstroSquad Station Window for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}.${fileHint} (Note: If Google asks you to sign in and blocks Electron, switch to Standalone App Mode in Settings).`
       };
     }
 

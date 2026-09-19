@@ -828,48 +828,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-                  {/* Mode 1: Integrated Station Window */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSettings((prev) => prev ? {
-                        ...prev,
-                        googleSuite: {
-                          engine: prev.googleSuite?.engine || 'auto',
-                          windowMode: 'station_window',
-                          docsUrl: prev.googleSuite?.docsUrl,
-                          sheetsUrl: prev.googleSuite?.sheetsUrl,
-                          slidesUrl: prev.googleSuite?.slidesUrl,
-                          driveUrl: prev.googleSuite?.driveUrl
-                        }
-                      } : prev);
-                    }}
-                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
-                      (settings.googleSuite?.windowMode ?? 'station_window') === 'station_window'
-                        ? 'bg-cyan-950/40 border-cyan-500 shadow-md ring-1 ring-cyan-500/50'
-                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                          <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                          Station Window
-                        </span>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 font-semibold border border-cyan-500/30">
-                          Universal
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-300 leading-tight">
-                        Integrated borderless desktop window with isolated Google session partition. Zero external browser dependencies.
-                      </p>
-                    </div>
-                    <div className="text-[9px] font-mono text-cyan-400/90 font-semibold">
-                      {(settings.googleSuite?.windowMode ?? 'station_window') === 'station_window' ? '✓ Currently Active' : 'Select Mode'}
-                    </div>
-                  </button>
-
-                  {/* Mode 2: Standalone App Window */}
+                  {/* Mode 1: Standalone App Window (Recommended) */}
                   <button
                     type="button"
                     onClick={() => {
@@ -886,8 +845,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       } : prev);
                     }}
                     className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
-                      settings.googleSuite?.windowMode === 'app_window'
-                        ? 'bg-cyan-950/40 border-cyan-500 shadow-md ring-1 ring-cyan-500/50'
+                      (settings.googleSuite?.windowMode ?? 'app_window') === 'app_window'
+                        ? 'bg-emerald-950/40 border-emerald-500 shadow-md ring-1 ring-emerald-500/50'
                         : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
                     }`}
                   >
@@ -898,19 +857,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           Standalone App
                         </span>
                         <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 font-semibold border border-emerald-500/30">
-                          --app Mode
+                          Recommended
                         </span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Spawns via Vivaldi, Chrome, Edge or Brave into an isolated PWA desktop window with taskbar presence.
+                        Spawns dedicated PWA desktop window via Vivaldi, Chrome, Edge or Brave. Uses your existing signed-in Google account with zero login security warnings.
                       </p>
                     </div>
                     <div className="text-[9px] font-mono text-emerald-400/90 font-semibold">
-                      {settings.googleSuite?.windowMode === 'app_window' ? '✓ Currently Active' : 'Select Mode'}
+                      {(settings.googleSuite?.windowMode ?? 'app_window') === 'app_window' ? '✓ Currently Active (Recommended)' : 'Select Mode'}
                     </div>
                   </button>
 
-                  {/* Mode 3: Browser Tab */}
+                  {/* Mode 2: Browser Tab */}
                   <button
                     type="button"
                     onClick={() => {
@@ -939,15 +898,56 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           Browser Tab
                         </span>
                         <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 font-semibold border border-amber-500/30">
-                          Default OS
+                          Safari / Default OS
                         </span>
                       </div>
                       <p className="text-[10px] text-slate-300 leading-tight">
-                        Opens directly as a standard tab inside your system default browser (Safari, Vivaldi, etc.).
+                        Opens directly as a standard tab inside your system default browser (Safari, Vivaldi, etc.). 100% compliant with existing Google login cookies.
                       </p>
                     </div>
                     <div className="text-[9px] font-mono text-amber-400/90 font-semibold">
                       {settings.googleSuite?.windowMode === 'browser_tab' ? '✓ Currently Active' : 'Select Mode'}
+                    </div>
+                  </button>
+
+                  {/* Mode 3: Integrated Station Window */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettings((prev) => prev ? {
+                        ...prev,
+                        googleSuite: {
+                          engine: prev.googleSuite?.engine || 'auto',
+                          windowMode: 'station_window',
+                          docsUrl: prev.googleSuite?.docsUrl,
+                          sheetsUrl: prev.googleSuite?.sheetsUrl,
+                          slidesUrl: prev.googleSuite?.slidesUrl,
+                          driveUrl: prev.googleSuite?.driveUrl
+                        }
+                      } : prev);
+                    }}
+                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
+                      settings.googleSuite?.windowMode === 'station_window'
+                        ? 'bg-cyan-950/40 border-cyan-500 shadow-md ring-1 ring-cyan-500/50'
+                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                    }`}
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                          <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                          Station Window
+                        </span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-300 font-semibold border border-rose-500/30">
+                          Embedded
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 leading-tight">
+                        Embedded Electron window. Note: Google blocks account sign-in in embedded webviews ("This browser or app may not be secure").
+                      </p>
+                    </div>
+                    <div className="text-[9px] font-mono text-cyan-400/90 font-semibold">
+                      {settings.googleSuite?.windowMode === 'station_window' ? '✓ Currently Active' : 'Select Mode'}
                     </div>
                   </button>
                 </div>

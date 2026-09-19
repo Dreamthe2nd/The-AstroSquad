@@ -56,27 +56,9 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({ filePath, base64Data, on
         // Sort numerically
         slideFiles.sort((a, b) => a.num - b.num);
 
-        // Preload any media images
-        const mediaMap: Record<string, string> = {};
-        const mediaPromises: Promise<void>[] = [];
-        loadedZip.forEach((relativePath, file) => {
-          if (relativePath.startsWith('ppt/media/')) {
-            const ext = relativePath.split('.').pop()?.toLowerCase();
-            if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(ext || '')) {
-              mediaPromises.push(
-                file.async('base64').then((b64) => {
-                  const filename = relativePath.split('/').pop() || '';
-                  mediaMap[filename] = `data:image/${ext === 'svg' ? 'svg+xml' : ext};base64,${b64}`;
-                })
-              );
-            }
-          }
-        });
-
-        await Promise.all(mediaPromises);
-
         const parsedSlides: SlideData[] = [];
 
+        // Parse slide outline text (titles & paragraphs) from slide XMLs without loading heavy media
         for (const { num, file } of slideFiles) {
           const xmlText = await file.async('text');
           const parser = new DOMParser();
@@ -104,15 +86,11 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({ filePath, base64Data, on
             slideTitle = paragraphs.length > 0 ? paragraphs.shift()! : `Slide ${num}`;
           }
 
-          // Check if there are associated media images referenced
-          const mediaNames = Object.keys(mediaMap);
-          const slideImages = mediaNames.slice(num - 1, num).map((k) => mediaMap[k]);
-
           parsedSlides.push({
             slideNumber: num,
             title: slideTitle,
             paragraphs,
-            imageUrls: slideImages
+            imageUrls: []
           });
         }
 

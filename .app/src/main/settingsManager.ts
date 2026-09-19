@@ -68,7 +68,7 @@ export class SettingsManager {
       },
       googleSuite: {
         engine: 'auto',
-        windowMode: 'station_window',
+        windowMode: 'app_window',
         docsUrl: 'https://docs.google.com/document/u/0/',
         sheetsUrl: 'https://docs.google.com/spreadsheets/u/0/',
         slidesUrl: 'https://docs.google.com/presentation/u/0/',
@@ -106,6 +106,10 @@ export class SettingsManager {
         }
         if (!merged.googleSuite.driveUrl || merged.googleSuite.driveUrl.includes('my-drive')) {
           merged.googleSuite.driveUrl = 'https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing';
+        }
+        if (!merged.googleSuite.windowMode || merged.googleSuite.windowMode === 'station_window') {
+          // Migrate away from station_window since Google blocks sign-in in Electron webviews
+          merged.googleSuite.windowMode = 'app_window';
         }
 
         return merged;

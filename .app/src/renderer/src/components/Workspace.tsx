@@ -165,7 +165,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
         showToast('success', 'Shared with Team', pushRes.message);
         setIsEditMorphed(false);
         await onRefreshFiles();
-        if (selectedFile) await loadFileContent(selectedFile);
+        if (selectedFile) await loadFile(selectedFile);
       } else if (pushRes.conflictsResolved && pushRes.conflictsResolved.length > 0) {
         showToast('conflict', 'Guardrail Protected Data', pushRes.message);
       } else {
@@ -202,7 +202,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
       );
     }
 
-    if (isLoadingContent) {
+    if (isLoadingFile) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
           <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
