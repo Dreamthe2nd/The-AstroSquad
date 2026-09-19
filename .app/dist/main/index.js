@@ -26616,13 +26616,23 @@ function registerIpcHandlers() {
   import_electron4.ipcMain.handle("shell:openExternal", async (_, urlToOpen) => {
     await import_electron4.shell.openExternal(urlToOpen);
   });
-  import_electron4.ipcMain.handle("shell:openDiscord", async () => {
+  import_electron4.ipcMain.handle("shell:openDiscord", async (_, args) => {
+    const auth = await gitEngine.getAuthenticatedUser();
+    if (!auth.authenticated) {
+      throw new Error("Authentication required to access Squad Comms. Please sign in with GitHub.");
+    }
     const settings = settingsManager.getSettings();
-    await FileHandlers.openDiscord(settings.discord.inviteUrl, settings.discord.appUri);
+    const inviteUrl = args?.customInviteUrl || settings.discord.inviteUrl;
+    const appUri = args?.customAppUri || settings.discord.appUri;
+    await FileHandlers.openDiscord(inviteUrl, appUri);
   });
-  import_electron4.ipcMain.handle("shell:openMeeting", async () => {
+  import_electron4.ipcMain.handle("shell:openMeeting", async (_, customUrl) => {
+    const auth = await gitEngine.getAuthenticatedUser();
+    if (!auth.authenticated) {
+      throw new Error("Authentication required to access Team Video Briefings. Please sign in with GitHub.");
+    }
     const settings = settingsManager.getSettings();
-    const url2 = settings.meeting?.url || "https://meet.google.com/new";
+    const url2 = customUrl || settings.meeting?.url || "https://meet.google.com/new";
     await import_electron4.shell.openExternal(url2);
   });
   import_electron4.ipcMain.handle("shell:openRepoFolder", async () => {

@@ -16,15 +16,17 @@ import {
   Sparkles, 
   ExternalLink, 
   Save,
-  Video
+  Video,
+  Lock
 } from 'lucide-react';
-import { StationSettings } from '../types';
+import { StationSettings, AuthStatus } from '../types';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSettingsSaved?: (newSettings: StationSettings, repoChanged: boolean) => void;
   showToast: (type: 'info' | 'success' | 'warning' | 'error' | 'conflict', title: string, message: string) => void;
+  authStatus?: AuthStatus | null;
 }
 
 type TabType = 'apps' | 'repo' | 'discord' | 'meeting';
@@ -33,7 +35,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
   onSettingsSaved,
-  showToast
+  showToast,
+  authStatus
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('apps');
   const [settings, setSettings] = useState<StationSettings | null>(null);
@@ -144,19 +147,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleTestDiscord = async () => {
+    if (authStatus && !authStatus.authenticated) {
+      showToast('warning', 'Authentication Required', 'GitHub authentication is required to access Squad Discord Comms.');
+      return;
+    }
     try {
       showToast('info', 'Testing Discord', 'Launching configured Discord channel...');
-      await window.api.shell.openDiscord();
+      await window.api.shell.openDiscord(settings?.discord.inviteUrl, settings?.discord.appUri);
     } catch (err: any) {
       showToast('error', 'Discord Test Failed', err.message);
     }
   };
 
   const handleTestMeeting = async () => {
+    if (authStatus && !authStatus.authenticated) {
+      showToast('warning', 'Authentication Required', 'GitHub authentication is required to join Team Video Briefings.');
+      return;
+    }
     try {
       const url = settings?.meeting?.url || 'https://meet.google.com/new';
       showToast('info', 'Testing Meeting Room', `Opening ${url}...`);
-      await window.api.shell.openMeeting();
+      await window.api.shell.openMeeting(url);
     } catch (err: any) {
       showToast('error', 'Meeting Test Failed', err.message);
     }
@@ -622,6 +633,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
               </div>
 
+              {authStatus && !authStatus.authenticated && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 text-xs font-mono text-amber-300">
+                  <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Authentication Required: Sign in with GitHub on the station flight deck to test or launch squad comms.</span>
+                </div>
+              )}
+
               <div className="pt-2 flex items-center gap-3">
                 <button
                   type="button"
@@ -765,6 +783,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   Paste your team's Google Meet room URL or Zoom meeting link. You can change this link at any time.
                 </p>
               </div>
+
+              {authStatus && !authStatus.authenticated && (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 text-xs font-mono text-amber-300">
+                  <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Authentication Required: Sign in with GitHub on the station flight deck to test or join squad video briefings.</span>
+                </div>
+              )}
 
               {/* Test Launch Button */}
               <div className="pt-2 flex items-center gap-3">

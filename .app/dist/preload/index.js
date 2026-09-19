@@ -49,8 +49,8 @@ var api = {
   },
   shell: {
     openExternal: (url) => import_electron.ipcRenderer.invoke("shell:openExternal", url),
-    openDiscord: () => import_electron.ipcRenderer.invoke("shell:openDiscord"),
-    openMeeting: () => import_electron.ipcRenderer.invoke("shell:openMeeting"),
+    openDiscord: (customInviteUrl, customAppUri) => import_electron.ipcRenderer.invoke("shell:openDiscord", { customInviteUrl, customAppUri }),
+    openMeeting: (customUrl) => import_electron.ipcRenderer.invoke("shell:openMeeting", customUrl),
     openRepoFolder: () => import_electron.ipcRenderer.invoke("shell:openRepoFolder"),
     copyToClipboard: (text) => import_electron.clipboard.writeText(text)
   }

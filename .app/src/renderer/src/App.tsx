@@ -187,6 +187,7 @@ export const App: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
         onSettingsSaved={handleSettingsSaved}
         showToast={showToast}
+        authStatus={authStatus}
       />
 
       {/* Global Toast Notifications */}

@@ -67,8 +67,8 @@ export interface ApiBridge {
   };
   shell: {
     openExternal: (url: string) => Promise<void>;
-    openDiscord: () => Promise<void>;
-    openMeeting: () => Promise<void>;
+    openDiscord: (customInviteUrl?: string, customAppUri?: string) => Promise<void>;
+    openMeeting: (customUrl?: string) => Promise<void>;
     openRepoFolder: () => Promise<void>;
     copyToClipboard: (text: string) => void;
   };
@@ -107,8 +107,8 @@ const api: ApiBridge = {
   },
   shell: {
     openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
-    openDiscord: () => ipcRenderer.invoke('shell:openDiscord'),
-    openMeeting: () => ipcRenderer.invoke('shell:openMeeting'),
+    openDiscord: (customInviteUrl?: string, customAppUri?: string) => ipcRenderer.invoke('shell:openDiscord', { customInviteUrl, customAppUri }),
+    openMeeting: (customUrl?: string) => ipcRenderer.invoke('shell:openMeeting', customUrl),
     openRepoFolder: () => ipcRenderer.invoke('shell:openRepoFolder'),
     copyToClipboard: (text) => clipboard.writeText(text)
   }
