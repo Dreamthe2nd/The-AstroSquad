@@ -47,7 +47,6 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
 }) => {
   const [loadingAction, setLoadingAction] = useState<'repo' | 'discord' | 'proposal' | 'meeting' | null>(null);
   const [showProposalMatrix, setShowProposalMatrix] = useState<boolean>(true);
-  const [authPromptTarget, setAuthPromptTarget] = useState<'discord' | 'meeting' | null>(null);
   const isCollaborator = Boolean(authStatus?.authenticated && authStatus?.isCollaborator);
 
   // 1. View Repository handler
@@ -64,21 +63,11 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
 
   // 2. Open Discord Comms handler
   const handleOpenDiscord = async () => {
-    if (!isCollaborator) {
-      setAuthPromptTarget('discord');
-      showToast(
-        'warning',
-        authStatus?.authenticated ? 'Collaborator Access Required' : 'Authentication Required',
-        authStatus?.authenticated
-          ? 'Only authorized team collaborators on GitHub can access the private AstroSquad Discord.'
-          : 'GitHub authentication is required to access Squad Comms. Sign in with GitHub to unlock.'
-      );
-      return;
-    }
     setLoadingAction('discord');
     try {
+      showToast('info', 'Connecting to Discord', 'Launching The-AstroSquad Discord server in browser or app...');
       await window.api.shell.openDiscord();
-      showToast('info', 'Connecting to Discord', 'Opening AstroSquad server in app or browser...');
+      showToast('success', 'Discord Active', 'Launched The-AstroSquad Discord channel.');
     } catch (err: any) {
       showToast('error', 'Discord Launch Failed', err.message);
     } finally {
@@ -88,21 +77,11 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
 
   // 3. Open Video Briefing handler (Google Meet / Zoom)
   const handleOpenMeeting = async () => {
-    if (!isCollaborator) {
-      setAuthPromptTarget('meeting');
-      showToast(
-        'warning',
-        authStatus?.authenticated ? 'Collaborator Access Required' : 'Authentication Required',
-        authStatus?.authenticated
-          ? 'Only authorized team collaborators on GitHub can join live squad video briefings.'
-          : 'GitHub authentication is required to join Team Video Briefings. Sign in with GitHub to unlock.'
-      );
-      return;
-    }
     setLoadingAction('meeting');
     try {
+      showToast('info', 'Joining Meeting Room', 'Opening synchronized video briefing in default browser...');
       await window.api.shell.openMeeting();
-      showToast('info', 'Joining Meeting Room', 'Opening video conference in browser or desktop...');
+      showToast('success', 'Meeting Active', 'Launched Team Video Briefing room.');
     } catch (err: any) {
       showToast('error', 'Meeting Launch Failed', err.message);
     } finally {
@@ -268,31 +247,17 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
             </div>
           </div>
 
-          {/* Card 2: Open Discord Server */}
+          {/* Card 2: Squad Comms (Discord) */}
           <div
             onClick={handleOpenDiscord}
-            className={`group relative cursor-pointer rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90 border p-7 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between ${
-              isCollaborator
-                ? 'border-slate-800 hover:border-indigo-500/60 hover:shadow-lg'
-                : 'border-slate-800 hover:border-amber-500/60 hover:shadow-amber-500/10'
-            }`}
+            className="group relative cursor-pointer rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800 hover:border-indigo-500/60 hover:shadow-lg p-7 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between"
           >
-            <div className={`absolute top-0 right-0 w-32 h-32 rounded-bl-full pointer-events-none transition-colors ${
-              isCollaborator
-                ? 'bg-indigo-500/5 group-hover:bg-indigo-500/10'
-                : 'bg-amber-500/5 group-hover:bg-amber-500/10'
-            }`} />
+            <div className="absolute top-0 right-0 w-32 h-32 rounded-bl-full pointer-events-none transition-colors bg-indigo-500/5 group-hover:bg-indigo-500/10" />
 
             <div>
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-all ${
-                isCollaborator
-                  ? 'bg-indigo-950/80 border border-indigo-500/30 text-indigo-400 group-hover:border-indigo-400'
-                  : 'bg-slate-950 border border-amber-500/40 text-amber-400 group-hover:border-amber-400'
-              }`}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-all bg-indigo-950/80 border border-indigo-500/30 text-indigo-400 group-hover:border-indigo-400 group-hover:shadow-indigo-500/20">
                 {loadingAction === 'discord' ? (
                   <RefreshCw className="w-7 h-7 animate-spin text-indigo-300" />
-                ) : !isCollaborator ? (
-                  <Lock className="w-7 h-7 text-amber-400" />
                 ) : (
                   <MessageSquare className="w-7 h-7" />
                 )}
@@ -303,21 +268,9 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
                   <h3 className="text-xl font-bold text-white group-hover:text-indigo-300 transition-colors">
                     Squad Comms
                   </h3>
-                  {isCollaborator ? (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-950 border border-indigo-500/30 text-indigo-400 font-semibold">
-                      DISCORD
-                    </span>
-                  ) : authStatus?.authenticated ? (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/90 border border-amber-500/50 text-amber-300 font-semibold flex items-center gap-1 shadow-sm">
-                      <Lock className="w-2.5 h-2.5 text-amber-400" />
-                      TEAM ONLY
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/90 border border-amber-500/50 text-amber-300 font-semibold flex items-center gap-1 shadow-sm">
-                      <Lock className="w-2.5 h-2.5 text-amber-400" />
-                      AUTH REQUIRED
-                    </span>
-                  )}
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-950 border border-indigo-500/30 text-indigo-400 font-semibold">
+                    DISCORD
+                  </span>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Collaborate live with Shlok, Annushka, Keya, and Sheetal to plan Takahashi &amp; Meade Cassegrain telescope observation runs.
@@ -325,22 +278,11 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
               </div>
             </div>
 
-            <div className={`mt-8 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold ${
-              isCollaborator ? 'text-indigo-400' : 'text-amber-400'
-            }`}>
+            <div className="mt-8 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-indigo-400">
               <span className="font-mono flex items-center gap-1.5">
-                {!isCollaborator && <Lock className="w-3.5 h-3.5 text-amber-400" />}
-                {isCollaborator
-                  ? 'Launch Comms'
-                  : authStatus?.authenticated
-                    ? 'Collaborator Access Required'
-                    : 'Authentication Required'}
+                Launch Squad Comms
               </span>
-              {isCollaborator ? (
-                <ExternalLink className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform" />
-              ) : (
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform text-amber-400" />
-              )}
+              <ExternalLink className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform" />
             </div>
           </div>
 
@@ -381,27 +323,17 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
             </div>
           </div>
 
-          {/* Card 4: Team Video Briefing (Yellow Theme - Google Meet / Zoom) */}
+          {/* Card 4: Team Video Briefing */}
           <div
             onClick={handleOpenMeeting}
-            className={`group relative cursor-pointer rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90 border p-7 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between ${
-              isCollaborator
-                ? 'border-slate-800 hover:border-amber-500/60 hover:shadow-lg'
-                : 'border-slate-800 hover:border-amber-500/60 hover:shadow-amber-500/10'
-            }`}
+            className="group relative cursor-pointer rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950/90 border border-slate-800 hover:border-amber-500/60 hover:shadow-lg p-7 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between"
           >
             <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-bl-full pointer-events-none group-hover:bg-amber-500/10 transition-colors" />
 
             <div>
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 group-hover:border-amber-400 transition-all ${
-                isCollaborator
-                  ? 'bg-amber-950/80 border border-amber-500/30 text-amber-400'
-                  : 'bg-slate-950 border border-amber-500/40 text-amber-400'
-              }`}>
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 group-hover:border-amber-400 transition-all bg-amber-950/80 border border-amber-500/30 text-amber-400">
                 {loadingAction === 'meeting' ? (
                   <RefreshCw className="w-7 h-7 animate-spin text-amber-300" />
-                ) : !isCollaborator ? (
-                  <Lock className="w-7 h-7 text-amber-400" />
                 ) : (
                   <Video className="w-7 h-7" />
                 )}
@@ -412,21 +344,9 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
                   <h3 className="text-xl font-bold text-white group-hover:text-amber-300 transition-colors">
                     Team Briefing
                   </h3>
-                  {isCollaborator ? (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 border border-amber-500/30 text-amber-400 font-semibold">
-                      MEET / ZOOM
-                    </span>
-                  ) : authStatus?.authenticated ? (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/90 border border-amber-500/50 text-amber-300 font-semibold flex items-center gap-1 shadow-sm">
-                      <Lock className="w-2.5 h-2.5 text-amber-400" />
-                      TEAM ONLY
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950/90 border border-amber-500/50 text-amber-300 font-semibold flex items-center gap-1 shadow-sm">
-                      <Lock className="w-2.5 h-2.5 text-amber-400" />
-                      AUTH REQUIRED
-                    </span>
-                  )}
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-950 border border-amber-500/30 text-amber-400 font-semibold">
+                    MEET / ZOOM
+                  </span>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Instant one-click access to the squad's synchronized video briefing room. Compatible with Google Meet and Zoom.
@@ -436,18 +356,9 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
 
             <div className="mt-8 pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs font-semibold text-amber-400">
               <span className="font-mono flex items-center gap-1.5">
-                {!isCollaborator && <Lock className="w-3.5 h-3.5 text-amber-400" />}
-                {isCollaborator
-                  ? 'Join Meeting Room'
-                  : authStatus?.authenticated
-                    ? 'Collaborator Access Required'
-                    : 'Authentication Required'}
+                Join Video Briefing
               </span>
-              {isCollaborator ? (
-                <ExternalLink className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform" />
-              ) : (
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform text-amber-400" />
-              )}
+              <ExternalLink className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-0.5 transition-transform" />
             </div>
           </div>
         </div>
@@ -652,67 +563,6 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
           <span>Remote: github.com/Dreamthe2nd/The-AstroSquad</span>
         </div>
       </footer>
-
-      {/* Auth Prompt Modal for unauthenticated or guest Discord / Meeting clicks */}
-      {authPromptTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-          <div className="w-full max-w-md rounded-2xl bg-slate-900 border border-amber-500/40 p-6 shadow-2xl space-y-5">
-            <div className="flex items-center gap-3 pb-3 border-b border-slate-800">
-              <div className="w-10 h-10 rounded-xl bg-amber-950/80 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
-                <Lock className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-white">
-                  {authStatus?.authenticated ? 'Collaborator Access Required' : 'Authentication Required'}
-                </h3>
-                <p className="text-xs font-mono text-amber-400">
-                  {authPromptTarget === 'discord' ? 'Squad Discord Channel' : 'Team Video Briefing'}
-                </p>
-              </div>
-            </div>
-
-            <div className="text-xs text-slate-300 leading-relaxed font-sans space-y-2">
-              {authStatus?.authenticated ? (
-                <>
-                  <p>
-                    You are currently signed in as <strong className="text-amber-300 font-mono">@{authStatus.user?.login}</strong> with <span className="text-amber-400 font-semibold">Guest (Read-Only)</span> access.
-                  </p>
-                  <p>
-                    Private channels ({authPromptTarget === 'discord' ? 'Squad Discord' : 'Team Video Briefings'}) and Git push permissions are strictly restricted to verified AstroSquad repository collaborators.
-                  </p>
-                </>
-              ) : (
-                <p>
-                  {authPromptTarget === 'discord'
-                    ? 'Squad Comms (Discord) is reserved for verified AstroSquad collaborators. Sign in with GitHub to access our private discussion channels and coordinate observation runs.'
-                    : 'Team Video Briefings (Google Meet / Zoom) are reserved for verified AstroSquad collaborators. Sign in with GitHub to join synchronized squad review sessions.'}
-                </p>
-              )}
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setAuthPromptTarget(null)}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-mono transition-colors"
-              >
-                Continue Browsing
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthPromptTarget(null);
-                  onLogout();
-                }}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-amber-500/20 font-mono"
-              >
-                <Key className="w-3.5 h-3.5" />
-                <span>{authStatus?.authenticated ? 'Switch GitHub Account' : 'Sign in with GitHub'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

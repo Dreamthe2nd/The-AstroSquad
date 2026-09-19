@@ -26668,16 +26668,11 @@ var FileHandlers = class {
     };
   }
   /**
-   * Open Discord Server: Tries discord:// uri, fallback to https web link
+   * Open Discord Server: Launches the official Discord invite link in the default browser / desktop app
    */
   static async openDiscord(customInviteUrl, customAppUri) {
-    const discordAppUri = customAppUri?.trim() || "discord://discord.com/channels/1545465896481333258";
-    const discordWebFallback = customInviteUrl?.trim() || "https://discord.gg/yk7cgnd6E";
-    try {
-      await import_electron3.shell.openExternal(discordAppUri);
-    } catch {
-      await import_electron3.shell.openExternal(discordWebFallback);
-    }
+    const inviteUrl = customInviteUrl?.trim() || "https://discord.gg/yk7cgnd6E";
+    await import_electron3.shell.openExternal(inviteUrl);
   }
 };
 
@@ -27054,20 +27049,12 @@ function registerIpcHandlers() {
     await import_electron5.shell.openExternal(urlToOpen);
   });
   import_electron5.ipcMain.handle("shell:openDiscord", async (_, args) => {
-    const auth = await gitEngine.getAuthenticatedUser();
-    if (!auth.authenticated || !auth.isCollaborator) {
-      throw new Error("Access restricted: Only verified AstroSquad repository collaborators can access Squad Comms.");
-    }
     const settings = settingsManager.getSettings();
-    const inviteUrl = args?.customInviteUrl || settings.discord.inviteUrl;
-    const appUri = args?.customAppUri || settings.discord.appUri;
+    const inviteUrl = args?.customInviteUrl || settings.discord?.inviteUrl || "https://discord.gg/yk7cgnd6E";
+    const appUri = args?.customAppUri || settings.discord?.appUri;
     await FileHandlers.openDiscord(inviteUrl, appUri);
   });
   import_electron5.ipcMain.handle("shell:openMeeting", async (_, customUrl) => {
-    const auth = await gitEngine.getAuthenticatedUser();
-    if (!auth.authenticated || !auth.isCollaborator) {
-      throw new Error("Access restricted: Only verified AstroSquad repository collaborators can access Team Video Briefings.");
-    }
     const settings = settingsManager.getSettings();
     const url2 = customUrl || settings.meeting?.url || "https://meet.google.com/new";
     await import_electron5.shell.openExternal(url2);

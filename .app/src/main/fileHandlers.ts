@@ -653,16 +653,10 @@ export class FileHandlers {
   }
 
   /**
-   * Open Discord Server: Tries discord:// uri, fallback to https web link
+   * Open Discord Server: Launches the official Discord invite link in the default browser / desktop app
    */
   public static async openDiscord(customInviteUrl?: string, customAppUri?: string): Promise<void> {
-    const discordAppUri = customAppUri?.trim() || 'discord://discord.com/channels/1545465896481333258';
-    const discordWebFallback = customInviteUrl?.trim() || 'https://discord.gg/yk7cgnd6E';
-
-    try {
-      await shell.openExternal(discordAppUri);
-    } catch {
-      await shell.openExternal(discordWebFallback);
-    }
+    const inviteUrl = customInviteUrl?.trim() || 'https://discord.gg/yk7cgnd6E';
+    await shell.openExternal(inviteUrl);
   }
 }

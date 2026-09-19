@@ -252,21 +252,13 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('shell:openDiscord', async (_, args?: { customInviteUrl?: string; customAppUri?: string }) => {
-    const auth = await gitEngine.getAuthenticatedUser();
-    if (!auth.authenticated || !auth.isCollaborator) {
-      throw new Error('Access restricted: Only verified AstroSquad repository collaborators can access Squad Comms.');
-    }
     const settings = settingsManager.getSettings();
-    const inviteUrl = args?.customInviteUrl || settings.discord.inviteUrl;
-    const appUri = args?.customAppUri || settings.discord.appUri;
+    const inviteUrl = args?.customInviteUrl || settings.discord?.inviteUrl || 'https://discord.gg/yk7cgnd6E';
+    const appUri = args?.customAppUri || settings.discord?.appUri;
     await FileHandlers.openDiscord(inviteUrl, appUri);
   });
 
   ipcMain.handle('shell:openMeeting', async (_, customUrl?: string) => {
-    const auth = await gitEngine.getAuthenticatedUser();
-    if (!auth.authenticated || !auth.isCollaborator) {
-      throw new Error('Access restricted: Only verified AstroSquad repository collaborators can access Team Video Briefings.');
-    }
     const settings = settingsManager.getSettings();
     const url = customUrl || settings.meeting?.url || 'https://meet.google.com/new';
     await shell.openExternal(url);

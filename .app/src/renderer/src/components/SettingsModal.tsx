@@ -209,12 +209,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleTestDiscord = async () => {
-    if (authStatus && !authStatus.authenticated) {
-      showToast('warning', 'Authentication Required', 'GitHub authentication is required to access Squad Discord Comms.');
-      return;
-    }
     try {
-      showToast('info', 'Testing Discord', 'Launching configured Discord channel...');
+      showToast('info', 'Testing Discord', 'Launching The-AstroSquad Discord server...');
       await window.api.shell.openDiscord(settings?.discord.inviteUrl, settings?.discord.appUri);
     } catch (err: any) {
       showToast('error', 'Discord Test Failed', err.message);
@@ -222,10 +218,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleTestMeeting = async () => {
-    if (authStatus && !authStatus.authenticated) {
-      showToast('warning', 'Authentication Required', 'GitHub authentication is required to join Team Video Briefings.');
-      return;
-    }
     try {
       const url = settings?.meeting?.url || 'https://meet.google.com/new';
       showToast('info', 'Testing Meeting Room', `Opening ${url}...`);
