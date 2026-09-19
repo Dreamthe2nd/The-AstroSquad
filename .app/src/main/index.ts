@@ -290,6 +290,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('shell:getDetectedBrowsers', async () => {
     const browsers = FileHandlers.detectBrowsers();
+    const obsidianPath = FileHandlers.detectObsidianPath();
     return {
       browsers,
       platform: process.platform,
@@ -297,7 +298,9 @@ function registerIpcHandlers(): void {
       hasChrome: browsers.some((b) => b.id === 'chrome'),
       hasSafari: browsers.some((b) => b.id === 'safari'),
       hasEdge: browsers.some((b) => b.id === 'edge'),
-      hasBrave: browsers.some((b) => b.id === 'brave')
+      hasBrave: browsers.some((b) => b.id === 'brave'),
+      hasObsidian: !!obsidianPath,
+      obsidianPath
     };
   });
 }

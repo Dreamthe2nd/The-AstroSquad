@@ -93,6 +93,8 @@ export interface ApiBridge {
       hasSafari: boolean;
       hasEdge: boolean;
       hasBrave: boolean;
+      hasObsidian: boolean;
+      obsidianPath: string | null;
     }>;
   };
 }

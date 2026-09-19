@@ -229,6 +229,31 @@ export class FileHandlers {
   }
 
   /**
+   * Detects local Obsidian installation across Windows and macOS
+   */
+  public static detectObsidianPath(): string | null {
+    const isWin = process.platform === 'win32';
+    const isMac = process.platform === 'darwin';
+
+    if (isWin) {
+      const candidates = [
+        path.join(process.env.LOCALAPPDATA || '', 'Programs\\Obsidian\\Obsidian.exe'),
+        path.join(process.env.LOCALAPPDATA || '', 'Obsidian\\Obsidian.exe'),
+        'C:\\Program Files\\Obsidian\\Obsidian.exe',
+        'C:\\Program Files (x86)\\Obsidian\\Obsidian.exe'
+      ];
+      for (const p of candidates) {
+        if (p && fs.existsSync(p)) return p;
+      }
+    } else if (isMac) {
+      if (fs.existsSync('/Applications/Obsidian.app')) {
+        return '/Applications/Obsidian.app';
+      }
+    }
+    return null;
+  }
+
+  /**
    * Opens local standalone session of Google Productivity Suite (Docs, Sheets, Slides, Drive)
    * Universal across macOS, Windows, and Linux.
    */
@@ -338,6 +363,54 @@ export class FileHandlers {
       if (trimmed === 'google_drive') {
         await this.openGoogleSuiteSession('drive', preferredMode, filePath);
         return '';
+      }
+
+      // Check if configured for Obsidian Markdown notes
+      if (trimmed === 'obsidian') {
+        const obsPath = this.detectObsidianPath();
+        if (obsPath) {
+          try {
+            if (process.platform === 'darwin') {
+              const child = child_process.spawn('open', ['-a', 'Obsidian', filePath], {
+                detached: true,
+                stdio: 'ignore'
+              });
+              child.unref();
+              return '';
+            } else {
+              const child = child_process.spawn(obsPath, [filePath], {
+                detached: true,
+                stdio: 'ignore'
+              });
+              child.unref();
+              return '';
+            }
+          } catch (err: any) {
+            console.warn('Failed to launch detected Obsidian:', err);
+          }
+        }
+        try {
+          const child = child_process.spawn('obsidian', [filePath], { detached: true, stdio: 'ignore' });
+          child.unref();
+          return '';
+        } catch {
+          return shell.openPath(filePath);
+        }
+      }
+
+      // macOS application bundle support (e.g. /Applications/Obsidian.app)
+      if (process.platform === 'darwin' && trimmed.endsWith('.app')) {
+        try {
+          const child = child_process.spawn('open', ['-a', trimmed, filePath], {
+            detached: true,
+            stdio: 'ignore'
+          });
+          child.unref();
+          return '';
+        } catch (err: any) {
+          console.warn(`Failed to open via macOS app ${trimmed}:`, err);
+          return shell.openPath(filePath);
+        }
       }
 
       try {

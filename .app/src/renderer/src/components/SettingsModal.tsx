@@ -55,6 +55,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     hasSafari: boolean;
     hasEdge: boolean;
     hasBrave: boolean;
+    hasObsidian?: boolean;
+    obsidianPath?: string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -467,7 +469,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <span className="p-1 rounded bg-rose-950/80 border border-rose-500/30 text-rose-400">
                       <FileText className="w-3.5 h-3.5" />
                     </span>
-                    <span className="font-bold text-slate-200">PDF Documents & Proposal (.pdf)</span>
+                    <span className="font-bold text-slate-200">PDF Documents &amp; Proposal (.pdf)</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                      Google Docs / Acrobat / Preview
+                    </span>
                   </div>
                   {settings.fileAssociations.pdf && (
                     <button
@@ -484,8 +489,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     type="text"
                     readOnly
                     placeholder="System Default (Acrobat, Edge, Preview, Foxit)"
-                    value={settings.fileAssociations.pdf || ''}
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate"
+                    value={
+                      settings.fileAssociations.pdf === 'google_docs'
+                        ? '⚡ Google Docs (Dedicated Standalone Session via Local App Engine)'
+                        : settings.fileAssociations.pdf || ''
+                    }
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate font-mono"
                   />
                   <button
                     onClick={() => handleBrowseApp('pdf')}
@@ -494,6 +503,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Browse .exe...</span>
                   </button>
+                </div>
+
+                {/* Quick Presets for PDF */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[11px] text-slate-400 font-sans">Presets:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleClearApp('pdf')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-sans transition-colors ${
+                      !settings.fileAssociations.pdf
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-semibold'
+                        : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                    }`}
+                  >
+                    Default (OS Reader)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSetGoogleApp('pdf', 'google_docs')}
+                    className={`px-2 py-0.5 rounded text-[10px] font-sans flex items-center gap-1 transition-colors ${
+                      settings.fileAssociations.pdf === 'google_docs'
+                        ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-semibold'
+                        : 'bg-slate-900 text-slate-400 hover:text-rose-300 border border-slate-800'
+                    }`}
+                  >
+                    <span>⚡ Google Docs (Local Session)</span>
+                  </button>
+                  {settings.fileAssociations.pdf === 'google_docs' && (
+                    <button
+                      type="button"
+                      onClick={() => handleLaunchGoogleSuite('docs')}
+                      className="ml-auto text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 underline"
+                      title="Test launch standalone Google Docs session"
+                    >
+                      <span>▶ Test Launch</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -505,8 +551,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <FileCode className="w-3.5 h-3.5" />
                     </span>
                     <span className="font-bold text-slate-200">Markdown Notes (.md)</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
-                      Obsidian / Google Docs / VS Code
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/30 text-purple-300 font-semibold">
+                      Obsidian Recommended
                     </span>
                   </div>
                   {settings.fileAssociations.md && (
@@ -523,10 +569,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <input
                     type="text"
                     readOnly
-                    placeholder="System Default"
+                    placeholder="In-App Editor / System Default"
                     value={
-                      settings.fileAssociations.md === 'google_docs'
-                        ? '⚡ Google Docs (Dedicated Standalone Session via Local App Engine)'
+                      settings.fileAssociations.md === 'obsidian'
+                        ? '⚡ Obsidian (Markdown Knowledge Base & Notes)'
                         : settings.fileAssociations.md || ''
                     }
                     className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate font-mono"
@@ -552,29 +598,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                     }`}
                   >
-                    Default (Editor)
+                    In-App Editor
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleSetGoogleApp('md', 'google_docs')}
+                    onClick={() => {
+                      setSettings(prev => prev ? {
+                        ...prev,
+                        fileAssociations: {
+                          ...prev.fileAssociations,
+                          md: 'obsidian'
+                        }
+                      } : prev);
+                      showToast('success', 'Obsidian Configured', 'Assigned .md files to launch in Obsidian.');
+                    }}
                     className={`px-2 py-0.5 rounded text-[10px] font-sans flex items-center gap-1 transition-colors ${
-                      settings.fileAssociations.md === 'google_docs'
-                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold'
-                        : 'bg-slate-900 text-slate-400 hover:text-cyan-300 border border-slate-800'
+                      settings.fileAssociations.md === 'obsidian'
+                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 font-semibold'
+                        : 'bg-slate-900 text-slate-400 hover:text-purple-300 border border-slate-800'
                     }`}
                   >
-                    <span>⚡ Google Docs (Local Session)</span>
+                    <span>⚡ Obsidian {browserInfo?.hasObsidian ? '(Detected)' : '(Recommended)'}</span>
                   </button>
-                  {settings.fileAssociations.md === 'google_docs' && (
-                    <button
-                      type="button"
-                      onClick={() => handleLaunchGoogleSuite('docs')}
-                      className="ml-auto text-[11px] text-cyan-400 hover:text-cyan-300 flex items-center gap-1 underline"
-                      title="Test launch standalone Google Docs session"
-                    >
-                      <span>▶ Test Launch</span>
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -1045,19 +1090,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       </span>
                       <div>
                         <h4 className="font-bold text-white text-xs">Google Docs</h4>
-                        <p className="text-[10px] text-slate-400">Research Manuscripts &amp; Logs</p>
+                        <p className="text-[10px] text-slate-400">Research Proposals &amp; PDF Documents</p>
                       </div>
                     </div>
                     <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                      settings.fileAssociations.md === 'google_docs'
+                      settings.fileAssociations.pdf === 'google_docs'
                         ? 'bg-emerald-950 border border-emerald-500/40 text-emerald-400'
                         : 'bg-slate-900 border border-slate-800 text-slate-500'
                     }`}>
-                      {settings.fileAssociations.md === 'google_docs' ? 'Active (.md)' : 'Not Default'}
+                      {settings.fileAssociations.pdf === 'google_docs' ? 'Active (.pdf)' : 'Not Default'}
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
-                    Draft and edit collaborative observation writeups, hypotheses, and telescope run summaries.
+                    Open, annotate, and review research proposal PDFs, methodology documents, and draft publications in Google Docs.
                   </p>
                   <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
                     <button
@@ -1071,15 +1116,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <button
                       type="button"
                       onClick={() => {
-                        handleSetGoogleApp('md', settings.fileAssociations.md === 'google_docs' ? '' : 'google_docs');
+                        handleSetGoogleApp('pdf', settings.fileAssociations.pdf === 'google_docs' ? '' : 'google_docs');
                       }}
                       className={`py-1.5 px-3 rounded-lg border text-xs font-semibold transition-colors ${
-                        settings.fileAssociations.md === 'google_docs'
+                        settings.fileAssociations.pdf === 'google_docs'
                           ? 'bg-rose-950/50 border-rose-500/40 text-rose-300 hover:bg-rose-900/50'
                           : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
                       }`}
                     >
-                      {settings.fileAssociations.md === 'google_docs' ? 'Unlink .md' : 'Use for .md'}
+                      {settings.fileAssociations.pdf === 'google_docs' ? 'Unlink .pdf' : 'Use for .pdf'}
                     </button>
                   </div>
                 </div>
