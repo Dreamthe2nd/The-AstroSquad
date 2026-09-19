@@ -14,6 +14,8 @@ export interface DeviceCodeResponse {
 
 export interface AuthStatus {
   authenticated: boolean;
+  isCollaborator?: boolean;
+  role?: 'contributor' | 'guest';
   user?: {
     login: string;
     avatar_url: string;
@@ -228,7 +230,7 @@ export class GitEngine {
   public async getAuthenticatedUser(): Promise<AuthStatus> {
     const token = this.getToken();
     if (!token) {
-      return { authenticated: false };
+      return { authenticated: false, isCollaborator: false, role: 'guest' };
     }
 
     try {
@@ -241,12 +243,43 @@ export class GitEngine {
       });
 
       if (!resp.ok) {
-        return { authenticated: false };
+        return { authenticated: false, isCollaborator: false, role: 'guest' };
       }
 
       const user = await resp.json();
+      let isCollaborator = false;
+
+      try {
+        const urlMatch = this.repoUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+        if (urlMatch) {
+          const owner = urlMatch[1];
+          const repo = urlMatch[2];
+          const repoResp = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/vnd.github.v3+json',
+              'User-Agent': 'AstroSquad-Station'
+            }
+          });
+          if (repoResp.ok) {
+            const repoData = await repoResp.json();
+            // permissions.push indicates write/contributor access on the repository
+            isCollaborator = Boolean(repoData.permissions?.push || repoData.permissions?.admin);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not verify repository collaborator permissions:', err);
+      }
+
+      // Repository owner always has collaborator permissions
+      if (user.login?.toLowerCase() === 'dreamthe2nd') {
+        isCollaborator = true;
+      }
+
       return {
         authenticated: true,
+        isCollaborator,
+        role: isCollaborator ? 'contributor' : 'guest',
         user: {
           login: user.login,
           avatar_url: user.avatar_url,
@@ -257,6 +290,8 @@ export class GitEngine {
       // If offline or network error, but token exists, treat as authenticated
       return {
         authenticated: true,
+        isCollaborator: true,
+        role: 'contributor',
         user: {
           login: 'AstroSquad Researcher',
           avatar_url: '',
@@ -412,6 +447,9 @@ export class GitEngine {
       }
 
       const user = await this.getAuthenticatedUser();
+      if (!user.isCollaborator) {
+        throw new Error(`Push restricted: Your GitHub account (@${user.user?.login || 'guest'}) is not an authorized collaborator on the repository. Edits remain saved locally.`);
+      }
       const authorName = user.user?.name || user.user?.login || 'AstroSquad Researcher';
       const authorEmail = user.user?.login ? `${user.user.login}@users.noreply.github.com` : 'researcher@astrosquad.space';
 

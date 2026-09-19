@@ -10,6 +10,8 @@ export interface FileNode {
 
 export interface AuthStatus {
   authenticated: boolean;
+  isCollaborator?: boolean;
+  role?: 'contributor' | 'guest';
   user?: {
     login: string;
     avatar_url: string;

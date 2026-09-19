@@ -251,8 +251,8 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('shell:openDiscord', async (_, args?: { customInviteUrl?: string; customAppUri?: string }) => {
     const auth = await gitEngine.getAuthenticatedUser();
-    if (!auth.authenticated) {
-      throw new Error('Authentication required to access Squad Comms. Please sign in with GitHub.');
+    if (!auth.authenticated || !auth.isCollaborator) {
+      throw new Error('Access restricted: Only verified AstroSquad repository collaborators can access Squad Comms.');
     }
     const settings = settingsManager.getSettings();
     const inviteUrl = args?.customInviteUrl || settings.discord.inviteUrl;
@@ -262,8 +262,8 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('shell:openMeeting', async (_, customUrl?: string) => {
     const auth = await gitEngine.getAuthenticatedUser();
-    if (!auth.authenticated) {
-      throw new Error('Authentication required to access Team Video Briefings. Please sign in with GitHub.');
+    if (!auth.authenticated || !auth.isCollaborator) {
+      throw new Error('Access restricted: Only verified AstroSquad repository collaborators can access Team Video Briefings.');
     }
     const settings = settingsManager.getSettings();
     const url = customUrl || settings.meeting?.url || 'https://meet.google.com/new';
