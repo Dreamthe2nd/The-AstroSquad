@@ -26051,6 +26051,7 @@ var GitEngine = class {
 // src/main/fileHandlers.ts
 var import_fs2 = __toESM(require("fs"));
 var import_path3 = __toESM(require("path"));
+var import_os = __toESM(require("os"));
 var import_child_process = __toESM(require("child_process"));
 var import_electron3 = require("electron");
 
@@ -26363,9 +26364,10 @@ var FileHandlers = class {
     const isWin = process.platform === "win32";
     const isMac = process.platform === "darwin";
     if (isWin) {
+      const localAppData = process.env.LOCALAPPDATA || "";
       const candidates = [
-        import_path3.default.join(process.env.LOCALAPPDATA || "", "Programs\\Obsidian\\Obsidian.exe"),
-        import_path3.default.join(process.env.LOCALAPPDATA || "", "Obsidian\\Obsidian.exe"),
+        import_path3.default.join(localAppData, "Programs", "Obsidian", "Obsidian.exe"),
+        import_path3.default.join(localAppData, "Obsidian", "Obsidian.exe"),
         "C:\\Program Files\\Obsidian\\Obsidian.exe",
         "C:\\Program Files (x86)\\Obsidian\\Obsidian.exe"
       ];
@@ -26378,6 +26380,115 @@ var FileHandlers = class {
       }
     }
     return null;
+  }
+  /**
+   * Safe wrapper for child_process.spawn that catches both sync and async ENOENT errors.
+   * Returns a Promise that resolves after a brief delay to check if the child started OK.
+   */
+  static safeSpawn(command, args) {
+    return new Promise((resolve) => {
+      try {
+        const child = import_child_process.default.spawn(command, args, {
+          detached: true,
+          stdio: "ignore"
+        });
+        let errorOccurred = false;
+        child.on("error", (err) => {
+          errorOccurred = true;
+          resolve({ success: false, error: err.message || "Spawn failed" });
+        });
+        setTimeout(() => {
+          if (!errorOccurred) {
+            child.unref();
+            resolve({ success: true });
+          }
+        }, 500);
+      } catch (err) {
+        resolve({ success: false, error: err.message || "Spawn threw synchronously" });
+      }
+    });
+  }
+  /**
+   * Resolves git repository root from a file path
+   */
+  static getRepoRoot(filePath) {
+    let dir = import_path3.default.dirname(filePath);
+    while (dir && dir !== import_path3.default.dirname(dir)) {
+      if (import_fs2.default.existsSync(import_path3.default.join(dir, ".git"))) {
+        return dir;
+      }
+      dir = import_path3.default.dirname(dir);
+    }
+    return import_path3.default.dirname(filePath);
+  }
+  /**
+   * Automatically ensures that the repository directory is recognized by Obsidian as a vault
+   * by creating .obsidian and registering the path in obsidian.json across Windows, macOS, and Linux.
+   */
+  static ensureObsidianVault(filePath) {
+    try {
+      const repoRoot = this.getRepoRoot(filePath);
+      const obsDir = import_path3.default.join(repoRoot, ".obsidian");
+      if (!import_fs2.default.existsSync(obsDir)) {
+        import_fs2.default.mkdirSync(obsDir, { recursive: true });
+      }
+      const isWin = process.platform === "win32";
+      const isMac = process.platform === "darwin";
+      let configPath = "";
+      if (isWin && process.env.APPDATA) {
+        configPath = import_path3.default.join(process.env.APPDATA, "obsidian", "obsidian.json");
+      } else if (isMac && process.env.HOME) {
+        configPath = import_path3.default.join(process.env.HOME, "Library", "Application Support", "obsidian", "obsidian.json");
+      } else if (process.env.HOME) {
+        configPath = import_path3.default.join(process.env.HOME, ".config", "obsidian", "obsidian.json");
+      }
+      if (configPath && import_fs2.default.existsSync(configPath)) {
+        try {
+          const raw = import_fs2.default.readFileSync(configPath, "utf-8");
+          const data = JSON.parse(raw);
+          if (!data.vaults) data.vaults = {};
+          let exists = false;
+          for (const id in data.vaults) {
+            if (import_path3.default.resolve(data.vaults[id]?.path || "") === import_path3.default.resolve(repoRoot)) {
+              exists = true;
+              break;
+            }
+          }
+          if (!exists) {
+            const vaultId = "astrosquad" + Math.random().toString(16).slice(2, 8);
+            data.vaults[vaultId] = {
+              path: repoRoot,
+              ts: Date.now()
+            };
+            import_fs2.default.writeFileSync(configPath, JSON.stringify(data, null, 2), "utf-8");
+          }
+        } catch (e) {
+          console.warn("Could not auto-register vault in obsidian.json:", e);
+        }
+      }
+    } catch (err) {
+      console.warn("ensureObsidianVault failed:", err);
+    }
+  }
+  /**
+   * Detects if a file is a PDF (by extension, name, or %PDF magic byte)
+   */
+  static isPdfFile(filePath) {
+    const ext = import_path3.default.extname(filePath).toLowerCase();
+    if (ext === ".pdf") return true;
+    const base = import_path3.default.basename(filePath).toLowerCase();
+    if (base === "proposal") return true;
+    try {
+      if (import_fs2.default.existsSync(filePath)) {
+        const fd = import_fs2.default.openSync(filePath, "r");
+        const buf = Buffer.alloc(5);
+        import_fs2.default.readSync(fd, buf, 0, 5, 0);
+        import_fs2.default.closeSync(fd);
+        return buf.toString("utf-8").startsWith("%PDF");
+      }
+    } catch {
+    }
+    return false;
   }
   /**
    * Opens local standalone session of Google Productivity Suite (Docs, Sheets, Slides, Drive)
@@ -26462,87 +26573,144 @@ var FileHandlers = class {
   }
   /**
    * Opens file in local desktop app (LibreOffice, Obsidian, Excel, Google Suite, etc.)
+   * Returns structured result so the renderer can show appropriate success/error feedback.
    */
   static async openInDesktopApp(filePath, customAppPath, preferredMode = "station_window") {
     if (!import_fs2.default.existsSync(filePath)) {
-      throw new Error(`File not found: ${filePath}`);
+      return { success: false, message: `File not found: ${filePath}` };
     }
+    const ext = import_path3.default.extname(filePath).toLowerCase();
+    const fileName = import_path3.default.basename(filePath);
+    const isPdf = this.isPdfFile(filePath);
     if (customAppPath && customAppPath.trim()) {
       const trimmed = customAppPath.trim();
       if (trimmed === "google_slides") {
-        const res = await this.openGoogleSuiteSession("slides", preferredMode, filePath);
-        return res.message;
+        return this.openGoogleSuiteSession("slides", preferredMode, filePath);
       }
       if (trimmed === "google_sheets") {
-        const res = await this.openGoogleSuiteSession("sheets", preferredMode, filePath);
-        return res.message;
+        return this.openGoogleSuiteSession("sheets", preferredMode, filePath);
       }
       if (trimmed === "google_docs") {
-        const res = await this.openGoogleSuiteSession("docs", preferredMode, filePath);
-        return res.message;
+        return this.openGoogleSuiteSession("docs", preferredMode, filePath);
       }
       if (trimmed === "google_drive") {
-        const res = await this.openGoogleSuiteSession("drive", preferredMode, filePath);
-        return res.message;
+        return this.openGoogleSuiteSession("drive", preferredMode, filePath);
       }
       if (trimmed === "obsidian") {
+        this.ensureObsidianVault(filePath);
         const obsPath = this.detectObsidianPath();
         if (obsPath) {
           try {
-            if (process.platform === "darwin") {
-              const child = import_child_process.default.spawn("open", ["-a", "Obsidian", filePath], {
-                detached: true,
-                stdio: "ignore"
-              });
-              child.unref();
-              return "";
-            } else {
-              const child = import_child_process.default.spawn(obsPath, [filePath], {
-                detached: true,
-                stdio: "ignore"
-              });
-              child.unref();
-              return "";
-            }
+            const obsUri = `obsidian://open?path=${encodeURIComponent(filePath)}`;
+            await import_electron3.shell.openExternal(obsUri);
+            return { success: true, message: `Launched "${fileName}" in Obsidian.` };
           } catch (err) {
-            console.warn("Failed to launch detected Obsidian:", err);
+            console.warn("Failed to launch Obsidian via URI:", err);
+          }
+          const spawnResult = await this.safeSpawn(obsPath, [filePath]);
+          if (spawnResult.success) {
+            return { success: true, message: `Launched "${fileName}" in Obsidian.` };
           }
         }
         try {
-          const child = import_child_process.default.spawn("obsidian", [filePath], { detached: true, stdio: "ignore" });
-          child.unref();
-          return "";
+          const obsUri = `obsidian://open?path=${encodeURIComponent(filePath)}`;
+          await import_electron3.shell.openExternal(obsUri);
+          return { success: true, message: `Launched "${fileName}" in Obsidian.` };
         } catch {
-          return import_electron3.shell.openPath(filePath);
+          console.warn("Obsidian not available, falling through to smart fallback");
         }
       }
       if (process.platform === "darwin" && trimmed.endsWith(".app")) {
-        try {
-          const child = import_child_process.default.spawn("open", ["-a", trimmed, filePath], {
-            detached: true,
-            stdio: "ignore"
-          });
-          child.unref();
-          return "";
-        } catch (err) {
-          console.warn(`Failed to open via macOS app ${trimmed}:`, err);
-          return import_electron3.shell.openPath(filePath);
+        const result2 = await this.safeSpawn("open", ["-a", trimmed, filePath]);
+        if (result2.success) {
+          return { success: true, message: `Launched "${fileName}" in ${import_path3.default.basename(trimmed, ".app")}.` };
+        }
+        console.warn(`Failed to open via macOS app ${trimmed}: ${result2.error}`);
+      }
+      if (trimmed !== "obsidian") {
+        if (import_fs2.default.existsSync(trimmed)) {
+          const result2 = await this.safeSpawn(trimmed, [filePath]);
+          if (result2.success) {
+            return { success: true, message: `Launched "${fileName}" in ${import_path3.default.basename(trimmed)}.` };
+          }
+          console.warn(`Failed to launch custom app "${trimmed}": ${result2.error}`);
+        } else {
+          console.warn(`Custom app not found at "${trimmed}", falling through to smart fallback`);
         }
       }
-      try {
-        const child = import_child_process.default.spawn(trimmed, [filePath], {
-          detached: true,
-          stdio: "ignore"
-        });
-        child.unref();
-        return "";
-      } catch (err) {
-        console.warn(`Failed to launch custom app "${trimmed}":`, err);
-        return import_electron3.shell.openPath(filePath);
+    }
+    if (ext === ".md") {
+      this.ensureObsidianVault(filePath);
+      const obsPath = this.detectObsidianPath();
+      if (obsPath) {
+        try {
+          const obsUri = `obsidian://open?path=${encodeURIComponent(filePath)}`;
+          await import_electron3.shell.openExternal(obsUri);
+          return { success: true, message: `Launched "${fileName}" in Obsidian.` };
+        } catch (err) {
+          console.warn("Obsidian open failed, falling back to shell.openPath:", err);
+        }
       }
+      const result2 = await import_electron3.shell.openPath(filePath);
+      if (!result2) {
+        return { success: true, message: `Opened "${fileName}" in default text editor.` };
+      }
+      import_electron3.shell.showItemInFolder(filePath);
+      return { success: true, message: `Revealed "${fileName}" in file explorer.` };
+    }
+    if (isPdf) {
+      let targetPath = filePath;
+      if (!ext) {
+        try {
+          const tempDir = import_path3.default.join(import_os.default.tmpdir(), "AstroSquad");
+          if (!import_fs2.default.existsSync(tempDir)) import_fs2.default.mkdirSync(tempDir, { recursive: true });
+          const tempPdf = import_path3.default.join(tempDir, `${fileName}.pdf`);
+          import_fs2.default.copyFileSync(filePath, tempPdf);
+          targetPath = tempPdf;
+        } catch (e) {
+          console.warn("Could not create temporary .pdf file for extensionless PDF:", e);
+        }
+      }
+      const result2 = await import_electron3.shell.openPath(targetPath);
+      if (!result2) {
+        return { success: true, message: `Opened "${fileName}" in system PDF reader.` };
+      }
+      console.log(`shell.openPath failed for PDF (${result2}), routing to Google Drive session.`);
+      return this.openGoogleSuiteSession("docs", preferredMode, filePath);
+    }
+    if (ext === ".pptx" || ext === ".ppt") {
+      const result2 = await import_electron3.shell.openPath(filePath);
+      if (!result2) {
+        return { success: true, message: `Opened "${fileName}" in presentation editor.` };
+      }
+      console.log(`No native app associated for ${ext} (${result2}). Routing to Google Drive / Slides.`);
+      return this.openGoogleSuiteSession("slides", preferredMode, filePath);
+    }
+    if (ext === ".csv" || ext === ".xlsx" || ext === ".xls") {
+      const result2 = await import_electron3.shell.openPath(filePath);
+      if (!result2) {
+        return { success: true, message: `Opened "${fileName}" in spreadsheet application.` };
+      }
+      console.log(`No native app associated for ${ext} (${result2}). Routing to Google Drive / Sheets.`);
+      return this.openGoogleSuiteSession("sheets", preferredMode, filePath);
+    }
+    if ([".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".svg"].includes(ext)) {
+      const result2 = await import_electron3.shell.openPath(filePath);
+      if (!result2) {
+        return { success: true, message: `Opened "${fileName}" in system image viewer.` };
+      }
+      import_electron3.shell.showItemInFolder(filePath);
+      return { success: true, message: `Revealed "${fileName}" in file explorer.` };
     }
     const result = await import_electron3.shell.openPath(filePath);
-    return result;
+    if (!result) {
+      return { success: true, message: `Opened "${fileName}" in system default app.` };
+    }
+    import_electron3.shell.showItemInFolder(filePath);
+    return {
+      success: true,
+      message: `No application found for "${fileName}". Revealed in file explorer instead.`
+    };
   }
   /**
    * Import File(s) from computer
@@ -26692,13 +26860,13 @@ var SettingsManager = class {
     const docs = import_electron4.app ? import_electron4.app.getPath("documents") : process.cwd();
     return {
       fileAssociations: {
-        pptx: "",
-        // System Default (PowerPoint / Keynote / LibreOffice)
+        pptx: "google_slides",
+        // Google Slides (no Office installed on team machines)
         pdf: "",
-        // System Default (Adobe Acrobat / Preview / OS Reader)
+        // System Default (Edge / Preview / OS Reader handles PDFs natively)
         md: "obsidian",
-        csv: "",
-        // System Default (Excel / Numbers / Calc)
+        csv: "google_sheets",
+        // Google Sheets (no Office installed on team machines)
         images: ""
       },
       repository: {
@@ -26737,20 +26905,29 @@ var SettingsManager = class {
           meeting: { ...defaults.meeting, ...parsed.meeting || {} },
           googleSuite: { ...defaults.googleSuite, ...parsed.googleSuite || {} }
         };
-        if (merged.fileAssociations.pptx === "google_slides") {
-          merged.fileAssociations.pptx = "";
-        }
-        if (merged.fileAssociations.csv === "google_sheets") {
-          merged.fileAssociations.csv = "";
-        }
+        let dirty = false;
         if (!merged.fileAssociations.md || merged.fileAssociations.md === "google_docs") {
           merged.fileAssociations.md = "obsidian";
+          dirty = true;
+        }
+        if (merged.fileAssociations.pdf === "google_docs") {
+          merged.fileAssociations.pdf = "";
+          dirty = true;
         }
         if (!merged.googleSuite.driveUrl || merged.googleSuite.driveUrl.includes("my-drive")) {
           merged.googleSuite.driveUrl = "https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing";
+          dirty = true;
         }
         if (!merged.googleSuite.windowMode || merged.googleSuite.windowMode === "station_window") {
           merged.googleSuite.windowMode = "app_window";
+          dirty = true;
+        }
+        if (dirty) {
+          try {
+            import_fs3.default.writeFileSync(this.filePath, JSON.stringify(merged, null, 2), "utf-8");
+          } catch (e) {
+            console.warn("Could not persist migrated settings:", e);
+          }
         }
         return merged;
       }
@@ -27012,11 +27189,18 @@ function registerIpcHandlers() {
     return FileHandlers.createMarkdownNote(targetDir, args.filename, args.title);
   });
   import_electron5.ipcMain.handle("fs:openInDesktopApp", async (_, targetFile) => {
-    const fullPath = import_path5.default.isAbsolute(targetFile) ? targetFile : import_path5.default.join(gitEngine.getRepoDir(), targetFile);
-    const customApp = settingsManager.resolveAppForFile(fullPath);
-    const settings = settingsManager.getSettings();
-    const mode = settings.googleSuite?.windowMode || "station_window";
-    return FileHandlers.openInDesktopApp(fullPath, customApp, mode);
+    try {
+      const fullPath = import_path5.default.isAbsolute(targetFile) ? targetFile : import_path5.default.join(gitEngine.getRepoDir(), targetFile);
+      console.log(`[openInDesktopApp] Resolved path: ${fullPath} (exists: ${import_fs4.default.existsSync(fullPath)})`);
+      const customApp = settingsManager.resolveAppForFile(fullPath);
+      console.log(`[openInDesktopApp] Custom app for "${import_path5.default.extname(fullPath)}": ${customApp || "(none \u2014 smart fallback)"}`);
+      const settings = settingsManager.getSettings();
+      const mode = settings.googleSuite?.windowMode || "app_window";
+      return FileHandlers.openInDesktopApp(fullPath, customApp, mode);
+    } catch (err) {
+      console.error("[openInDesktopApp] IPC handler error:", err);
+      return { success: false, message: err.message || "Failed to open file." };
+    }
   });
   import_electron5.ipcMain.handle("settings:get", async () => {
     return settingsManager.getSettings();

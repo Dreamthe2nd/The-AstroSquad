@@ -64,7 +64,7 @@ export interface ApiBridge {
     importFiles: (targetSubdir?: string) => Promise<any>;
     importFolder: (targetSubdir?: string) => Promise<any>;
     createMarkdownNote: (targetSubdir: string, filename: string, title?: string) => Promise<any>;
-    openInDesktopApp: (filePath: string) => Promise<string>;
+    openInDesktopApp: (filePath: string) => Promise<{ success: boolean; message: string }>;
   };
   settings: {
     getSettings: () => Promise<StationSettings>;

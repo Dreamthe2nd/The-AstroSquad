@@ -141,29 +141,33 @@ export const Workspace: React.FC<WorkspaceProps> = ({
   const handleEditInDesktop = async () => {
     if (!selectedFile) return;
 
-    setIsSyncing(true);
     try {
-      // 1. Pull remote changes to ensure fresh data
-      showToast('info', 'Pre-Edit Sync', 'Checking mission control for latest remote updates...');
-      const syncRes = await window.api.git.syncRepository();
-      if (syncRes.conflictsResolved && syncRes.conflictsResolved.length > 0) {
-        showToast('conflict', 'Guardrail Alert', `Conflict resolved: Local edits backed up to preserve work.`);
+      const fileName = selectedFile.split(/[/\\]/).pop();
+      showToast('info', 'Opening App', `Launching ${fileName} ...`);
+
+      // 1. Launch file in configured app IMMEDIATELY (no network blocking)
+      const result = await window.api.fs.openInDesktopApp(selectedFile);
+
+      if (result && result.success) {
+        showToast('success', 'App Launch Active', result.message);
+        // Morph button into glowing "Save & Share" so user can publish updates easily
+        setIsEditMorphed(true);
+      } else if (result && !result.success) {
+        showToast('error', 'Open Failed', result.message);
+      } else {
+        showToast('info', 'File Action', 'Attempted to open file.');
       }
 
-      // 2. Launch file in local desktop app
-      showToast('info', 'Opening Desktop App', `Launching ${selectedFile.split(/[/\\]/).pop()} in configured application...`);
-      const openResult = await window.api.fs.openInDesktopApp(selectedFile);
-      if (openResult) {
-        const isSuccess = openResult.toLowerCase().includes('launched') || openResult.toLowerCase().includes('opened');
-        showToast(isSuccess ? 'success' : 'info', 'App Launch Active', openResult);
-      }
-
-      // 3. Temporarily morph button into glowing "Save & Share"
-      setIsEditMorphed(true);
+      // 2. Non-blocking background sync to ensure local workspace has remote updates
+      window.api.git.syncRepository().then((syncRes) => {
+        if (syncRes && syncRes.conflictsResolved && syncRes.conflictsResolved.length > 0) {
+          showToast('conflict', 'Guardrail Alert', 'Conflict resolved: Local edits backed up to preserve work.');
+        }
+      }).catch((syncErr) => {
+        console.warn('Background sync check (non-blocking):', syncErr);
+      });
     } catch (err: any) {
       showToast('error', 'Edit Launch Failed', err.message);
-    } finally {
-      setIsSyncing(false);
     }
   };
 

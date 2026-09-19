@@ -47,10 +47,10 @@ export class SettingsManager {
     const docs = app ? app.getPath('documents') : process.cwd();
     return {
       fileAssociations: {
-        pptx: '', // System Default (PowerPoint / Keynote / LibreOffice)
-        pdf: '',  // System Default (Adobe Acrobat / Preview / OS Reader)
+        pptx: 'google_slides', // Google Slides (no Office installed on team machines)
+        pdf: '',  // System Default (Edge / Preview / OS Reader handles PDFs natively)
         md: 'obsidian',
-        csv: '',  // System Default (Excel / Numbers / Calc)
+        csv: 'google_sheets',  // Google Sheets (no Office installed on team machines)
         images: ''
       },
       repository: {
@@ -91,22 +91,34 @@ export class SettingsManager {
           googleSuite: { ...defaults.googleSuite, ...(parsed.googleSuite || {}) }
         };
 
-        // Migration: Reset previously forced google_slides / google_sheets so local files open in native desktop apps (PowerPoint / Excel)
-        if (merged.fileAssociations.pptx === 'google_slides') {
-          merged.fileAssociations.pptx = '';
-        }
-        if (merged.fileAssociations.csv === 'google_sheets') {
-          merged.fileAssociations.csv = '';
-        }
+        let dirty = false;
+        // Migration: Ensure md defaults to obsidian if unset or was wrongly set to google_docs
         if (!merged.fileAssociations.md || merged.fileAssociations.md === 'google_docs') {
           merged.fileAssociations.md = 'obsidian';
+          dirty = true;
         }
+        // Migration: PDFs should use system default viewer (Edge/Preview), not Google Docs redirect
+        if (merged.fileAssociations.pdf === 'google_docs') {
+          merged.fileAssociations.pdf = '';
+          dirty = true;
+        }
+        // Migration: Ensure shared Drive folder URL is set
         if (!merged.googleSuite.driveUrl || merged.googleSuite.driveUrl.includes('my-drive')) {
           merged.googleSuite.driveUrl = 'https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing';
+          dirty = true;
         }
         if (!merged.googleSuite.windowMode || merged.googleSuite.windowMode === 'station_window') {
           // Migrate away from station_window since Google blocks sign-in in Electron webviews
           merged.googleSuite.windowMode = 'app_window';
+          dirty = true;
+        }
+
+        if (dirty) {
+          try {
+            fs.writeFileSync(this.filePath, JSON.stringify(merged, null, 2), 'utf-8');
+          } catch (e) {
+            console.warn('Could not persist migrated settings:', e);
+          }
         }
 
         return merged;

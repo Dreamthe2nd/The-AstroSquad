@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import child_process from 'child_process';
 import { dialog, shell, BrowserWindow, clipboard } from 'electron';
 import { GoogleWindowManager } from './googleWindowManager';
@@ -283,9 +284,10 @@ export class FileHandlers {
     const isMac = process.platform === 'darwin';
 
     if (isWin) {
+      const localAppData = process.env.LOCALAPPDATA || '';
       const candidates = [
-        path.join(process.env.LOCALAPPDATA || '', 'Programs\\Obsidian\\Obsidian.exe'),
-        path.join(process.env.LOCALAPPDATA || '', 'Obsidian\\Obsidian.exe'),
+        path.join(localAppData, 'Programs', 'Obsidian', 'Obsidian.exe'),
+        path.join(localAppData, 'Obsidian', 'Obsidian.exe'),
         'C:\\Program Files\\Obsidian\\Obsidian.exe',
         'C:\\Program Files (x86)\\Obsidian\\Obsidian.exe'
       ];
@@ -298,6 +300,127 @@ export class FileHandlers {
       }
     }
     return null;
+  }
+
+  /**
+   * Safe wrapper for child_process.spawn that catches both sync and async ENOENT errors.
+   * Returns a Promise that resolves after a brief delay to check if the child started OK.
+   */
+  private static safeSpawn(command: string, args: string[]): Promise<{ success: boolean; error?: string }> {
+    return new Promise((resolve) => {
+      try {
+        const child = child_process.spawn(command, args, {
+          detached: true,
+          stdio: 'ignore'
+        });
+
+        let errorOccurred = false;
+
+        child.on('error', (err: any) => {
+          errorOccurred = true;
+          resolve({ success: false, error: err.message || 'Spawn failed' });
+        });
+
+        // Give it 500ms to detect spawn errors (ENOENT fires almost immediately)
+        setTimeout(() => {
+          if (!errorOccurred) {
+            child.unref();
+            resolve({ success: true });
+          }
+        }, 500);
+      } catch (err: any) {
+        resolve({ success: false, error: err.message || 'Spawn threw synchronously' });
+      }
+    });
+  }
+
+  /**
+   * Resolves git repository root from a file path
+   */
+  public static getRepoRoot(filePath: string): string {
+    let dir = path.dirname(filePath);
+    while (dir && dir !== path.dirname(dir)) {
+      if (fs.existsSync(path.join(dir, '.git'))) {
+        return dir;
+      }
+      dir = path.dirname(dir);
+    }
+    return path.dirname(filePath);
+  }
+
+  /**
+   * Automatically ensures that the repository directory is recognized by Obsidian as a vault
+   * by creating .obsidian and registering the path in obsidian.json across Windows, macOS, and Linux.
+   */
+  public static ensureObsidianVault(filePath: string): void {
+    try {
+      const repoRoot = this.getRepoRoot(filePath);
+      // 1. Ensure .obsidian folder exists so Obsidian treats it as a vault
+      const obsDir = path.join(repoRoot, '.obsidian');
+      if (!fs.existsSync(obsDir)) {
+        fs.mkdirSync(obsDir, { recursive: true });
+      }
+
+      // 2. Register vault in obsidian.json across OSes
+      const isWin = process.platform === 'win32';
+      const isMac = process.platform === 'darwin';
+      let configPath = '';
+      if (isWin && process.env.APPDATA) {
+        configPath = path.join(process.env.APPDATA, 'obsidian', 'obsidian.json');
+      } else if (isMac && process.env.HOME) {
+        configPath = path.join(process.env.HOME, 'Library', 'Application Support', 'obsidian', 'obsidian.json');
+      } else if (process.env.HOME) {
+        configPath = path.join(process.env.HOME, '.config', 'obsidian', 'obsidian.json');
+      }
+
+      if (configPath && fs.existsSync(configPath)) {
+        try {
+          const raw = fs.readFileSync(configPath, 'utf-8');
+          const data = JSON.parse(raw);
+          if (!data.vaults) data.vaults = {};
+
+          let exists = false;
+          for (const id in data.vaults) {
+            if (path.resolve(data.vaults[id]?.path || '') === path.resolve(repoRoot)) {
+              exists = true;
+              break;
+            }
+          }
+          if (!exists) {
+            const vaultId = 'astrosquad' + Math.random().toString(16).slice(2, 8);
+            data.vaults[vaultId] = {
+              path: repoRoot,
+              ts: Date.now()
+            };
+            fs.writeFileSync(configPath, JSON.stringify(data, null, 2), 'utf-8');
+          }
+        } catch (e) {
+          console.warn('Could not auto-register vault in obsidian.json:', e);
+        }
+      }
+    } catch (err) {
+      console.warn('ensureObsidianVault failed:', err);
+    }
+  }
+
+  /**
+   * Detects if a file is a PDF (by extension, name, or %PDF magic byte)
+   */
+  public static isPdfFile(filePath: string): boolean {
+    const ext = path.extname(filePath).toLowerCase();
+    if (ext === '.pdf') return true;
+    const base = path.basename(filePath).toLowerCase();
+    if (base === 'proposal') return true;
+    try {
+      if (fs.existsSync(filePath)) {
+        const fd = fs.openSync(filePath, 'r');
+        const buf = Buffer.alloc(5);
+        fs.readSync(fd, buf, 0, 5, 0);
+        fs.closeSync(fd);
+        return buf.toString('utf-8').startsWith('%PDF');
+      }
+    } catch {}
+    return false;
   }
 
   /**
@@ -409,96 +532,173 @@ export class FileHandlers {
 
   /**
    * Opens file in local desktop app (LibreOffice, Obsidian, Excel, Google Suite, etc.)
+   * Returns structured result so the renderer can show appropriate success/error feedback.
    */
-  public static async openInDesktopApp(filePath: string, customAppPath?: string, preferredMode: 'station_window' | 'app_window' | 'browser_tab' = 'station_window'): Promise<string> {
+  public static async openInDesktopApp(filePath: string, customAppPath?: string, preferredMode: 'station_window' | 'app_window' | 'browser_tab' = 'station_window'): Promise<{ success: boolean; message: string }> {
     if (!fs.existsSync(filePath)) {
-      throw new Error(`File not found: ${filePath}`);
+      return { success: false, message: `File not found: ${filePath}` };
     }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const fileName = path.basename(filePath);
+    const isPdf = this.isPdfFile(filePath);
 
     if (customAppPath && customAppPath.trim()) {
       const trimmed = customAppPath.trim();
 
-      // Check if configured for Google Productivity Suite standalone sessions
+      // Google Productivity Suite standalone sessions
       if (trimmed === 'google_slides') {
-        const res = await this.openGoogleSuiteSession('slides', preferredMode, filePath);
-        return res.message;
+        return this.openGoogleSuiteSession('slides', preferredMode, filePath);
       }
       if (trimmed === 'google_sheets') {
-        const res = await this.openGoogleSuiteSession('sheets', preferredMode, filePath);
-        return res.message;
+        return this.openGoogleSuiteSession('sheets', preferredMode, filePath);
       }
       if (trimmed === 'google_docs') {
-        const res = await this.openGoogleSuiteSession('docs', preferredMode, filePath);
-        return res.message;
+        return this.openGoogleSuiteSession('docs', preferredMode, filePath);
       }
       if (trimmed === 'google_drive') {
-        const res = await this.openGoogleSuiteSession('drive', preferredMode, filePath);
-        return res.message;
+        return this.openGoogleSuiteSession('drive', preferredMode, filePath);
       }
 
-      // Check if configured for Obsidian Markdown notes
+      // Obsidian Markdown editor
       if (trimmed === 'obsidian') {
+        this.ensureObsidianVault(filePath);
         const obsPath = this.detectObsidianPath();
         if (obsPath) {
           try {
-            if (process.platform === 'darwin') {
-              const child = child_process.spawn('open', ['-a', 'Obsidian', filePath], {
-                detached: true,
-                stdio: 'ignore'
-              });
-              child.unref();
-              return '';
-            } else {
-              const child = child_process.spawn(obsPath, [filePath], {
-                detached: true,
-                stdio: 'ignore'
-              });
-              child.unref();
-              return '';
-            }
+            const obsUri = `obsidian://open?path=${encodeURIComponent(filePath)}`;
+            await shell.openExternal(obsUri);
+            return { success: true, message: `Launched "${fileName}" in Obsidian.` };
           } catch (err: any) {
-            console.warn('Failed to launch detected Obsidian:', err);
+            console.warn('Failed to launch Obsidian via URI:', err);
+          }
+          const spawnResult = await this.safeSpawn(obsPath, [filePath]);
+          if (spawnResult.success) {
+            return { success: true, message: `Launched "${fileName}" in Obsidian.` };
           }
         }
         try {
-          const child = child_process.spawn('obsidian', [filePath], { detached: true, stdio: 'ignore' });
-          child.unref();
-          return '';
+          const obsUri = `obsidian://open?path=${encodeURIComponent(filePath)}`;
+          await shell.openExternal(obsUri);
+          return { success: true, message: `Launched "${fileName}" in Obsidian.` };
         } catch {
-          return shell.openPath(filePath);
+          console.warn('Obsidian not available, falling through to smart fallback');
         }
       }
 
       // macOS application bundle support (e.g. /Applications/Obsidian.app)
       if (process.platform === 'darwin' && trimmed.endsWith('.app')) {
-        try {
-          const child = child_process.spawn('open', ['-a', trimmed, filePath], {
-            detached: true,
-            stdio: 'ignore'
-          });
-          child.unref();
-          return '';
-        } catch (err: any) {
-          console.warn(`Failed to open via macOS app ${trimmed}:`, err);
-          return shell.openPath(filePath);
+        const result = await this.safeSpawn('open', ['-a', trimmed, filePath]);
+        if (result.success) {
+          return { success: true, message: `Launched "${fileName}" in ${path.basename(trimmed, '.app')}.` };
         }
+        console.warn(`Failed to open via macOS app ${trimmed}: ${result.error}`);
       }
 
-      try {
-        const child = child_process.spawn(trimmed, [filePath], {
-          detached: true,
-          stdio: 'ignore'
-        });
-        child.unref();
-        return '';
-      } catch (err: any) {
-        console.warn(`Failed to launch custom app "${trimmed}":`, err);
-        return shell.openPath(filePath);
+      // Custom executable path (e.g. C:\Program Files\LibreOffice\program\soffice.exe)
+      if (trimmed !== 'obsidian') {
+        if (fs.existsSync(trimmed)) {
+          const result = await this.safeSpawn(trimmed, [filePath]);
+          if (result.success) {
+            return { success: true, message: `Launched "${fileName}" in ${path.basename(trimmed)}.` };
+          }
+          console.warn(`Failed to launch custom app "${trimmed}": ${result.error}`);
+        } else {
+          console.warn(`Custom app not found at "${trimmed}", falling through to smart fallback`);
+        }
       }
     }
 
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // SMART FALLBACK: No custom app configured or custom app failed.
+    // Route intelligently by file type instead of blindly calling shell.openPath.
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    // 1. Markdown (.md) Notes
+    if (ext === '.md') {
+      this.ensureObsidianVault(filePath);
+      const obsPath = this.detectObsidianPath();
+      if (obsPath) {
+        try {
+          const obsUri = `obsidian://open?path=${encodeURIComponent(filePath)}`;
+          await shell.openExternal(obsUri);
+          return { success: true, message: `Launched "${fileName}" in Obsidian.` };
+        } catch (err: any) {
+          console.warn('Obsidian open failed, falling back to shell.openPath:', err);
+        }
+      }
+      const result = await shell.openPath(filePath);
+      if (!result) {
+        return { success: true, message: `Opened "${fileName}" in default text editor.` };
+      }
+      shell.showItemInFolder(filePath);
+      return { success: true, message: `Revealed "${fileName}" in file explorer.` };
+    }
+
+    // 2. PDF Documents (.pdf or extensionless Proposal)
+    if (isPdf) {
+      let targetPath = filePath;
+      if (!ext) {
+        try {
+          const tempDir = path.join(os.tmpdir(), 'AstroSquad');
+          if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+          const tempPdf = path.join(tempDir, `${fileName}.pdf`);
+          fs.copyFileSync(filePath, tempPdf);
+          targetPath = tempPdf;
+        } catch (e) {
+          console.warn('Could not create temporary .pdf file for extensionless PDF:', e);
+        }
+      }
+
+      const result = await shell.openPath(targetPath);
+      if (!result) {
+        return { success: true, message: `Opened "${fileName}" in system PDF reader.` };
+      }
+      console.log(`shell.openPath failed for PDF (${result}), routing to Google Drive session.`);
+      return this.openGoogleSuiteSession('docs', preferredMode, filePath);
+    }
+
+    // 3. PPTX Slide Decks (.pptx, .ppt)
+    if (ext === '.pptx' || ext === '.ppt') {
+      const result = await shell.openPath(filePath);
+      if (!result) {
+        return { success: true, message: `Opened "${fileName}" in presentation editor.` };
+      }
+      console.log(`No native app associated for ${ext} (${result}). Routing to Google Drive / Slides.`);
+      return this.openGoogleSuiteSession('slides', preferredMode, filePath);
+    }
+
+    // 4. CSV Tabular Catalogs (.csv, .xlsx, .xls)
+    if (ext === '.csv' || ext === '.xlsx' || ext === '.xls') {
+      const result = await shell.openPath(filePath);
+      if (!result) {
+        return { success: true, message: `Opened "${fileName}" in spreadsheet application.` };
+      }
+      console.log(`No native app associated for ${ext} (${result}). Routing to Google Drive / Sheets.`);
+      return this.openGoogleSuiteSession('sheets', preferredMode, filePath);
+    }
+
+    // 5. Images (.png, .jpg, .jpeg, .webp, etc.)
+    if (['.png', '.jpg', '.jpeg', '.webp', '.gif', '.bmp', '.svg'].includes(ext)) {
+      const result = await shell.openPath(filePath);
+      if (!result) {
+        return { success: true, message: `Opened "${fileName}" in system image viewer.` };
+      }
+      shell.showItemInFolder(filePath);
+      return { success: true, message: `Revealed "${fileName}" in file explorer.` };
+    }
+
+    // 6. Universal Fallback
     const result = await shell.openPath(filePath);
-    return result; // Empty string on success, or error message
+    if (!result) {
+      return { success: true, message: `Opened "${fileName}" in system default app.` };
+    }
+
+    shell.showItemInFolder(filePath);
+    return {
+      success: true,
+      message: `No application found for "${fileName}". Revealed in file explorer instead.`
+    };
   }
 
   /**

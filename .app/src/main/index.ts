@@ -204,13 +204,20 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('fs:openInDesktopApp', async (_, targetFile: string) => {
-    const fullPath = path.isAbsolute(targetFile)
-      ? targetFile
-      : path.join(gitEngine.getRepoDir(), targetFile);
-    const customApp = settingsManager.resolveAppForFile(fullPath);
-    const settings = settingsManager.getSettings();
-    const mode = settings.googleSuite?.windowMode || 'station_window';
-    return FileHandlers.openInDesktopApp(fullPath, customApp, mode);
+    try {
+      const fullPath = path.isAbsolute(targetFile)
+        ? targetFile
+        : path.join(gitEngine.getRepoDir(), targetFile);
+      console.log(`[openInDesktopApp] Resolved path: ${fullPath} (exists: ${fs.existsSync(fullPath)})`);
+      const customApp = settingsManager.resolveAppForFile(fullPath);
+      console.log(`[openInDesktopApp] Custom app for "${path.extname(fullPath)}": ${customApp || '(none — smart fallback)'}`);
+      const settings = settingsManager.getSettings();
+      const mode = settings.googleSuite?.windowMode || 'app_window';
+      return FileHandlers.openInDesktopApp(fullPath, customApp, mode);
+    } catch (err: any) {
+      console.error('[openInDesktopApp] IPC handler error:', err);
+      return { success: false, message: err.message || 'Failed to open file.' };
+    }
   });
 
   // Settings handlers
