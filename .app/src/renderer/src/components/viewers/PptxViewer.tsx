@@ -63,6 +63,14 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
     }
   }, [base64Data]);
 
+  const handleOpenDriveDesktop = async () => {
+    try {
+      await window.api.fs.openInDesktopApp(filePath, 'google_drive');
+    } catch (err: any) {
+      console.warn('[PptxViewer] Open in Drive Desktop error:', err);
+    }
+  };
+
   const handleOpenGoogleDrive = async () => {
     if (isDriveConnected) {
       setIsUploading(true);
@@ -113,22 +121,31 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
 
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={handleOpenDriveDesktop}
+            className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+            title="Open locally in PowerPoint via Google Drive Desktop (auto-syncs to pro account, 0% browser conflict)"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+            <span>⚡ Open in Drive Desktop</span>
+          </button>
+
+          <button
             onClick={handleOpenGoogleDrive}
             disabled={isUploading}
-            className="px-3 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-xs text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
-            title="Open presentation directly in Google Slides"
+            className="px-2.5 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-xs text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+            title="Open presentation in Google Slides via web"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>{isUploading ? 'Opening in Slides...' : '⚡ Open in Google Slides'}</span>
+            <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+            <span>{isUploading ? 'Opening...' : 'Slides (Web)'}</span>
           </button>
 
           <button
             onClick={onOpenInDesktop}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-700 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
-            title="Launch presentation in PowerPoint, Keynote, or system presentation editor"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+            title="Launch presentation in default system presentation editor"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Open in Desktop App</span>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            <span>System Default</span>
           </button>
         </div>
       </div>
@@ -143,22 +160,22 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
             <div className="space-y-1 max-w-md">
               <h3 className="text-sm font-bold text-slate-200">Presentation Rendering Anomaly</h3>
               <p className="text-xs text-slate-400 font-sans leading-relaxed">
-                {error} You can open this presentation directly in your native desktop presentation software (PowerPoint, Keynote, LibreOffice) or via Google Workspace.
+                {error} You can open this presentation directly in PowerPoint via Google Drive Desktop or in Google Slides.
               </p>
             </div>
             <div className="flex items-center gap-3 pt-2">
               <button
-                onClick={onOpenInDesktop}
-                className="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-colors shadow-doppler-blue"
+                onClick={handleOpenDriveDesktop}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-colors shadow-md"
               >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Open in Desktop App</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>⚡ Open in Drive Desktop (PowerPoint)</span>
               </button>
               <button
                 onClick={handleOpenGoogleDrive}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono transition-colors"
+                className="px-4 py-2 rounded-xl bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-500/40 text-xs font-mono transition-colors"
               >
-                <span>View in Google Drive</span>
+                <span>Google Slides (Web)</span>
               </button>
             </div>
           </div>

@@ -38,7 +38,7 @@ var api = {
     importFiles: (targetSubdir) => import_electron.ipcRenderer.invoke("fs:importFiles", targetSubdir),
     importFolder: (targetSubdir) => import_electron.ipcRenderer.invoke("fs:importFolder", targetSubdir),
     createMarkdownNote: (targetSubdir, filename, title) => import_electron.ipcRenderer.invoke("fs:createMarkdownNote", { targetSubdir, filename, title }),
-    openInDesktopApp: (filePath) => import_electron.ipcRenderer.invoke("fs:openInDesktopApp", filePath)
+    openInDesktopApp: (filePath, customApp) => import_electron.ipcRenderer.invoke("fs:openInDesktopApp", filePath, customApp)
   },
   settings: {
     getSettings: () => import_electron.ipcRenderer.invoke("settings:get"),

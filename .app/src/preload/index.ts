@@ -35,6 +35,7 @@ export interface StationSettings {
   googleSuite?: {
     engine?: string;
     windowMode?: 'station_window' | 'app_window' | 'browser_tab';
+    accountIndex?: string;
     docsUrl?: string;
     sheetsUrl?: string;
     slidesUrl?: string;
@@ -71,7 +72,7 @@ export interface ApiBridge {
     importFiles: (targetSubdir?: string) => Promise<any>;
     importFolder: (targetSubdir?: string) => Promise<any>;
     createMarkdownNote: (targetSubdir: string, filename: string, title?: string) => Promise<any>;
-    openInDesktopApp: (filePath: string) => Promise<{ success: boolean; message: string }>;
+    openInDesktopApp: (filePath: string, customApp?: string) => Promise<{ success: boolean; message: string }>;
   };
   settings: {
     getSettings: () => Promise<StationSettings>;
@@ -152,7 +153,7 @@ const api: ApiBridge = {
     importFiles: (targetSubdir) => ipcRenderer.invoke('fs:importFiles', targetSubdir),
     importFolder: (targetSubdir) => ipcRenderer.invoke('fs:importFolder', targetSubdir),
     createMarkdownNote: (targetSubdir, filename, title) => ipcRenderer.invoke('fs:createMarkdownNote', { targetSubdir, filename, title }),
-    openInDesktopApp: (filePath) => ipcRenderer.invoke('fs:openInDesktopApp', filePath)
+    openInDesktopApp: (filePath, customApp) => ipcRenderer.invoke('fs:openInDesktopApp', filePath, customApp)
   },
   settings: {
     getSettings: () => ipcRenderer.invoke('settings:get'),

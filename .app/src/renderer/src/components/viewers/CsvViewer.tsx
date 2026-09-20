@@ -148,6 +148,21 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
     setEditedContent(csvContent);
   };
 
+  const handleOpenDriveDesktop = async () => {
+    if (isDirty && onSave) {
+      try {
+        await onSave(editedContent);
+      } catch (e) {
+        console.warn('[CsvViewer] Could not save edits before opening desktop:', e);
+      }
+    }
+    try {
+      await window.api.fs.openInDesktopApp(filePath, 'google_drive');
+    } catch (e) {
+      console.warn('[CsvViewer] Drive desktop open error:', e);
+    }
+  };
+
   const handleOpenGoogleDrive = async () => {
     if (isDriveConnected) {
       // Save any unsaved edits to disk before uploading
@@ -282,25 +297,35 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
             </button>
           )}
 
+          {/* Google Drive Desktop Button (Excel with Cloud Sync) */}
+          <button
+            onClick={handleOpenDriveDesktop}
+            className="px-2.5 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+            title="Open locally in Excel via Google Drive Desktop (auto-syncs to pro account, 0% browser conflict)"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+            <span className="hidden sm:inline">⚡ Drive Desktop</span>
+          </button>
+
           {/* Google Drive Cloud Hub Button */}
           <button
             onClick={handleOpenGoogleDrive}
             disabled={isUploading}
             className="px-2.5 py-1.5 rounded-lg bg-indigo-950/60 hover:bg-indigo-900/60 text-xs text-indigo-300 hover:text-white border border-indigo-500/30 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
-            title="Open CSV directly in Google Sheets"
+            title="Open CSV in Google Sheets via web"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="hidden sm:inline">{isUploading ? 'Opening...' : '⚡ Google Sheets'}</span>
+            <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+            <span className="hidden sm:inline">{isUploading ? 'Opening...' : 'Sheets (Web)'}</span>
           </button>
 
           {/* System Desktop Fallback */}
           <button
             onClick={onOpenInDesktop}
             className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
-            title="Open in Excel, Calc, or default desktop application"
+            title="Open in default desktop application"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-teal-400" />
-            <span className="hidden md:inline">Open in Desktop</span>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            <span className="hidden md:inline">System Default</span>
           </button>
         </div>
       </div>

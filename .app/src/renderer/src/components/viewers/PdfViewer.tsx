@@ -34,6 +34,14 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOp
     return () => window.removeEventListener('focus', checkStatus);
   }, []);
 
+  const handleOpenDriveDesktop = async () => {
+    try {
+      await window.api.fs.openInDesktopApp(filePath, 'google_drive');
+    } catch (err: any) {
+      console.warn('[PdfViewer] Open in Drive Desktop error:', err);
+    }
+  };
+
   const handleOpenGoogleDrive = async () => {
     if (isDriveConnected) {
       setIsUploading(true);
@@ -147,22 +155,31 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOp
         {/* Desktop & Google Drive Launcher Buttons */}
         <div className="flex items-center gap-2">
           <button
+            onClick={handleOpenDriveDesktop}
+            className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+            title="Open PDF via Google Drive Desktop with cloud sync (0% browser account conflict)"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>⚡ Open in Drive Desktop</span>
+          </button>
+
+          <button
             onClick={handleOpenGoogleDrive}
             disabled={isUploading}
-            className="px-3 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-xs text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
-            title="Open document directly in Google Docs"
+            className="px-2.5 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-xs text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+            title="Open document in Google Docs via web"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>{isUploading ? 'Opening...' : '⚡ Google Docs'}</span>
+            <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+            <span>{isUploading ? 'Opening...' : 'Docs (Web)'}</span>
           </button>
 
           <button
             onClick={onOpenInDesktop}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
             title="Open in default system PDF reader (Acrobat, Preview, Edge)"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-rose-400" />
-            <span>Open in Desktop App</span>
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            <span>System Default</span>
           </button>
         </div>
       </div>
@@ -190,15 +207,15 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOp
               <div className="space-y-1">
                 <h3 className="text-lg font-bold text-slate-200">PDF Reader Preview</h3>
                 <p className="text-xs text-slate-400 max-w-sm">
-                  Document ready for inspection in system reader.
+                  Document ready for inspection via Google Drive Desktop or system reader.
                 </p>
               </div>
               <button
-                onClick={onOpenInDesktop}
+                onClick={handleOpenDriveDesktop}
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center gap-2 transition-colors shadow-doppler-red"
               >
-                <ExternalLink className="w-4 h-4" />
-                <span>Launch in System PDF Reader</span>
+                <Sparkles className="w-4 h-4" />
+                <span>⚡ Open in Drive Desktop</span>
               </button>
             </div>
           )}

@@ -54,6 +54,7 @@ export interface StationSettings {
   googleSuite?: {
     engine?: string;
     windowMode?: 'station_window' | 'app_window' | 'browser_tab';
+    accountIndex?: string;
     docsUrl?: string;
     sheetsUrl?: string;
     slidesUrl?: string;

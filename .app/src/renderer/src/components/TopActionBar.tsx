@@ -206,15 +206,12 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
         <button
           onClick={async () => {
             if (showToast) {
-              showToast('info', 'Opening Google Drive', 'Launching The-AstroSquad Cloud Hub in default browser...');
+              showToast('info', 'Opening Google Drive', 'Opening local Google Drive Desktop folder...');
             }
             try {
-              const res = await window.api.shell.openGoogleSuite({
-                appType: 'drive',
-                windowMode: 'browser_tab'
-              });
+              const res = await window.api.shell.openGoogleDriveFolder();
               if (res && res.message && showToast) {
-                showToast('success', 'Google Drive Active', res.message);
+                showToast('success', 'Google Drive Desktop', res.message);
               }
             } catch (err: any) {
               if (showToast) {
@@ -223,7 +220,7 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
             }
           }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-500/30 bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 hover:text-white transition-colors text-xs font-mono shadow-sm"
-          title="Open The-AstroSquad Shared Cloud Hub (Google Drive)"
+          title="Open The-AstroSquad Google Drive Desktop Folder (G:\My Drive\The-AstroSquad)"
         >
           <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
           <span className="hidden md:inline font-semibold">Google Drive</span>

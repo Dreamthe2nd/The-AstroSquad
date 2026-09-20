@@ -27,6 +27,7 @@ export interface StationSettings {
   googleSuite: {
     engine: string;
     windowMode: 'station_window' | 'app_window' | 'browser_tab';
+    accountIndex?: string;
     docsUrl?: string;
     sheetsUrl?: string;
     slidesUrl?: string;
@@ -55,10 +56,10 @@ export class SettingsManager {
     const docs = app ? app.getPath('documents') : process.cwd();
     return {
       fileAssociations: {
-        pptx: 'google_slides', // Google Slides (no Office installed on team machines)
-        pdf: '',  // System Default (Edge / Preview / OS Reader handles PDFs natively)
+        pptx: 'google_drive', // Google Drive Desktop (direct desktop app with pro account auto-sync)
+        pdf: 'google_drive',  // Google Drive Desktop / System Default
         md: 'obsidian',
-        csv: 'google_sheets',  // Google Sheets (no Office installed on team machines)
+        csv: 'google_drive',  // Google Drive Desktop + Excel / In-App
         images: ''
       },
       repository: {
@@ -77,6 +78,7 @@ export class SettingsManager {
       googleSuite: {
         engine: 'auto',
         windowMode: 'app_window',
+        accountIndex: '0',
         docsUrl: 'https://docs.google.com/document/u/0/',
         sheetsUrl: 'https://docs.google.com/spreadsheets/u/0/',
         slidesUrl: 'https://docs.google.com/presentation/u/0/',
@@ -105,9 +107,17 @@ export class SettingsManager {
           merged.fileAssociations.md = 'obsidian';
           dirty = true;
         }
-        // Migration: PDFs should use system default viewer (Edge/Preview), not Google Docs redirect
-        if (merged.fileAssociations.pdf === 'google_docs') {
-          merged.fileAssociations.pdf = '';
+        // Migration: PDFs, PPTX, and CSV should default to google_drive for native desktop editing + pro account sync
+        if (merged.fileAssociations.pptx === 'google_slides' || !merged.fileAssociations.pptx) {
+          merged.fileAssociations.pptx = 'google_drive';
+          dirty = true;
+        }
+        if (merged.fileAssociations.csv === 'google_sheets') {
+          merged.fileAssociations.csv = 'google_drive';
+          dirty = true;
+        }
+        if (merged.fileAssociations.pdf === 'google_docs' || !merged.fileAssociations.pdf) {
+          merged.fileAssociations.pdf = 'google_drive';
           dirty = true;
         }
         // Migration: Ensure shared Drive folder URL is set

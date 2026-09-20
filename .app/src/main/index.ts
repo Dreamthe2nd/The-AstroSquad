@@ -204,13 +204,13 @@ function registerIpcHandlers(): void {
     return FileHandlers.createMarkdownNote(targetDir, args.filename, args.title);
   });
 
-  ipcMain.handle('fs:openInDesktopApp', async (_, targetFile: string) => {
+  ipcMain.handle('fs:openInDesktopApp', async (_, targetFile: string, customAppOverride?: string) => {
     try {
       const fullPath = path.isAbsolute(targetFile)
         ? targetFile
         : path.join(gitEngine.getRepoDir(), targetFile);
       console.log(`[openInDesktopApp] Resolved path: ${fullPath} (exists: ${fs.existsSync(fullPath)})`);
-      const customApp = settingsManager.resolveAppForFile(fullPath);
+      const customApp = customAppOverride || settingsManager.resolveAppForFile(fullPath);
       console.log(`[openInDesktopApp] Custom app for "${path.extname(fullPath)}": ${customApp || '(none — smart fallback)'}`);
       const settings = settingsManager.getSettings();
       const mode = settings.googleSuite?.windowMode || 'app_window';
