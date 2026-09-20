@@ -214,18 +214,28 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
           </button>
 
           {authStatus?.authenticated ? (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs font-sans">
-              <span className={`w-2 h-2 rounded-full ${isCollaborator ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-              <span className="text-slate-200 font-medium">
-                {authStatus.user?.name || authStatus.user?.login || 'Collaborator'}
-              </span>
-              <span className={`text-[10px] uppercase font-mono px-1.5 py-0.2 rounded font-semibold ${
-                isCollaborator
-                  ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30'
-                  : 'bg-amber-950/60 text-amber-300 border border-amber-500/30'
-              }`}>
-                {isCollaborator ? 'Team' : 'Guest'}
-              </span>
+            <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-xs font-sans">
+                <span className={`w-2 h-2 rounded-full ${isCollaborator ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+                <span className="text-slate-200 font-medium">
+                  {authStatus.user?.name || authStatus.user?.login || 'Collaborator'}
+                </span>
+                <span className={`text-[10px] uppercase font-mono px-1.5 py-0.5 rounded font-semibold ${
+                  isCollaborator
+                    ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-amber-950/60 text-amber-300 border border-amber-500/30'
+                }`}>
+                  {isCollaborator ? 'Team' : 'Guest'}
+                </span>
+              </div>
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-red-500/10 border border-white/[0.08] hover:border-red-500/30 text-xs font-sans text-slate-400 hover:text-red-400 transition-all active:scale-[0.98] group"
+                title="Log out and return to Mission Control Sign In"
+              >
+                <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-400 transition-colors" />
+                <span className="hidden sm:inline font-medium">Log Out</span>
+              </button>
             </div>
           ) : (
             <button

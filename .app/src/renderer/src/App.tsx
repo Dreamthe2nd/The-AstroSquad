@@ -188,6 +188,7 @@ export const App: React.FC = () => {
         onSettingsSaved={handleSettingsSaved}
         showToast={showToast}
         authStatus={authStatus}
+        onLogout={handleLogout}
       />
 
       {/* Global Toast Notifications */}

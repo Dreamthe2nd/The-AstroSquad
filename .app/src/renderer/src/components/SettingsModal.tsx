@@ -25,7 +25,8 @@ import {
   User,
   RefreshCw,
   Telescope,
-  Download
+  Download,
+  LogOut
 } from 'lucide-react';
 import { StationSettings, AuthStatus } from '../types';
 
@@ -35,6 +36,7 @@ interface SettingsModalProps {
   onSettingsSaved?: (newSettings: StationSettings, repoChanged: boolean) => void;
   showToast: (type: 'info' | 'success' | 'warning' | 'error' | 'conflict', title: string, message: string) => void;
   authStatus?: AuthStatus | null;
+  onLogout?: () => void;
 }
 
 type TabType = 'apps' | 'repo' | 'discord' | 'meeting' | 'updates';
@@ -44,7 +46,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   onSettingsSaved,
   showToast,
-  authStatus
+  authStatus,
+  onLogout
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('apps');
   const [settings, setSettings] = useState<StationSettings | null>(null);
@@ -1331,6 +1334,81 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   }
                   className="w-48 px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-slate-200 text-xs focus:outline-none focus:border-cyan-400 font-mono"
                 />
+              </div>
+
+              {/* GitHub Mission Session & Authentication */}
+              <div className="pt-2 border-t border-white/[0.08] space-y-3">
+                <label className="text-xs font-bold text-slate-200 flex items-center gap-2">
+                  <User className="w-4 h-4 text-emerald-400" />
+                  <span>GitHub Authentication &amp; Mission Session:</span>
+                </label>
+                {authStatus?.authenticated ? (
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {authStatus.user?.avatar_url ? (
+                        <img
+                          src={authStatus.user.avatar_url}
+                          alt={authStatus.user.login}
+                          className="w-9 h-9 rounded-full border border-white/[0.1]"
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-white/[0.06] border border-white/[0.1] flex items-center justify-center">
+                          <User className="w-4 h-4 text-slate-300" />
+                        </div>
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-white text-xs">
+                            {authStatus.user?.name || authStatus.user?.login}
+                          </span>
+                          <span className={`text-[9px] uppercase font-mono px-1.5 py-0.5 rounded font-semibold ${
+                            authStatus.isCollaborator
+                              ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-amber-950/60 text-amber-300 border border-amber-500/30'
+                          }`}>
+                            {authStatus.isCollaborator ? 'Team Contributor' : 'Guest Explorer'}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          @{authStatus.user?.login || 'anonymous'} · safeStorage encrypted
+                        </span>
+                      </div>
+                    </div>
+
+                    {onLogout && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onLogout();
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 font-medium text-xs flex items-center gap-1.5 transition-colors active:scale-[0.98]"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Log Out</span>
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div className="text-xs text-slate-400">
+                      Currently operating in Guest / Explorer mode (unauthenticated).
+                    </div>
+                    {onLogout && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onClose();
+                          onLogout();
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] text-white border border-white/[0.08] font-medium text-xs flex items-center gap-1.5 transition-colors active:scale-[0.98]"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Sign In</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
