@@ -26602,40 +26602,25 @@ var FileHandlers = class {
     }
   }
   /**
-   * Opens file directly in the desktop app via Google Drive for Desktop (G:\My Drive\The-AstroSquad).
-   * Bypasses the web browser completely, prevents account mismatch (catfish account in browser),
-   * and ensures all saves auto-sync directly under the user's pro account.
+   * Opens file directly in Google Workspace via Google Drive Desktop (G:\My Drive\The-AstroSquad).
+   * Automatically copies to local Google Drive for cloud background sync under the Pro account.
+   * Eliminates local PowerPoint / Excel / OS hijacking by directly routing presentations to Google Slides,
+   * spreadsheets/CSV to Google Sheets, and PDFs/documents to Google Docs with configured Pro account authuser context.
    */
   static async openInGoogleDriveDesktop(filePath) {
     const driveInfo = this.detectGoogleDrivePath();
     const squadFolder = driveInfo.squadPath || (driveInfo.driveRoot ? import_path3.default.join(driveInfo.driveRoot, "The-AstroSquad") : null);
-    if (!squadFolder) {
-      if (filePath && import_fs2.default.existsSync(filePath)) {
-        const ext2 = import_path3.default.extname(filePath).toLowerCase();
-        const openResult2 = await import_electron3.shell.openPath(filePath);
-        if (!openResult2) {
-          return { success: true, message: `Opened "${import_path3.default.basename(filePath)}" in system default app.` };
-        }
-        const appType2 = ext2 === ".pptx" || ext2 === ".ppt" ? "slides" : ext2 === ".csv" || ext2 === ".xlsx" || ext2 === ".xls" ? "sheets" : ext2 === ".pdf" ? "docs" : "drive";
-        return this.openGoogleSuiteSession(appType2, "browser_tab", filePath);
+    if (!filePath) {
+      if (squadFolder && import_fs2.default.existsSync(squadFolder)) {
+        await import_electron3.shell.openPath(squadFolder);
+        return {
+          success: true,
+          message: `Opened local Google Drive Desktop folder: ${squadFolder}`
+        };
       }
       return {
         success: false,
         message: "Google Drive for Desktop was not detected on this system. Please verify Google Drive is running."
-      };
-    }
-    if (!import_fs2.default.existsSync(squadFolder)) {
-      try {
-        import_fs2.default.mkdirSync(squadFolder, { recursive: true });
-      } catch (e) {
-        console.warn("Could not create Google Drive folder:", e);
-      }
-    }
-    if (!filePath) {
-      await import_electron3.shell.openPath(squadFolder);
-      return {
-        success: true,
-        message: `Opened local Google Drive Desktop folder: ${squadFolder}`
       };
     }
     if (!import_fs2.default.existsSync(filePath)) {
@@ -26644,25 +26629,62 @@ var FileHandlers = class {
     const fileName = import_path3.default.basename(filePath);
     const ext = import_path3.default.extname(filePath).toLowerCase();
     const isGoogleVirtual = ext === ".gslides" || ext === ".gsheet" || ext === ".gdoc";
-    const destPath = isGoogleVirtual ? filePath : import_path3.default.join(squadFolder, fileName);
-    if (!isGoogleVirtual) {
-      try {
-        import_fs2.default.copyFileSync(filePath, destPath);
-        import_electron3.clipboard.writeText(destPath);
-      } catch (e) {
-        console.warn("Error syncing file to Google Drive Desktop:", e);
+    let destPath = filePath;
+    if (squadFolder) {
+      if (!import_fs2.default.existsSync(squadFolder)) {
+        try {
+          import_fs2.default.mkdirSync(squadFolder, { recursive: true });
+        } catch (e) {
+          console.warn("Could not create Google Drive folder:", e);
+        }
+      }
+      if (!isGoogleVirtual) {
+        destPath = import_path3.default.join(squadFolder, fileName);
+        try {
+          import_fs2.default.copyFileSync(filePath, destPath);
+          import_electron3.clipboard.writeText(destPath);
+        } catch (e) {
+          console.warn("Error syncing file to Google Drive Desktop:", e);
+        }
       }
     }
-    const openResult = await import_electron3.shell.openPath(destPath);
-    if (!openResult) {
-      return {
-        success: true,
-        message: `Opened "${fileName}" via Google Drive Desktop (${destPath}). Auto-syncing to your account.`
-      };
+    const baseNameWithoutExt = import_path3.default.parse(fileName).name;
+    let virtualPath = null;
+    if (isGoogleVirtual) {
+      virtualPath = filePath;
+    } else if (squadFolder) {
+      const candidateDirs = [squadFolder, driveInfo.driveRoot, import_path3.default.dirname(filePath)].filter(Boolean);
+      let targetVirtualExts = [];
+      if (ext === ".pptx" || ext === ".ppt") {
+        targetVirtualExts = [".gslides"];
+      } else if (ext === ".csv" || ext === ".xlsx" || ext === ".xls") {
+        targetVirtualExts = [".gsheet"];
+      } else if (ext === ".pdf" || this.isPdfFile(filePath)) {
+        targetVirtualExts = [".gdoc"];
+      }
+      for (const dir of candidateDirs) {
+        for (const vExt of targetVirtualExts) {
+          const candidate = import_path3.default.join(dir, `${baseNameWithoutExt}${vExt}`);
+          if (import_fs2.default.existsSync(candidate)) {
+            virtualPath = candidate;
+            break;
+          }
+        }
+        if (virtualPath) break;
+      }
     }
-    console.log(`[GoogleDriveDesktop] shell.openPath returned: "${openResult}". Routing to Google Workspace with document context.`);
-    const appType = ext === ".pptx" || ext === ".ppt" || ext === ".gslides" ? "slides" : ext === ".csv" || ext === ".xlsx" || ext === ".xls" || ext === ".gsheet" ? "sheets" : "docs";
-    return this.openGoogleSuiteSession(appType, "browser_tab", destPath);
+    if (virtualPath && import_fs2.default.existsSync(virtualPath)) {
+      const openResult = await import_electron3.shell.openPath(virtualPath);
+      if (!openResult) {
+        return {
+          success: true,
+          message: `Opened "${import_path3.default.basename(virtualPath)}" via Google Drive Desktop.`
+        };
+      }
+      console.warn(`[GoogleDriveDesktop] shell.openPath on virtual file returned: "${openResult}". Falling through to Google Workspace.`);
+    }
+    const appType = ext === ".pptx" || ext === ".ppt" || ext === ".gslides" ? "slides" : ext === ".csv" || ext === ".xlsx" || ext === ".xls" || ext === ".gsheet" ? "sheets" : ext === ".pdf" || this.isPdfFile(filePath) || ext === ".gdoc" ? "docs" : "drive";
+    return this.openGoogleSuiteSession(appType, "browser_tab", filePath);
   }
   /**
    * Opens local standalone session of Google Productivity Suite (Docs, Sheets, Slides, Drive)
@@ -26714,20 +26736,21 @@ var FileHandlers = class {
     try {
       const userData = (process.env.APPDATA || process.env.USERPROFILE || "") + import_path3.default.sep + "astrosquad-station";
       const settingsFile = import_path3.default.join(userData, "station_settings.json");
+      let account = "0";
       if (import_fs2.default.existsSync(settingsFile)) {
         const parsed = JSON.parse(import_fs2.default.readFileSync(settingsFile, "utf-8"));
-        const account = parsed.googleSuite?.accountIndex || parsed.googleSuite?.userEmail;
-        if (account && targetUrl.includes("google.com")) {
-          if (targetUrl.includes("docs.google.com/viewer")) {
-            targetUrl += `&authuser=${encodeURIComponent(account)}`;
-          } else if (targetUrl.includes("/u/0/")) {
-            targetUrl = targetUrl.replace("/u/0/", `/u/${encodeURIComponent(account)}/`);
-          } else if (!targetUrl.includes("authuser=")) {
-            targetUrl += (targetUrl.includes("?") ? "&" : "?") + `authuser=${encodeURIComponent(account)}`;
-          }
+        account = parsed.googleSuite?.accountIndex || parsed.googleSuite?.userEmail || "0";
+      }
+      if (account && targetUrl.includes("google.com")) {
+        if (targetUrl.includes("/u/0/")) {
+          targetUrl = targetUrl.replace("/u/0/", `/u/${encodeURIComponent(account)}/`);
+        }
+        if (!targetUrl.includes("authuser=")) {
+          targetUrl += (targetUrl.includes("?") ? "&" : "?") + `authuser=${encodeURIComponent(account)}`;
         }
       }
-    } catch {
+    } catch (e) {
+      console.warn("Could not resolve Google account for authuser:", e);
     }
     const isMac = process.platform === "darwin";
     const isWin = process.platform === "win32";
@@ -26807,6 +26830,20 @@ var FileHandlers = class {
     }
     if (customAppPath && customAppPath.trim()) {
       const trimmed = customAppPath.trim();
+      if (trimmed === "system_default") {
+        const openResult = await import_electron3.shell.openPath(filePath);
+        if (!openResult) {
+          return {
+            success: true,
+            message: `Opened "${fileName}" in system default app.`
+          };
+        }
+        import_electron3.shell.showItemInFolder(filePath);
+        return {
+          success: true,
+          message: `Revealed "${fileName}" in file explorer.`
+        };
+      }
       if (trimmed === "google_slides") {
         return this.openGoogleSuiteSession("slides", preferredMode, filePath);
       }

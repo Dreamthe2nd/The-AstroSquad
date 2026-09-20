@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   Presentation, 
   ExternalLink, 
@@ -53,22 +53,17 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
   const [currentSlideIndex, setCurrentSlideIndex] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [isDriveConnected, setIsDriveConnected] = useState<boolean>(false);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   const fileName = useMemo(() => filePath.split(/[/\\]/).pop() || 'Presentation.pptx', [filePath]);
 
-  // Check Google Drive API connection status
-  useEffect(() => {
-    const checkStatus = () => {
-      window.api.drive.getStatus().then((status) => {
-        setIsDriveConnected(status.connected);
-      }).catch(() => {});
-    };
-    checkStatus();
-    window.addEventListener('focus', checkStatus);
-    return () => window.removeEventListener('focus', checkStatus);
-  }, []);
+  const handleOpenDriveDesktop = async () => {
+    try {
+      await window.api.fs.openInDesktopApp(filePath, 'google_drive');
+    } catch (err: any) {
+      console.warn('[PptxViewer] Open in Drive Desktop error:', err);
+    }
+  };
+
 
   // Parse PPTX with JSZip into Image-Based Slides & High-Res Vector Snapshots
   useEffect(() => {
@@ -307,47 +302,8 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [slides.length]);
 
-  const handleOpenDriveDesktop = async () => {
-    try {
-      await window.api.fs.openInDesktopApp(filePath, 'google_drive');
-    } catch (err: any) {
-      console.warn('[PptxViewer] Open in Drive Desktop error:', err);
-    }
-  };
-
-  const handleOpenGoogleDrive = async () => {
-    if (isDriveConnected) {
-      setIsUploading(true);
-      try {
-        const res = await window.api.drive.uploadAndOpen(filePath);
-        if (!res.success) {
-          console.warn('[PptxViewer] Drive upload failed:', res.message);
-          window.api.shell.openGoogleSuite({
-            appType: 'slides',
-            windowMode: 'browser_tab',
-            targetFilePath: filePath
-          });
-        }
-      } catch (err: any) {
-        console.warn('[PptxViewer] Drive upload error:', err?.message);
-        window.api.shell.openGoogleSuite({
-          appType: 'slides',
-          windowMode: 'browser_tab',
-          targetFilePath: filePath
-        });
-      } finally {
-        setIsUploading(false);
-      }
-    } else {
-      window.api.shell.openGoogleSuite({
-        appType: 'slides',
-        windowMode: 'browser_tab',
-        targetFilePath: filePath
-      });
-    }
-  };
-
   const currentSlide = slides[currentSlideIndex];
+
 
   return (
     <div className="flex flex-col h-full w-full bg-slate-950 text-slate-100 overflow-hidden select-none font-sans">
@@ -398,26 +354,16 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
           <button
             onClick={handleOpenDriveDesktop}
             className="px-2.5 py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold flex items-center gap-1.5 transition-colors shadow-sm active:scale-95"
-            title="Open in PowerPoint via Google Drive Desktop (auto-syncs to Pro account)"
+            title="Open in Google Drive for Desktop — edits sync to your Pro account via Google Slides"
           >
             <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-            <span>⚡ Open in Drive Desktop</span>
-          </button>
-
-          <button
-            onClick={handleOpenGoogleDrive}
-            disabled={isUploading}
-            className="px-2.5 py-1 rounded-md bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
-            title="Open presentation in Google Slides via web"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-            <span>{isUploading ? 'Opening...' : 'Slides (Web)'}</span>
+            <span>⚡ Open in Drive</span>
           </button>
 
           <button
             onClick={onOpenInDesktop}
             className="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 flex items-center gap-1.5 transition-colors shadow-sm"
-            title="Launch presentation in default system presentation editor"
+            title="Launch in default system presentation editor"
           >
             <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             <span>System Default</span>
@@ -440,7 +386,7 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
             <div className="space-y-1 max-w-md">
               <h3 className="text-sm font-bold text-slate-200">Presentation Deck Notice</h3>
               <p className="text-xs text-slate-400 font-sans leading-relaxed">
-                {error || 'Presentation could not be displayed.'} You can open this presentation directly in PowerPoint via Google Drive Desktop or in Google Slides.
+                {error || 'Presentation could not be displayed.'} Open directly in Google Drive for Desktop to edit in Google Slides.
               </p>
             </div>
             <div className="flex items-center gap-2 pt-2">
@@ -449,13 +395,7 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
                 className="px-3.5 py-1.5 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-colors shadow-sm"
               >
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>⚡ Open in Drive Desktop</span>
-              </button>
-              <button
-                onClick={handleOpenGoogleDrive}
-                className="px-3.5 py-1.5 rounded-md bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-500/40 text-xs font-mono transition-colors"
-              >
-                <span>Google Slides (Web)</span>
+                <span>⚡ Open in Drive</span>
               </button>
             </div>
           </div>

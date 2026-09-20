@@ -8,12 +8,11 @@ import {
   ChevronRight, 
   ExternalLink, 
   FileSpreadsheet, 
-  Save,
-  Edit3,
-  Eye,
-  Sparkles,
-  RotateCcw,
-  Check
+  Save, 
+  Edit3, 
+  Sparkles, 
+  RotateCcw, 
+  Check 
 } from 'lucide-react';
 
 interface CsvViewerProps {
@@ -33,8 +32,6 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
   const [editedContent, setEditedContent] = useState<string>(csvContent);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
-  const [isDriveConnected, setIsDriveConnected] = useState<boolean>(false);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   // Table view state
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -42,17 +39,6 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
   const [sortAsc, setSortAsc] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(25);
-
-  useEffect(() => {
-    const checkStatus = () => {
-      window.api.drive.getStatus().then((status) => {
-        setIsDriveConnected(status.connected);
-      }).catch(() => {});
-    };
-    checkStatus();
-    window.addEventListener('focus', checkStatus);
-    return () => window.removeEventListener('focus', checkStatus);
-  }, []);
 
   // Reset state when switching files or when external content updates
   useEffect(() => {
@@ -163,46 +149,6 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
     }
   };
 
-  const handleOpenGoogleDrive = async () => {
-    if (isDriveConnected) {
-      // Save any unsaved edits to disk before uploading
-      if (isDirty && onSave) {
-        try {
-          await onSave(editedContent);
-        } catch (e) {
-          console.warn('[CsvViewer] Could not save edits before upload:', e);
-        }
-      }
-      setIsUploading(true);
-      try {
-        const res = await window.api.drive.uploadAndOpen(filePath);
-        if (!res.success) {
-          console.warn('[CsvViewer] Drive upload failed:', res.message);
-          window.api.shell.openGoogleSuite({
-            appType: 'sheets',
-            windowMode: 'browser_tab',
-            targetFilePath: filePath
-          });
-        }
-      } catch (err: any) {
-        console.warn('[CsvViewer] Drive upload error:', err?.message);
-        window.api.shell.openGoogleSuite({
-          appType: 'sheets',
-          windowMode: 'browser_tab',
-          targetFilePath: filePath
-        });
-      } finally {
-        setIsUploading(false);
-      }
-    } else {
-      window.api.shell.openGoogleSuite({
-        appType: 'sheets',
-        windowMode: 'browser_tab',
-        targetFilePath: filePath
-      });
-    }
-  };
-
   const editorLines = useMemo(() => {
     return editedContent.split('\n');
   }, [editedContent]);
@@ -297,35 +243,24 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
             </button>
           )}
 
-          {/* Google Drive Desktop Button (Excel with Cloud Sync) */}
+          {/* Google Drive — open via Drive for Desktop */}
           <button
             onClick={handleOpenDriveDesktop}
             className="px-2.5 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
-            title="Open locally in Excel via Google Drive Desktop (auto-syncs to pro account, 0% browser conflict)"
+            title="Open in Google Drive for Desktop — edits sync via Google Sheets on your pro account"
           >
             <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-            <span className="hidden sm:inline">⚡ Drive Desktop</span>
-          </button>
-
-          {/* Google Drive Cloud Hub Button */}
-          <button
-            onClick={handleOpenGoogleDrive}
-            disabled={isUploading}
-            className="px-2.5 py-1.5 rounded-lg bg-indigo-950/60 hover:bg-indigo-900/60 text-xs text-indigo-300 hover:text-white border border-indigo-500/30 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
-            title="Open CSV in Google Sheets via web"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="hidden sm:inline">{isUploading ? 'Opening...' : 'Sheets (Web)'}</span>
+            <span>⚡ Open in Drive</span>
           </button>
 
           {/* System Desktop Fallback */}
           <button
             onClick={onOpenInDesktop}
-            className="p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
             title="Open in default desktop application"
           >
             <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-            <span className="hidden md:inline">System Default</span>
+            <span>System Default</span>
           </button>
         </div>
       </div>

@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { 
   ZoomIn, 
   ZoomOut, 
   RotateCw, 
-  Maximize2, 
   ExternalLink, 
-  FileText,
-  Download,
-  AlertCircle,
-  Sparkles
+  FileText, 
+  AlertCircle, 
+  Sparkles 
 } from 'lucide-react';
 
 interface PdfViewerProps {
@@ -20,57 +18,12 @@ interface PdfViewerProps {
 export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOpenInDesktop }) => {
   const [zoom, setZoom] = useState<number>(100);
   const [rotation, setRotation] = useState<number>(0);
-  const [isDriveConnected, setIsDriveConnected] = useState<boolean>(false);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
-
-  useEffect(() => {
-    const checkStatus = () => {
-      window.api.drive.getStatus().then((status) => {
-        setIsDriveConnected(status.connected);
-      }).catch(() => {});
-    };
-    checkStatus();
-    window.addEventListener('focus', checkStatus);
-    return () => window.removeEventListener('focus', checkStatus);
-  }, []);
 
   const handleOpenDriveDesktop = async () => {
     try {
       await window.api.fs.openInDesktopApp(filePath, 'google_drive');
     } catch (err: any) {
       console.warn('[PdfViewer] Open in Drive Desktop error:', err);
-    }
-  };
-
-  const handleOpenGoogleDrive = async () => {
-    if (isDriveConnected) {
-      setIsUploading(true);
-      try {
-        const res = await window.api.drive.uploadAndOpen(filePath);
-        if (!res.success) {
-          console.warn('[PdfViewer] Drive upload failed:', res.message);
-          window.api.shell.openGoogleSuite({
-            appType: 'docs',
-            windowMode: 'browser_tab',
-            targetFilePath: filePath
-          });
-        }
-      } catch (err: any) {
-        console.warn('[PdfViewer] Drive upload error:', err?.message);
-        window.api.shell.openGoogleSuite({
-          appType: 'docs',
-          windowMode: 'browser_tab',
-          targetFilePath: filePath
-        });
-      } finally {
-        setIsUploading(false);
-      }
-    } else {
-      window.api.shell.openGoogleSuite({
-        appType: 'docs',
-        windowMode: 'browser_tab',
-        targetFilePath: filePath
-      });
     }
   };
 
@@ -152,25 +105,15 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOp
           </button>
         </div>
 
-        {/* Desktop & Google Drive Launcher Buttons */}
+        {/* Drive & Desktop Launcher Buttons */}
         <div className="flex items-center gap-2">
           <button
             onClick={handleOpenDriveDesktop}
             className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
-            title="Open PDF via Google Drive Desktop with cloud sync (0% browser account conflict)"
+            title="Open in Google Drive for Desktop — syncs to your Pro account for editing in Google Docs"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>⚡ Open in Drive Desktop</span>
-          </button>
-
-          <button
-            onClick={handleOpenGoogleDrive}
-            disabled={isUploading}
-            className="px-2.5 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-xs text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
-            title="Open document in Google Docs via web"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
-            <span>{isUploading ? 'Opening...' : 'Docs (Web)'}</span>
+            <span>⚡ Open in Drive</span>
           </button>
 
           <button
@@ -215,7 +158,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOp
                 className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs flex items-center gap-2 transition-colors shadow-doppler-red"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>⚡ Open in Drive Desktop</span>
+                <span>⚡ Open in Drive</span>
               </button>
             </div>
           )}

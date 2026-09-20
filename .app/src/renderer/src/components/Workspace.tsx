@@ -138,6 +138,28 @@ export const Workspace: React.FC<WorkspaceProps> = ({
 
   /* ---------------- Actions: Edit in Desktop & Save/Share ---------------- */
 
+  const handleOpenSystemDefault = async () => {
+    if (!selectedFile) return;
+
+    try {
+      const fileName = selectedFile.split(/[/\\]/).pop();
+      showToast('info', 'Opening App', `Launching ${fileName} in system default app...`);
+
+      const result = await window.api.fs.openInDesktopApp(selectedFile, 'system_default');
+
+      if (result && result.success) {
+        showToast('success', 'App Launch Active', result.message);
+        setIsEditMorphed(true);
+      } else if (result && !result.success) {
+        showToast('error', 'Open Failed', result.message);
+      } else {
+        showToast('info', 'File Action', 'Attempted to open file.');
+      }
+    } catch (err: any) {
+      showToast('error', 'Launch Failed', err.message);
+    }
+  };
+
   const handleEditInDesktop = async () => {
     if (!selectedFile) return;
 
@@ -239,7 +261,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           key={selectedFile}
           filePath={selectedFile}
           base64Data={isBinary ? fileContent : undefined}
-          onOpenInDesktop={handleEditInDesktop}
+          onOpenInDesktop={handleOpenSystemDefault}
         />
       );
     }
@@ -251,7 +273,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           key={selectedFile}
           filePath={selectedFile}
           base64Data={fileContent}
-          onOpenInDesktop={handleEditInDesktop}
+          onOpenInDesktop={handleOpenSystemDefault}
         />
       );
     }
@@ -264,7 +286,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           filePath={selectedFile}
           csvContent={fileContent}
           onSave={handleSaveMarkdownNote}
-          onOpenInDesktop={handleEditInDesktop}
+          onOpenInDesktop={handleOpenSystemDefault}
         />
       );
     }
