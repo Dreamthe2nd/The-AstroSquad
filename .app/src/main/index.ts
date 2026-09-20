@@ -7,6 +7,8 @@ import { FileHandlers } from './fileHandlers';
 import { GoogleDriveManager } from './googleDriveManager';
 import { SettingsManager, StationSettings } from './settingsManager';
 import { DriveSyncBridge } from './driveSyncBridge';
+import { PrerequisiteInstaller } from './prerequisiteInstaller';
+import { UpdateManager } from './updateManager';
 
 let mainWindow: BrowserWindow | null = null;
 let gitEngine: GitEngine;
@@ -366,7 +368,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle('shell:openMeeting', async (_, customUrl?: string) => {
     const settings = settingsManager.getSettings();
-    const url = customUrl || settings.meeting?.url || 'https://meet.google.com/new';
+    const url = customUrl || settings.meeting?.url || 'https://oracle.zoom.us/my/sheetal.prasad?pwd=MDdMMDdUWU93QkI0NVZwcGRhZzlqQT09';
     await shell.openExternal(url);
   });
 
@@ -419,6 +421,29 @@ function registerIpcHandlers(): void {
     }
     await shell.openExternal('https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing');
     return { success: true, message: 'Opened The-AstroSquad Google Drive Cloud Hub in browser' };
+  });
+
+  /* ---------------- Prerequisites System ---------------- */
+  ipcMain.handle('system:checkPrerequisites', async () => {
+    return PrerequisiteInstaller.checkPrerequisites();
+  });
+
+  ipcMain.handle('system:installGoogleDrive', async () => {
+    return PrerequisiteInstaller.installGoogleDrive();
+  });
+
+  ipcMain.handle('system:installObsidian', async () => {
+    return PrerequisiteInstaller.installObsidian();
+  });
+
+  /* ---------------- In-App Updater ---------------- */
+  ipcMain.handle('updater:checkForUpdates', async () => {
+    const currentVersion = app.getVersion() || '1.0.0';
+    return UpdateManager.checkForUpdates(currentVersion);
+  });
+
+  ipcMain.handle('updater:launchUpdate', async (_, args?: { releaseUrl?: string; downloadUrl?: string }) => {
+    return UpdateManager.launchUpdate(args?.releaseUrl, args?.downloadUrl);
   });
 }
 

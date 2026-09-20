@@ -66,6 +66,15 @@ var api = {
     syncFromDrive: () => import_electron.ipcRenderer.invoke("drive:syncFromDrive"),
     syncToDrive: () => import_electron.ipcRenderer.invoke("drive:syncToDrive"),
     twoWaySync: () => import_electron.ipcRenderer.invoke("drive:twoWaySync")
+  },
+  prerequisites: {
+    checkPrerequisites: () => import_electron.ipcRenderer.invoke("system:checkPrerequisites"),
+    installGoogleDrive: () => import_electron.ipcRenderer.invoke("system:installGoogleDrive"),
+    installObsidian: () => import_electron.ipcRenderer.invoke("system:installObsidian")
+  },
+  updater: {
+    checkForUpdates: () => import_electron.ipcRenderer.invoke("updater:checkForUpdates"),
+    launchUpdate: (args) => import_electron.ipcRenderer.invoke("updater:launchUpdate", args)
   }
 };
 import_electron.contextBridge.exposeInMainWorld("api", api);

@@ -50,7 +50,25 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
   const [showNewNoteModal, setShowNewNoteModal] = useState<boolean>(false);
   const [newNoteName, setNewNoteName] = useState<string>('');
   const [newNoteTitle, setNewNoteTitle] = useState<string>('');
+  const [hasUpdate, setHasUpdate] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check for updates on mount
+  useEffect(() => {
+    let isMounted = true;
+    const checkUpdates = async () => {
+      try {
+        const res = await window.api.updater.checkForUpdates();
+        if (isMounted && res.updateAvailable) {
+          setHasUpdate(res.latestVersion);
+        }
+      } catch {}
+    };
+    checkUpdates();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -265,11 +283,22 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
           <span className="hidden md:inline font-medium">Google Drive</span>
         </button>
 
+        {hasUpdate && onOpenSettings && (
+          <button
+            onClick={onOpenSettings}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-nothing/30 bg-nothing/15 hover:bg-nothing/25 text-nothing-400 hover:text-nothing-300 transition-all text-xs font-sans active:scale-[0.98]"
+            title={`Station Update Available: v${hasUpdate} (Click to open Settings)`}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-nothing animate-pulse" />
+            <span className="font-mono font-medium text-[11px]">v{hasUpdate} Update</span>
+          </button>
+        )}
+
         {onOpenSettings && (
           <button
             onClick={onOpenSettings}
             className="p-2 rounded-lg border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white transition-all active:scale-[0.98]"
-            title="Station Mission Settings (Custom Apps, Repositories, Discord)"
+            title="Station Mission Settings (Custom Apps, Repositories, Discord, Updates)"
           >
             <Settings className="w-3.5 h-3.5" />
           </button>

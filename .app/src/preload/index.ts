@@ -152,6 +152,28 @@ export interface ApiBridge {
       message: string;
     }>;
   };
+  prerequisites: {
+    checkPrerequisites: () => Promise<{
+      platform: 'win32' | 'darwin' | 'linux';
+      googleDrive: { installed: boolean; running: boolean; path?: string; label: string };
+      obsidian: { installed: boolean; path?: string; label: string };
+    }>;
+    installGoogleDrive: () => Promise<{ success: boolean; message: string; method: string }>;
+    installObsidian: () => Promise<{ success: boolean; message: string; method: string }>;
+  };
+  updater: {
+    checkForUpdates: () => Promise<{
+      updateAvailable: boolean;
+      currentVersion: string;
+      latestVersion: string;
+      releaseName: string;
+      releaseNotes: string;
+      publishedAt: string;
+      releaseUrl: string;
+      installerAsset?: { name: string; downloadUrl: string; size: number };
+    }>;
+    launchUpdate: (args?: { releaseUrl?: string; downloadUrl?: string }) => Promise<{ success: boolean; message: string }>;
+  };
 }
 
 const api: ApiBridge = {
@@ -204,6 +226,15 @@ const api: ApiBridge = {
     syncFromDrive: () => ipcRenderer.invoke('drive:syncFromDrive'),
     syncToDrive: () => ipcRenderer.invoke('drive:syncToDrive'),
     twoWaySync: () => ipcRenderer.invoke('drive:twoWaySync')
+  },
+  prerequisites: {
+    checkPrerequisites: () => ipcRenderer.invoke('system:checkPrerequisites'),
+    installGoogleDrive: () => ipcRenderer.invoke('system:installGoogleDrive'),
+    installObsidian: () => ipcRenderer.invoke('system:installObsidian')
+  },
+  updater: {
+    checkForUpdates: () => ipcRenderer.invoke('updater:checkForUpdates'),
+    launchUpdate: (args) => ipcRenderer.invoke('updater:launchUpdate', args)
   }
 };
 

@@ -74,8 +74,8 @@ export class SettingsManager {
         appUri: 'discord://discord.com/channels/1545465896481333258'
       },
       meeting: {
-        url: 'https://meet.google.com/new',
-        platform: 'google_meet'
+        url: 'https://oracle.zoom.us/my/sheetal.prasad?pwd=MDdMMDdUWU93QkI0NVZwcGRhZzlqQT09',
+        platform: 'zoom'
       },
       googleSuite: {
         engine: 'auto',

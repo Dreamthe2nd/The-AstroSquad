@@ -1,5 +1,8 @@
 node_modules/
 .app/node_modules/
+.app/release/
+release/
 *.log
 .DS_Store
 .obsidian/
+.app/dist/test-fileHandlers.js

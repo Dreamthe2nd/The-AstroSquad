@@ -24,7 +24,8 @@ import {
   Info,
   User,
   RefreshCw,
-  Telescope
+  Telescope,
+  Download
 } from 'lucide-react';
 import { StationSettings, AuthStatus } from '../types';
 
@@ -36,7 +37,7 @@ interface SettingsModalProps {
   authStatus?: AuthStatus | null;
 }
 
-type TabType = 'apps' | 'repo' | 'discord' | 'meeting';
+type TabType = 'apps' | 'repo' | 'discord' | 'meeting' | 'updates';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
@@ -75,6 +76,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [clientIdInput, setClientIdInput] = useState<string>('');
   const [clientSecretInput, setClientSecretInput] = useState<string>('');
   const [showDriveInstructions, setShowDriveInstructions] = useState<boolean>(false);
+
+  // Updates state
+  const [checkingUpdate, setCheckingUpdate] = useState<boolean>(false);
+  const [updateInfo, setUpdateInfo] = useState<{
+    updateAvailable: boolean;
+    currentVersion: string;
+    latestVersion: string;
+    releaseName: string;
+    releaseNotes: string;
+    publishedAt: string;
+    releaseUrl: string;
+    installerAsset?: { name: string; downloadUrl: string; size: number };
+  } | null>(null);
+
+  const handleCheckUpdates = async () => {
+    setCheckingUpdate(true);
+    try {
+      const res = await window.api.updater.checkForUpdates();
+      setUpdateInfo(res);
+      if (res.updateAvailable) {
+        showToast('success', 'Update Available', `New version v${res.latestVersion} is ready.`);
+      } else {
+        showToast('info', 'Up to Date', `AstroSquad Station v${res.currentVersion} is up to date.`);
+      }
+    } catch (err: any) {
+      showToast('error', 'Update Check Failed', err.message || 'Unable to query GitHub releases.');
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+
+  const handleLaunchUpdate = async () => {
+    if (!updateInfo) return;
+    try {
+      showToast('info', 'Launching Update', 'Opening release installer / download portal...');
+      await window.api.updater.launchUpdate({
+        releaseUrl: updateInfo.releaseUrl,
+        downloadUrl: updateInfo.installerAsset?.downloadUrl
+      });
+    } catch (err: any) {
+      showToast('error', 'Update Launch Failed', err.message || 'Unable to launch update.');
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -324,7 +368,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   const handleTestMeeting = async () => {
     try {
-      const url = settings?.meeting?.url || 'https://meet.google.com/new';
+      const url = settings?.meeting?.url || 'https://oracle.zoom.us/my/sheetal.prasad?pwd=MDdMMDdUWU93QkI0NVZwcGRhZzlqQT09';
       showToast('info', 'Testing Meeting Room', `Opening ${url}...`);
       await window.api.shell.openMeeting(url);
     } catch (err: any) {
@@ -338,12 +382,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       return {
         ...prev,
         meeting: {
-          url: 'https://meet.google.com/new',
-          platform: 'google_meet'
+          url: 'https://oracle.zoom.us/my/sheetal.prasad?pwd=MDdMMDdUWU93QkI0NVZwcGRhZzlqQT09',
+          platform: 'zoom'
         }
       };
     });
-    showToast('info', 'Meeting Reset', 'Restored default Google Meet room link.');
+    showToast('info', 'Meeting Reset', 'Restored default Oracle Zoom room link.');
   };
 
   const handleResetAll = async () => {
@@ -456,6 +500,24 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           >
             <Video className="w-3.5 h-3.5 text-slate-300" />
             <span>Meetings &amp; Video</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('updates');
+              if (!updateInfo) handleCheckUpdates();
+            }}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-t-lg border-b-2 transition-all ${
+              activeTab === 'updates'
+                ? 'border-white text-white bg-white/[0.04]'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Download className="w-3.5 h-3.5 text-slate-300" />
+            <span>Updates</span>
+            {updateInfo?.updateAvailable && (
+              <span className="w-1.5 h-1.5 rounded-full bg-nothing animate-pulse" />
+            )}
           </button>
         </div>
 
@@ -1392,7 +1454,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                               meeting: {
                                 ...prev.meeting,
                                 platform: 'zoom',
-                                url: prev.meeting?.url && prev.meeting.url !== 'https://meet.google.com/new' ? prev.meeting.url : 'https://zoom.us/join'
+                                url: prev.meeting?.url && prev.meeting.url !== 'https://meet.google.com/new' ? prev.meeting.url : 'https://oracle.zoom.us/my/sheetal.prasad?pwd=MDdMMDdUWU93QkI0NVZwcGRhZzlqQT09'
                               }
                             }
                           : prev
@@ -1492,6 +1554,103 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <ExternalLink className="w-3.5 h-3.5 text-slate-950" />
                   <span>Test Launch Meeting Room</span>
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: STATION UPDATES */}
+          {activeTab === 'updates' && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-obsidian-950 border border-white/[0.08] space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-white">
+                      <Download className="w-4 h-4 text-sapphire-400" />
+                    </span>
+                    <div>
+                      <h4 className="text-sm font-bold text-white font-sans">
+                        AstroSquad Station Software Updates
+                      </h4>
+                      <p className="text-xs text-slate-400 font-sans mt-0.5">
+                        Connected to official GitHub Releases for zero-friction distribution.
+                      </p>
+                    </div>
+                  </div>
+
+                  {updateInfo?.updateAvailable ? (
+                    <span className="px-2.5 py-1 rounded-full bg-nothing/20 border border-nothing/30 text-nothing-400 text-xs font-mono font-medium flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-nothing animate-pulse" />
+                      v{updateInfo.latestVersion} Available
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-mono font-medium flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5" />
+                      Up to Date
+                    </span>
+                  )}
+                </div>
+
+                {/* Version Information Grid */}
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <div className="text-[10px] uppercase font-mono text-slate-400">Current Installed Version</div>
+                    <div className="text-sm font-bold text-white font-mono mt-1">v{updateInfo?.currentVersion || '1.0.0'}</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <div className="text-[10px] uppercase font-mono text-slate-400">Latest Available Release</div>
+                    <div className="text-sm font-bold text-slate-200 font-mono mt-1">v{updateInfo?.latestVersion || '1.0.0'}</div>
+                  </div>
+                </div>
+
+                {/* Release Details (if available) */}
+                {updateInfo && updateInfo.updateAvailable && (
+                  <div className="p-4 rounded-xl bg-white/[0.02] border border-nothing/30 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-xs font-bold text-white font-sans">
+                        {updateInfo.releaseName}
+                      </h5>
+                      <span className="text-[10px] font-mono text-slate-400">
+                        {new Date(updateInfo.publishedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-300 whitespace-pre-wrap font-sans leading-relaxed max-h-40 overflow-y-auto pr-2">
+                      {updateInfo.releaseNotes}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCheckUpdates}
+                    disabled={checkingUpdate}
+                    className="px-3.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.08] text-xs font-sans font-medium flex items-center gap-2 transition-all active:scale-[0.98] disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${checkingUpdate ? 'animate-spin text-nothing' : 'text-slate-400'}`} />
+                    <span>{checkingUpdate ? 'Checking GitHub...' : 'Check for Updates Now'}</span>
+                  </button>
+
+                  {updateInfo?.updateAvailable ? (
+                    <button
+                      type="button"
+                      onClick={handleLaunchUpdate}
+                      className="px-4 py-1.5 rounded-xl bg-nothing hover:bg-nothing-hover text-white text-xs font-sans font-medium flex items-center gap-2 transition-all shadow-sm active:scale-[0.98]"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download &amp; Install Update</span>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => window.api.shell.openExternal('https://github.com/Dreamthe2nd/The-AstroSquad/releases')}
+                      className="px-3.5 py-1.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] text-slate-400 hover:text-white border border-white/[0.06] text-xs font-sans flex items-center gap-1.5 transition-all"
+                    >
+                      <span>View Releases on GitHub</span>
+                      <ExternalLink className="w-3 h-3 text-slate-500" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

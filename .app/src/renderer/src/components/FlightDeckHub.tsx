@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   FolderGit2, 
   MessageSquare, 
@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { AuthStatus } from '../types';
 import { DopplerWavesBackground } from './DopplerWavesBackground';
+import { PrerequisitesModal } from './PrerequisitesModal';
 
 interface FlightDeckHubProps {
   authStatus: AuthStatus | null;
@@ -49,7 +50,29 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
 }) => {
   const [loadingAction, setLoadingAction] = useState<'repo' | 'discord' | 'proposal' | 'meeting' | 'kstars' | 'website' | null>(null);
   const [showProposalMatrix, setShowProposalMatrix] = useState<boolean>(true);
+  const [showPrerequisites, setShowPrerequisites] = useState<boolean>(false);
   const isCollaborator = Boolean(authStatus?.authenticated && authStatus?.isCollaborator);
+
+  // Check prerequisites on station launch
+  useEffect(() => {
+    let isMounted = true;
+    const checkOnLaunch = async () => {
+      try {
+        const res = await window.api.prerequisites.checkPrerequisites();
+        if (isMounted && (!res.googleDrive.installed || !res.obsidian.installed)) {
+          const dismissed = sessionStorage.getItem('astrosquad_prereq_checked');
+          if (!dismissed) {
+            setShowPrerequisites(true);
+            sessionStorage.setItem('astrosquad_prereq_checked', 'true');
+          }
+        }
+      } catch {}
+    };
+    checkOnLaunch();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // 1. View Repository handler
   const handleViewRepository = async () => {
@@ -172,6 +195,15 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
 
         {/* User Info & Quick Actions */}
         <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setShowPrerequisites(true)}
+            className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-sans text-slate-300 hover:text-white border border-white/[0.08] font-medium flex items-center gap-1.5 transition-all active:scale-[0.98]"
+            title="Station Prerequisites & Diagnostics (Google Drive & Obsidian)"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Prerequisites</span>
+          </button>
+
           <button
             onClick={handleOpenFolder}
             className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-xs font-sans text-slate-300 hover:text-white border border-white/[0.08] font-medium flex items-center gap-1.5 transition-all active:scale-[0.98]"
@@ -610,6 +642,13 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
           <span>Remote: github.com/Dreamthe2nd/The-AstroSquad</span>
         </div>
       </footer>
+
+      {/* Prerequisites & Companion Diagnostics Modal */}
+      <PrerequisitesModal
+        isOpen={showPrerequisites}
+        onClose={() => setShowPrerequisites(false)}
+        showToast={showToast}
+      />
     </div>
   );
 };
