@@ -343,8 +343,21 @@ function registerIpcHandlers(): void {
       hasEdge: browsers.some((b) => b.id === 'edge'),
       hasBrave: browsers.some((b) => b.id === 'brave'),
       hasObsidian: !!obsidianPath,
-      obsidianPath
+      obsidianPath,
+      hasGoogleDrive: !!FileHandlers.detectGoogleDrivePath().driveRoot,
+      googleDrivePath: FileHandlers.detectGoogleDrivePath().squadPath || FileHandlers.detectGoogleDrivePath().driveRoot
     };
+  });
+
+  ipcMain.handle('shell:openGoogleDriveFolder', async () => {
+    const driveInfo = FileHandlers.detectGoogleDrivePath();
+    const folder = driveInfo.squadPath || driveInfo.driveRoot;
+    if (folder && fs.existsSync(folder)) {
+      await shell.openPath(folder);
+      return { success: true, message: `Opened ${folder}` };
+    }
+    await shell.openExternal('https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing');
+    return { success: true, message: 'Opened The-AstroSquad Google Drive Cloud Hub in browser' };
   });
 }
 

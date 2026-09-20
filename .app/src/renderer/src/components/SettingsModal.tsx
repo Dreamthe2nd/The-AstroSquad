@@ -33,7 +33,7 @@ interface SettingsModalProps {
   authStatus?: AuthStatus | null;
 }
 
-type TabType = 'apps' | 'googlesuite' | 'repo' | 'discord' | 'meeting';
+type TabType = 'apps' | 'repo' | 'discord' | 'meeting';
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
@@ -57,6 +57,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     hasBrave: boolean;
     hasObsidian?: boolean;
     obsidianPath?: string | null;
+    hasGoogleDrive?: boolean;
+    googleDrivePath?: string | null;
   } | null>(null);
 
   const [driveStatus, setDriveStatus] = useState<{
@@ -387,18 +389,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('googlesuite')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 font-semibold transition-all ${
-              activeTab === 'googlesuite'
-                ? 'border-cyan-400 text-cyan-300 bg-slate-850/60'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Google Suite</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('repo')}
             className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 font-semibold transition-all ${
               activeTab === 'repo'
@@ -442,6 +432,172 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="space-y-4">
               <div className="p-3 rounded-xl bg-cyan-950/20 border border-cyan-500/30 text-slate-300 leading-relaxed font-sans text-xs">
                 Configure which desktop program opens when clicking <span className="font-mono text-cyan-300 font-bold">Edit</span> or <span className="font-mono text-cyan-300 font-bold">Open in Desktop App</span>. You can choose your default desktop app (PowerPoint / Excel), standalone local sessions of the <strong className="text-amber-300 font-semibold">Google Productivity Suite</strong>, or any custom <code className="text-cyan-400 font-mono">.exe</code>.
+              </div>
+
+              {/* Google Drive Desktop Status & Workspace Switcher */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-indigo-500/40 space-y-3.5 shadow-lg shadow-indigo-950/20">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2 rounded-lg bg-indigo-950/80 border border-indigo-500/30 text-indigo-400">
+                      <Sparkles className="w-4 h-4 text-indigo-400" />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-white text-xs">Google Drive &amp; Workspace Integration</h4>
+                        <span className={`text-[9px] font-mono px-2 py-0.5 rounded font-semibold border ${
+                          browserInfo?.hasGoogleDrive
+                            ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40'
+                            : 'bg-slate-900 text-slate-400 border-slate-700'
+                        }`}>
+                          {browserInfo?.hasGoogleDrive ? '● Google Drive Desktop Active' : 'Desktop Drive Not Detected'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400">
+                        {browserInfo?.hasGoogleDrive
+                          ? `Linked to ${browserInfo.googleDrivePath || 'G:\\My Drive\\The-AstroSquad'}. Local presentations and catalogs sync automatically.`
+                          : 'Google Drive for Desktop enables automatic cloud sync and 1-click Google Slides / Sheets editing.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {browserInfo?.hasGoogleDrive && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await window.api.shell.openGoogleDriveFolder();
+                        } catch (err: any) {
+                          showToast('error', 'Open Folder Failed', err.message);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-indigo-950/60 hover:bg-indigo-900/70 border border-indigo-500/40 text-indigo-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+                      title="Reveal local Google Drive folder in Windows Explorer"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5 text-indigo-400" />
+                      <span>Open Drive Folder</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* 3-Way Window Display Mode Switcher */}
+                <div className="pt-2 border-t border-slate-900 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                      <Monitor className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Google Workspace Window Mode:</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-sans">
+                      Select how Google Slides, Sheets, and Docs launch
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    {/* Mode 1: Standalone App Window */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettings((prev) => prev ? {
+                          ...prev,
+                          googleSuite: {
+                            ...prev.googleSuite,
+                            windowMode: 'app_window'
+                          }
+                        } : prev);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-1.5 ${
+                        (settings.googleSuite?.windowMode ?? 'app_window') === 'app_window'
+                          ? 'bg-emerald-950/40 border-emerald-500 shadow-md ring-1 ring-emerald-500/50 text-white'
+                          : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[11px] flex items-center gap-1.5 text-white">
+                          <Monitor className="w-3 h-3 text-emerald-400" />
+                          Standalone App
+                        </span>
+                        <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-emerald-950 text-emerald-300 font-semibold border border-emerald-500/30">
+                          Recommended
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-slate-400 leading-tight">
+                        Dedicated PWA window via Chrome, Edge, or Brave without browser toolbars.
+                      </p>
+                      <span className="text-[9px] font-mono text-emerald-400 font-semibold">
+                        {(settings.googleSuite?.windowMode ?? 'app_window') === 'app_window' ? '✓ Selected' : 'Select'}
+                      </span>
+                    </button>
+
+                    {/* Mode 2: Browser Tab */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettings((prev) => prev ? {
+                          ...prev,
+                          googleSuite: {
+                            ...prev.googleSuite,
+                            windowMode: 'browser_tab'
+                          }
+                        } : prev);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-1.5 ${
+                        settings.googleSuite?.windowMode === 'browser_tab'
+                          ? 'bg-cyan-950/40 border-cyan-500 shadow-md ring-1 ring-cyan-500/50 text-white'
+                          : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[11px] flex items-center gap-1.5 text-white">
+                          <Globe className="w-3 h-3 text-cyan-400" />
+                          Browser Tab
+                        </span>
+                        <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-cyan-950 text-cyan-300 font-semibold border border-cyan-500/30">
+                          Default OS
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-slate-400 leading-tight">
+                        Opens directly as a standard tab in your default browser (Vivaldi, Chrome, Edge).
+                      </p>
+                      <span className="text-[9px] font-mono text-cyan-400 font-semibold">
+                        {settings.googleSuite?.windowMode === 'browser_tab' ? '✓ Selected' : 'Select'}
+                      </span>
+                    </button>
+
+                    {/* Mode 3: Station Window */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettings((prev) => prev ? {
+                          ...prev,
+                          googleSuite: {
+                            ...prev.googleSuite,
+                            windowMode: 'station_window'
+                          }
+                        } : prev);
+                      }}
+                      className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-1.5 ${
+                        settings.googleSuite?.windowMode === 'station_window'
+                          ? 'bg-amber-950/40 border-amber-500 shadow-md ring-1 ring-amber-500/50 text-white'
+                          : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[11px] flex items-center gap-1.5 text-white">
+                          <Layers className="w-3 h-3 text-amber-400" />
+                          Station Window
+                        </span>
+                        <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-amber-950 text-amber-300 font-semibold border border-amber-500/30">
+                          Embedded
+                        </span>
+                      </div>
+                      <p className="text-[9px] text-slate-400 leading-tight">
+                        Integrated native desktop window inside the station container.
+                      </p>
+                      <span className="text-[9px] font-mono text-amber-400 font-semibold">
+                        {settings.googleSuite?.windowMode === 'station_window' ? '✓ Selected' : 'Select'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
               {/* PPTX Association */}
@@ -801,577 +957,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Browse .exe...</span>
                   </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB: GOOGLE PRODUCTIVITY SUITE */}
-          {activeTab === 'googlesuite' && (
-            <div className="space-y-4">
-              {/* Description Banner & Cross-Platform Engine Detection */}
-              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/40 via-amber-950/30 to-emerald-950/30 border border-cyan-500/30 text-slate-200 leading-relaxed font-sans text-xs space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 font-bold text-white text-sm">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>Google Productivity Suite (Local Desktop Sessions)</span>
-                  </div>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase bg-slate-800 border border-slate-700 text-slate-300">
-                    {browserInfo?.platform === 'darwin' ? 'macOS System' : (browserInfo?.platform === 'win32' ? 'Windows System' : 'Desktop System')}
-                  </span>
-                </div>
-                <p className="text-slate-300">
-                  Launch and operate dedicated desktop sessions of <strong>Google Slides</strong>, <strong>Google Sheets</strong>, <strong>Google Docs</strong>, and <strong>Google Drive</strong> without browser tab clutter or address bars. Configured for seamless operation across all squad team machines (macOS Safari &amp; Chrome, Windows Vivaldi &amp; Edge).
-                </p>
-
-                {/* Detected Local Browsers Status */}
-                <div className="pt-2 border-t border-slate-800/80 space-y-2">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-slate-400 font-medium">Detected Local Browsers:</span>
-                    <div className="flex flex-wrap gap-1.5 items-center">
-                      {browserInfo?.hasVivaldi && (
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
-                          <Check className="w-3 h-3 text-emerald-400" /> Vivaldi (Browser Mode Ready)
-                        </span>
-                      )}
-                      {browserInfo?.hasSafari && (
-                        <span className="px-2 py-0.5 rounded-md bg-blue-950/80 border border-blue-500/40 text-blue-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
-                          <Globe className="w-3 h-3 text-blue-400" /> Safari (macOS Native)
-                        </span>
-                      )}
-                      {browserInfo?.hasChrome && (
-                        <span className="px-2 py-0.5 rounded-md bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
-                          <Check className="w-3 h-3 text-emerald-400" /> Chrome (App Mode Ready)
-                        </span>
-                      )}
-                      {browserInfo?.hasEdge && (
-                        <span className="px-2 py-0.5 rounded-md bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
-                          <Check className="w-3 h-3 text-cyan-400" /> Edge (App Mode Ready)
-                        </span>
-                      )}
-                      {browserInfo?.hasBrave && (
-                        <span className="px-2 py-0.5 rounded-md bg-amber-950/80 border border-amber-500/40 text-amber-300 font-mono text-[10px] flex items-center gap-1 font-semibold">
-                          <Check className="w-3 h-3 text-amber-400" /> Brave (App Mode Ready)
-                        </span>
-                      )}
-                      {!browserInfo?.hasVivaldi && !browserInfo?.hasSafari && !browserInfo?.hasChrome && !browserInfo?.hasEdge && !browserInfo?.hasBrave && (
-                        <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 font-mono text-[10px]">
-                          Default System Browser
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {browserInfo?.platform === 'darwin' && browserInfo?.hasSafari && !browserInfo?.hasChrome && !browserInfo?.hasVivaldi && (
-                    <div className="flex items-start gap-2 p-2 rounded-lg bg-blue-950/40 border border-blue-500/30 text-[11px] text-blue-200">
-                      <Info className="w-3.5 h-3.5 text-blue-400 mt-0.5 shrink-0" />
-                      <span>
-                        <strong>macOS Safari Notice:</strong> Safari does not support the <code>--app</code> standalone window flag. Google Drive and Google Suite open directly in your active Safari session with complete authentication cookies.
-                      </span>
-                    </div>
-                  )}
-                  {browserInfo?.hasVivaldi && (
-                    <div className="flex items-start gap-2 p-2 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-[11px] text-emerald-200">
-                      <Info className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
-                      <span>
-                        <strong>Vivaldi Environment:</strong> Google Drive and Google Workspace launch directly in your active Vivaldi session with all team accounts and permissions intact.
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Google Drive API Direct Cloud Bridge */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-indigo-500/40 space-y-3.5 shadow-lg shadow-indigo-950/20">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className="p-2 rounded-lg bg-indigo-950/80 border border-indigo-500/30 text-indigo-400">
-                      <Sparkles className="w-4 h-4 text-indigo-400" />
-                    </span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-white text-xs">Google Drive API Cloud Bridge</h4>
-                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-500/30 font-semibold">
-                          Direct Workspace Launcher
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-400">Uploads files directly to The-AstroSquad shared folder and opens live Google Slides, Sheets, or Docs editors</p>
-                    </div>
-                  </div>
-
-                  {/* Connection Badge */}
-                  <div>
-                    {driveStatus?.connected ? (
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-950 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5">
-                        <Check className="w-3 h-3 text-emerald-400" />
-                        <span>Connected</span>
-                      </span>
-                    ) : (
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-slate-900 border border-slate-700 text-slate-400 flex items-center gap-1.5">
-                        <Lock className="w-3 h-3 text-slate-500" />
-                        <span>Not Connected</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Connected User Account Info or Connection Form */}
-                {driveStatus?.connected ? (
-                  <div className="p-3 rounded-lg bg-emerald-950/20 border border-emerald-500/30 flex items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2 text-slate-200">
-                      <div className="w-8 h-8 rounded-full bg-emerald-900/60 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-300">
-                        {(driveStatus.userName || driveStatus.userEmail || 'A').charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-white">{driveStatus.userName || 'AstroSquad Researcher'}</div>
-                        <div className="text-[11px] font-mono text-emerald-400">{driveStatus.userEmail}</div>
-                        {settings.googleSuite?.clientId && (
-                          <div className="text-[10px] font-mono text-slate-400 truncate max-w-xs">
-                            Client ID: {settings.googleSuite.clientId.slice(0, 16)}...
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
-                        Shared Folder: {driveStatus.folderId.slice(0, 8)}...
-                      </span>
-                      <button
-                        type="button"
-                        onClick={handleDisconnectGoogleDrive}
-                        className="px-3 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/30 text-rose-300 text-xs font-semibold transition-colors"
-                      >
-                        Disconnect
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3 pt-1">
-                    <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
-                      Connect with a Google Cloud OAuth 2.0 Client ID to enable automated cloud upload. When connected, clicking <strong>&quot;Open in Google Slides&quot;</strong> or <strong>&quot;Open in Google Sheets&quot;</strong> automatically converts and opens your presentations and catalogs in your browser without manual uploads.
-                    </p>
-
-                    <div className="space-y-2">
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
-                          <span>Google OAuth 2.0 Client ID (Desktop Application)</span>
-                          <button
-                            type="button"
-                            onClick={() => setShowDriveInstructions(!showDriveInstructions)}
-                            className="text-[10px] text-indigo-400 hover:text-indigo-300 underline font-mono"
-                          >
-                            {showDriveInstructions ? 'Hide Guide' : 'How to get a free Client ID (2 min)?'}
-                          </button>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 1234567890-abcdefg.apps.googleusercontent.com"
-                          value={clientIdInput}
-                          onChange={(e) => {
-                            setClientIdInput(e.target.value);
-                            setSettings((prev) => prev ? {
-                              ...prev,
-                              googleSuite: {
-                                ...prev.googleSuite,
-                                clientId: e.target.value
-                              }
-                            } : prev);
-                          }}
-                          className="w-full mt-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs font-mono focus:outline-none focus:border-indigo-500"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
-                          <span>Google OAuth 2.0 Client Secret (Optional)</span>
-                          <span className="text-[10px] text-slate-500 font-mono">Only if required by client</span>
-                        </label>
-                        <input
-                          type="password"
-                          placeholder="e.g. GOCSPX-..."
-                          value={clientSecretInput}
-                          onChange={(e) => {
-                            setClientSecretInput(e.target.value);
-                            setSettings((prev) => prev ? {
-                              ...prev,
-                              googleSuite: {
-                                ...prev.googleSuite,
-                                clientSecret: e.target.value
-                              }
-                            } : prev);
-                          }}
-                          className="w-full mt-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs font-mono focus:outline-none focus:border-indigo-500"
-                        />
-                      </div>
-
-                      {showDriveInstructions && (
-                        <div className="p-3 rounded-lg bg-indigo-950/30 border border-indigo-500/20 text-[11px] text-indigo-200 space-y-1.5 font-sans">
-                          <div className="font-bold text-white flex items-center gap-1.5">
-                            <Info className="w-3.5 h-3.5 text-indigo-400" />
-                            <span>Google Cloud Console Setup:</span>
-                          </div>
-                          <ol className="list-decimal list-inside space-y-1 text-slate-300">
-                            <li>Visit <a href="#" onClick={(e) => { e.preventDefault(); window.api.shell.openExternal('https://console.cloud.google.com/apis/credentials'); }} className="text-cyan-400 underline">Google Cloud Credentials</a>.</li>
-                            <li>Click <strong>+ Create Credentials</strong> &rarr; <strong>OAuth client ID</strong>.</li>
-                            <li>Select Application type: <strong>Desktop app</strong>, name it <em>AstroSquad Station</em>.</li>
-                            <li>Copy the generated <strong>Client ID</strong> and paste it into the box above.</li>
-                          </ol>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={handleConnectGoogleDrive}
-                          disabled={isConnectingDrive || !clientIdInput.trim()}
-                          className="flex-1 py-2 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>{isConnectingDrive ? 'Waiting for Browser Login...' : 'Connect Google Drive'}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 3-Way Window Display Mode Selector */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                <div>
-                  <h4 className="font-bold text-slate-200 text-xs">Window Display Mode</h4>
-                  <p className="text-[11px] text-slate-400 font-sans">
-                    Select how Google Suite sessions are launched and displayed on this system:
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-                  {/* Mode 1: Standalone App Window (Recommended) */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSettings((prev) => prev ? {
-                        ...prev,
-                        googleSuite: {
-                          ...prev.googleSuite,
-                          windowMode: 'app_window'
-                        }
-                      } : prev);
-                    }}
-                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
-                      (settings.googleSuite?.windowMode ?? 'app_window') === 'app_window'
-                        ? 'bg-emerald-950/40 border-emerald-500 shadow-md ring-1 ring-emerald-500/50'
-                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                          <Monitor className="w-3.5 h-3.5 text-emerald-400" />
-                          Standalone App
-                        </span>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 font-semibold border border-emerald-500/30">
-                          Recommended
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-300 leading-tight">
-                        Spawns dedicated PWA desktop window via Vivaldi, Chrome, Edge or Brave. Uses your existing signed-in Google account with zero login security warnings.
-                      </p>
-                    </div>
-                    <div className="text-[9px] font-mono text-emerald-400/90 font-semibold">
-                      {(settings.googleSuite?.windowMode ?? 'app_window') === 'app_window' ? '✓ Currently Active (Recommended)' : 'Select Mode'}
-                    </div>
-                  </button>
-
-                  {/* Mode 2: Browser Tab */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSettings((prev) => prev ? {
-                        ...prev,
-                        googleSuite: {
-                          ...prev.googleSuite,
-                          windowMode: 'browser_tab'
-                        }
-                      } : prev);
-                    }}
-                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
-                      settings.googleSuite?.windowMode === 'browser_tab'
-                        ? 'bg-cyan-950/40 border-cyan-500 shadow-md ring-1 ring-cyan-500/50'
-                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                          <Globe className="w-3.5 h-3.5 text-amber-400" />
-                          Browser Tab
-                        </span>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 font-semibold border border-amber-500/30">
-                          Safari / Default OS
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-300 leading-tight">
-                        Opens directly as a standard tab inside your system default browser (Safari, Vivaldi, etc.). 100% compliant with existing Google login cookies.
-                      </p>
-                    </div>
-                    <div className="text-[9px] font-mono text-amber-400/90 font-semibold">
-                      {settings.googleSuite?.windowMode === 'browser_tab' ? '✓ Currently Active' : 'Select Mode'}
-                    </div>
-                  </button>
-
-                  {/* Mode 3: Integrated Station Window */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSettings((prev) => prev ? {
-                        ...prev,
-                        googleSuite: {
-                          ...prev.googleSuite,
-                          windowMode: 'station_window'
-                        }
-                      } : prev);
-                    }}
-                    className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between gap-2 ${
-                      settings.googleSuite?.windowMode === 'station_window'
-                        ? 'bg-cyan-950/40 border-cyan-500 shadow-md ring-1 ring-cyan-500/50'
-                        : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
-                    }`}
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs text-white flex items-center gap-1.5">
-                          <Layers className="w-3.5 h-3.5 text-cyan-400" />
-                          Station Window
-                        </span>
-                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-rose-950/80 text-rose-300 font-semibold border border-rose-500/30">
-                          Embedded
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-slate-300 leading-tight">
-                        Embedded Electron window. Note: Google blocks account sign-in in embedded webviews ("This browser or app may not be secure").
-                      </p>
-                    </div>
-                    <div className="text-[9px] font-mono text-cyan-400/90 font-semibold">
-                      {settings.googleSuite?.windowMode === 'station_window' ? '✓ Currently Active' : 'Select Mode'}
-                    </div>
-                  </button>
-                </div>
-
-                {settings.googleSuite?.windowMode === 'station_window' && (
-                  <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-950/40 border border-amber-500/40 text-[11px] text-amber-200">
-                    <Info className="w-4 h-4 text-amber-400 mt-0.5 shrink-0" />
-                    <span>
-                      <strong>Google Security Policy:</strong> Google blocks account sign-in inside embedded Electron windows (<em>&quot;This browser or app may not be secure&quot;</em>). If you need to log into Google, select <strong>Standalone App</strong> (Vivaldi, Chrome, Edge) or <strong>Browser Tab</strong> (Safari, Vivaldi) for unrestricted authentication.
-                    </span>
-                  </div>
-                )}
-
-                {/* Preferred Engine Selector (when in app_window mode) */}
-                {settings.googleSuite?.windowMode === 'app_window' && browserInfo?.browsers && browserInfo.browsers.filter(b => b.supportsAppMode).length > 0 && (
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
-                    <div className="text-slate-300 font-medium">Preferred App Browser:</div>
-                    <select
-                      value={settings.googleSuite?.engine || 'auto'}
-                      onChange={(e) => {
-                        const newEngine = e.target.value;
-                        setSettings((prev) => prev ? {
-                          ...prev,
-                          googleSuite: {
-                            ...prev.googleSuite,
-                            engine: newEngine
-                          }
-                        } : prev);
-                      }}
-                      className="px-2.5 py-1 rounded bg-slate-900 border border-slate-700 text-slate-200 text-xs focus:outline-none focus:border-cyan-500"
-                    >
-                      <option value="auto">Auto Detect (Recommended)</option>
-                      {browserInfo.browsers
-                        .filter((b) => b.supportsAppMode)
-                        .map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.name}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {/* 4 App Cards Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                {/* Google Slides Card */}
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-amber-500/40 space-y-3 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="p-1.5 rounded-lg bg-amber-950/80 border border-amber-500/30 text-amber-400">
-                        <Presentation className="w-4 h-4" />
-                      </span>
-                      <div>
-                        <h4 className="font-bold text-white text-xs">Google Slides</h4>
-                        <p className="text-[10px] text-slate-400">Presentation Decks &amp; Pitch Slides</p>
-                      </div>
-                    </div>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                      settings.fileAssociations.pptx === 'google_slides'
-                        ? 'bg-emerald-950 border border-emerald-500/40 text-emerald-400'
-                        : 'bg-slate-900 border border-slate-800 text-slate-500'
-                    }`}>
-                      {settings.fileAssociations.pptx === 'google_slides' ? 'Active (.pptx)' : 'Not Default'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
-                    Open and design collaborative team presentation decks for symposium talks and progress reviews.
-                  </p>
-                  <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
-                    <button
-                      type="button"
-                      onClick={() => handleLaunchGoogleSuite('slides')}
-                      className="flex-1 py-1.5 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Launch Local Session</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleSetGoogleApp('pptx', settings.fileAssociations.pptx === 'google_slides' ? '' : 'google_slides');
-                      }}
-                      className={`py-1.5 px-3 rounded-lg border text-xs font-semibold transition-colors ${
-                        settings.fileAssociations.pptx === 'google_slides'
-                          ? 'bg-rose-950/50 border-rose-500/40 text-rose-300 hover:bg-rose-900/50'
-                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
-                      }`}
-                    >
-                      {settings.fileAssociations.pptx === 'google_slides' ? 'Unlink .pptx' : 'Use for .pptx'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Google Sheets Card */}
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-teal-500/40 space-y-3 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="p-1.5 rounded-lg bg-teal-950/80 border border-teal-500/30 text-teal-400">
-                        <FileSpreadsheet className="w-4 h-4" />
-                      </span>
-                      <div>
-                        <h4 className="font-bold text-white text-xs">Google Sheets</h4>
-                        <p className="text-[10px] text-slate-400">Spectroscopy Tables &amp; CSV Data</p>
-                      </div>
-                    </div>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                      settings.fileAssociations.csv === 'google_sheets'
-                        ? 'bg-emerald-950 border border-emerald-500/40 text-emerald-400'
-                        : 'bg-slate-900 border border-slate-800 text-slate-500'
-                    }`}>
-                      {settings.fileAssociations.csv === 'google_sheets' ? 'Active (.csv)' : 'Not Default'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
-                    Open M82 &amp; M31 spectroscopy datasets, wavelength calibrations, and photometric catalogs.
-                  </p>
-                  <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
-                    <button
-                      type="button"
-                      onClick={() => handleLaunchGoogleSuite('sheets')}
-                      className="flex-1 py-1.5 px-3 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 border border-teal-500/40 text-teal-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Launch Local Session</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleSetGoogleApp('csv', settings.fileAssociations.csv === 'google_sheets' ? '' : 'google_sheets');
-                      }}
-                      className={`py-1.5 px-3 rounded-lg border text-xs font-semibold transition-colors ${
-                        settings.fileAssociations.csv === 'google_sheets'
-                          ? 'bg-rose-950/50 border-rose-500/40 text-rose-300 hover:bg-rose-900/50'
-                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
-                      }`}
-                    >
-                      {settings.fileAssociations.csv === 'google_sheets' ? 'Unlink .csv' : 'Use for .csv'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Google Docs Card */}
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500/40 space-y-3 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/30 text-cyan-400">
-                        <FileText className="w-4 h-4" />
-                      </span>
-                      <div>
-                        <h4 className="font-bold text-white text-xs">Google Docs</h4>
-                        <p className="text-[10px] text-slate-400">Research Proposals &amp; PDF Documents</p>
-                      </div>
-                    </div>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                      settings.fileAssociations.pdf === 'google_docs'
-                        ? 'bg-emerald-950 border border-emerald-500/40 text-emerald-400'
-                        : 'bg-slate-900 border border-slate-800 text-slate-500'
-                    }`}>
-                      {settings.fileAssociations.pdf === 'google_docs' ? 'Active (.pdf)' : 'Not Default'}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
-                    Open, annotate, and review research proposal PDFs, methodology documents, and draft publications in Google Docs.
-                  </p>
-                  <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
-                    <button
-                      type="button"
-                      onClick={() => handleLaunchGoogleSuite('docs')}
-                      className="flex-1 py-1.5 px-3 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Launch Local Session</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleSetGoogleApp('pdf', settings.fileAssociations.pdf === 'google_docs' ? '' : 'google_docs');
-                      }}
-                      className={`py-1.5 px-3 rounded-lg border text-xs font-semibold transition-colors ${
-                        settings.fileAssociations.pdf === 'google_docs'
-                          ? 'bg-rose-950/50 border-rose-500/40 text-rose-300 hover:bg-rose-900/50'
-                          : 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white'
-                      }`}
-                    >
-                      {settings.fileAssociations.pdf === 'google_docs' ? 'Unlink .pdf' : 'Use for .pdf'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Google Drive Card */}
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 hover:border-indigo-500/40 space-y-3 transition-colors">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="p-1.5 rounded-lg bg-indigo-950/80 border border-indigo-500/30 text-indigo-400">
-                        <FolderGit2 className="w-4 h-4 text-indigo-400" />
-                      </span>
-                      <div>
-                        <h4 className="font-bold text-white text-xs">Google Drive</h4>
-                        <p className="text-[10px] text-slate-400">AstroSquad Shared Cloud Storage</p>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-950 border border-indigo-500/40 text-indigo-300 font-semibold">
-                      CLOUD HUB
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-400 font-sans leading-relaxed">
-                    Access the official squad shared Google Drive folder (<code className="text-indigo-300 font-mono text-[10px]">The-AstroSquad Cloud Hub</code>), raw FITS spectra images, and research archives.
-                  </p>
-                  <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
-                    <button
-                      type="button"
-                      onClick={() => handleLaunchGoogleSuite('drive')}
-                      className="w-full py-1.5 px-3 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/40 text-indigo-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Launch Local Drive Session</span>
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>

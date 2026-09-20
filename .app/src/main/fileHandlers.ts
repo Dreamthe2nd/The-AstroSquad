@@ -303,6 +303,67 @@ export class FileHandlers {
   }
 
   /**
+   * Detects local Google Drive for Desktop installation and shared AstroSquad folder
+   */
+  public static detectGoogleDrivePath(): { driveRoot: string | null; squadPath: string | null } {
+    const isWin = process.platform === 'win32';
+    const isMac = process.platform === 'darwin';
+
+    if (isWin) {
+      // Check G: first (standard Google Drive mount)
+      const primaryCandidate = 'G:\\My Drive';
+      if (fs.existsSync(primaryCandidate)) {
+        const squadPath = path.join(primaryCandidate, 'The-AstroSquad');
+        return {
+          driveRoot: primaryCandidate,
+          squadPath: fs.existsSync(squadPath) ? squadPath : primaryCandidate
+        };
+      }
+
+      // Check all drive letters D through Z
+      for (let c = 68; c <= 90; c++) {
+        const letter = String.fromCharCode(c);
+        const myDrive = `${letter}:\\My Drive`;
+        if (fs.existsSync(myDrive)) {
+          const squadPath = path.join(myDrive, 'The-AstroSquad');
+          return {
+            driveRoot: myDrive,
+            squadPath: fs.existsSync(squadPath) ? squadPath : myDrive
+          };
+        }
+      }
+
+      // Check user profile folder
+      const userProfile = process.env.USERPROFILE || '';
+      const localDrive = path.join(userProfile, 'Google Drive', 'My Drive');
+      if (fs.existsSync(localDrive)) {
+        const squadPath = path.join(localDrive, 'The-AstroSquad');
+        return {
+          driveRoot: localDrive,
+          squadPath: fs.existsSync(squadPath) ? squadPath : localDrive
+        };
+      }
+    } else if (isMac) {
+      const home = process.env.HOME || '';
+      const candidates = [
+        path.join(home, 'Google Drive', 'My Drive'),
+        path.join(home, 'Library/CloudStorage/GoogleDrive')
+      ];
+      for (const c of candidates) {
+        if (fs.existsSync(c)) {
+          const squadPath = path.join(c, 'The-AstroSquad');
+          return {
+            driveRoot: c,
+            squadPath: fs.existsSync(squadPath) ? squadPath : c
+          };
+        }
+      }
+    }
+
+    return { driveRoot: null, squadPath: null };
+  }
+
+  /**
    * Safe wrapper for child_process.spawn that catches both sync and async ENOENT errors.
    * Returns a Promise that resolves after a brief delay to check if the child started OK.
    */
@@ -445,22 +506,46 @@ export class FileHandlers {
     const isMac = process.platform === 'darwin';
     const isWin = process.platform === 'win32';
 
+    const driveInfo = this.detectGoogleDrivePath();
+    let fileHint = '';
+
     if (targetFilePath && fs.existsSync(targetFilePath)) {
-      try {
-        clipboard.writeText(targetFilePath);
-        shell.showItemInFolder(targetFilePath);
-      } catch (e) {
-        console.warn('Could not copy file path or show item in folder:', e);
+      const fileName = path.basename(targetFilePath);
+      if (driveInfo.driveRoot) {
+        try {
+          const squadFolder = driveInfo.squadPath || path.join(driveInfo.driveRoot, 'The-AstroSquad');
+          if (!fs.existsSync(squadFolder)) {
+            fs.mkdirSync(squadFolder, { recursive: true });
+          }
+          const destPath = path.join(squadFolder, fileName);
+          fs.copyFileSync(targetFilePath, destPath);
+          clipboard.writeText(destPath);
+          shell.showItemInFolder(destPath);
+          fileHint = ` Synced to Google Drive Desktop (${destPath}) and revealed in Explorer.`;
+        } catch (e) {
+          console.warn('Could not sync to Google Drive folder:', e);
+          clipboard.writeText(targetFilePath);
+          shell.showItemInFolder(targetFilePath);
+          fileHint = ` Opened Google Drive Cloud Hub for "${fileName}" (path copied & revealed in folder).`;
+        }
+      } else {
+        try {
+          clipboard.writeText(targetFilePath);
+          shell.showItemInFolder(targetFilePath);
+        } catch (e) {}
+        fileHint = ` Opened Google Drive Cloud Hub for "${fileName}" (path copied & revealed in folder).`;
       }
     }
 
-    const fileName = targetFilePath ? path.basename(targetFilePath) : '';
-    const fileHint = fileName
-      ? ` Opened The-AstroSquad Google Drive Cloud Hub for "${fileName}" (path copied & revealed in folder for drag-and-drop).`
-      : '';
-
-    // Google Drive is a collaborative cloud storage hub: always launch directly in default browser for 100% session fidelity
+    // Google Drive: open desktop folder if installed, or web hub
     if (appType === 'drive') {
+      if (driveInfo.squadPath && fs.existsSync(driveInfo.squadPath)) {
+        await shell.openPath(driveInfo.squadPath);
+        return {
+          success: true,
+          message: `Opened local Google Drive folder: ${driveInfo.squadPath}`
+        };
+      }
       await shell.openExternal(targetUrl);
       return {
         success: true,

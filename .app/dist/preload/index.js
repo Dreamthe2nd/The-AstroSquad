@@ -54,7 +54,8 @@ var api = {
     openRepoFolder: () => import_electron.ipcRenderer.invoke("shell:openRepoFolder"),
     copyToClipboard: (text) => import_electron.clipboard.writeText(text),
     openGoogleSuite: (args) => import_electron.ipcRenderer.invoke("shell:openGoogleSuite", args),
-    getDetectedBrowsers: () => import_electron.ipcRenderer.invoke("shell:getDetectedBrowsers")
+    getDetectedBrowsers: () => import_electron.ipcRenderer.invoke("shell:getDetectedBrowsers"),
+    openGoogleDriveFolder: () => import_electron.ipcRenderer.invoke("shell:openGoogleDriveFolder")
   },
   drive: {
     getStatus: () => import_electron.ipcRenderer.invoke("drive:getStatus"),

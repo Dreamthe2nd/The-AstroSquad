@@ -102,7 +102,10 @@ export interface ApiBridge {
       hasBrave: boolean;
       hasObsidian: boolean;
       obsidianPath: string | null;
+      hasGoogleDrive: boolean;
+      googleDrivePath: string | null;
     }>;
+    openGoogleDriveFolder: () => Promise<{ success: boolean; message: string }>;
   };
   drive: {
     getStatus: () => Promise<{
@@ -165,7 +168,8 @@ const api: ApiBridge = {
     openRepoFolder: () => ipcRenderer.invoke('shell:openRepoFolder'),
     copyToClipboard: (text) => clipboard.writeText(text),
     openGoogleSuite: (args) => ipcRenderer.invoke('shell:openGoogleSuite', args),
-    getDetectedBrowsers: () => ipcRenderer.invoke('shell:getDetectedBrowsers')
+    getDetectedBrowsers: () => ipcRenderer.invoke('shell:getDetectedBrowsers'),
+    openGoogleDriveFolder: () => ipcRenderer.invoke('shell:openGoogleDriveFolder')
   },
   drive: {
     getStatus: () => ipcRenderer.invoke('drive:getStatus'),
