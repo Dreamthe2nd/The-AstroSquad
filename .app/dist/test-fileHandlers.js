@@ -399,10 +399,19 @@ var FileHandlers = class {
           squadPath
         };
       }
+      const localDriveMirror = import_path2.default.join(userProfile, "Google Drive");
+      if (import_fs.default.existsSync(localDriveMirror)) {
+        const squadPath = import_path2.default.join(localDriveMirror, "The-AstroSquad");
+        return {
+          driveRoot: localDriveMirror,
+          squadPath
+        };
+      }
     } else if (isMac) {
       const home = process.env.HOME || "";
       const candidates = [
         import_path2.default.join(home, "Google Drive", "My Drive"),
+        import_path2.default.join(home, "Google Drive"),
         import_path2.default.join(home, "Library/CloudStorage/GoogleDrive")
       ];
       for (const c of candidates) {
@@ -412,6 +421,24 @@ var FileHandlers = class {
             driveRoot: c,
             squadPath
           };
+        }
+      }
+      const cloudStorage = import_path2.default.join(home, "Library/CloudStorage");
+      if (import_fs.default.existsSync(cloudStorage)) {
+        try {
+          const entries = import_fs.default.readdirSync(cloudStorage);
+          for (const entry of entries) {
+            if (entry.startsWith("GoogleDrive")) {
+              const fullEntry = import_path2.default.join(cloudStorage, entry);
+              const myDrive = import_path2.default.join(fullEntry, "My Drive");
+              const targetRoot = import_fs.default.existsSync(myDrive) ? myDrive : fullEntry;
+              return {
+                driveRoot: targetRoot,
+                squadPath: import_path2.default.join(targetRoot, "The-AstroSquad")
+              };
+            }
+          }
+        } catch {
         }
       }
     }
@@ -594,12 +621,27 @@ var FileHandlers = class {
     const driveInfo = this.detectGoogleDrivePath();
     const squadFolder = driveInfo.squadPath || (driveInfo.driveRoot ? import_path2.default.join(driveInfo.driveRoot, "The-AstroSquad") : null);
     if (!filePath) {
-      if (squadFolder && import_fs.default.existsSync(squadFolder)) {
-        await import_electron2.shell.openPath(squadFolder);
-        return {
-          success: true,
-          message: `Opened local Google Drive Desktop folder: ${squadFolder}`
-        };
+      if (squadFolder) {
+        if (!import_fs.default.existsSync(squadFolder)) {
+          try {
+            import_fs.default.mkdirSync(squadFolder, { recursive: true });
+          } catch (e) {
+            console.warn("Could not create Google Drive squad folder:", e);
+          }
+        }
+        if (import_fs.default.existsSync(squadFolder)) {
+          await import_electron2.shell.openPath(squadFolder);
+          return {
+            success: true,
+            message: `Opened local Google Drive Desktop folder: ${squadFolder}`
+          };
+        } else if (driveInfo.driveRoot && import_fs.default.existsSync(driveInfo.driveRoot)) {
+          await import_electron2.shell.openPath(driveInfo.driveRoot);
+          return {
+            success: true,
+            message: `Opened Google Drive Desktop folder: ${driveInfo.driveRoot}`
+          };
+        }
       }
       return {
         success: false,
@@ -760,6 +802,8 @@ var FileHandlers = class {
         }
         if (!targetUrl.includes("authuser=")) {
           targetUrl += (targetUrl.includes("?") ? "&" : "?") + `authuser=${encodeURIComponent(account)}`;
+        } else {
+          targetUrl = targetUrl.replace(/([?&])authuser=[^&#]*/, `$1authuser=${encodeURIComponent(account)}`);
         }
       }
     } catch (e) {
@@ -838,7 +882,19 @@ var FileHandlers = class {
           message: `Opened "${fileName}" via Google Drive Desktop.`
         };
       }
+      console.warn(`[GoogleDriveDesktop] shell.openPath on virtual file returned: "${openResult}". Falling through to Google Workspace.`);
       const appType = ext === ".gslides" ? "slides" : ext === ".gsheet" ? "sheets" : "docs";
+      try {
+        const vContent = import_fs.default.readFileSync(filePath, "utf-8");
+        const vData = JSON.parse(vContent);
+        const docId = vData?.doc_id || vData?.id;
+        const fallbackUrl = docId ? appType === "slides" ? `https://docs.google.com/presentation/d/${docId}/edit` : appType === "sheets" ? `https://docs.google.com/spreadsheets/d/${docId}/edit` : `https://docs.google.com/document/d/${docId}/edit` : void 0;
+        const targetVirtualUrl = vData?.url || fallbackUrl;
+        if (targetVirtualUrl) {
+          return this.openGoogleSuiteSession(appType, preferredMode, filePath, void 0, targetVirtualUrl);
+        }
+      } catch {
+      }
       return this.openGoogleSuiteSession(appType, preferredMode, filePath);
     }
     if (customAppPath && customAppPath.trim()) {

@@ -78,9 +78,18 @@ const mockElectron = {
     constructor() {
       this.webContents = {
         on: () => {},
-        setWindowOpenHandler: () => {}
+        setWindowOpenHandler: () => {},
+        setUserAgent: () => {},
+        loadURL: (url) => { electronCalls.openExternal.push(url); }
       };
     }
+    isDestroyed() { return false; }
+    show() {}
+    focus() {}
+    loadURL(url) { electronCalls.openExternal.push(url); }
+    setTitle() {}
+    on() {}
+    close() {}
   },
   clipboard: {
     writeText: (t) => { electronCalls.clipboard.push(t); }
@@ -119,6 +128,7 @@ require.cache[path.join(__dirname, 'src', 'main', 'googleWindowManager.ts')] = {
 
 // Read and evaluate FileHandlers from compiled dist
 const { FileHandlers } = require('./dist/test-fileHandlers.js');
+const originalDetectGoogleDrivePath = FileHandlers.detectGoogleDrivePath;
 
 // Mock detectGoogleDrivePath on FileHandlers to point to our mockDriveRoot
 FileHandlers.detectGoogleDrivePath = () => {
@@ -340,12 +350,78 @@ async function runRuntimeTests() {
   assert.strictEqual(fs.existsSync(path.join(targetCreatedSquadDir, 'presentation.pptx')), true, 'FATAL ERROR: File was not copied into newly created The-AstroSquad folder!');
   console.log('  ✓ Verified: The-AstroSquad folder is auto-created and synced under fresh Google Drive root');
 
+  // TEST M: openInGoogleDriveDesktop() with no file argument when squadPath does not pre-exist
+  console.log('\n[TEST M] openInGoogleDriveDesktop() without filePath when folder does not pre-exist');
+  const emptyDriveRoot = path.join(tempDir, 'EmptyDrive');
+  fs.mkdirSync(emptyDriveRoot, { recursive: true });
+  FileHandlers.detectGoogleDrivePath = () => ({
+    driveRoot: emptyDriveRoot,
+    squadPath: path.join(emptyDriveRoot, 'The-AstroSquad')
+  });
+  electronCalls.openPath = [];
+  const resM = await FileHandlers.openInGoogleDriveDesktop();
+  console.log('  Result:', resM);
+  assert.strictEqual(resM.success, true, 'FATAL ERROR: openInGoogleDriveDesktop() failed on fresh drive mount!');
+  assert.strictEqual(fs.existsSync(path.join(emptyDriveRoot, 'The-AstroSquad')), true, 'FATAL ERROR: The-AstroSquad folder was not auto-created when opening drive folder!');
+  console.log('  ✓ Verified: Opening Google Drive folder auto-creates The-AstroSquad and opens it');
+
+  // TEST N: openInDesktopApp on native virtual file with shell.openPath failure
+  console.log('\n[TEST N] openInDesktopApp on native virtual file with shell.openPath failure');
+  const standaloneVirtualFile = path.join(tempDir, 'standalone.gslides');
+  fs.writeFileSync(standaloneVirtualFile, JSON.stringify({ doc_id: 'docid_app_fallback_999' }));
+  electronCalls.openPath = [];
+  electronCalls.openExternal = [];
+  electronCalls.mockOpenPathResult = 'Failed to launch desktop association';
+
+  const resN = await FileHandlers.openInDesktopApp(standaloneVirtualFile);
+  console.log('  Result:', resN);
+  assert.strictEqual(resN.success, true);
+  const openedUrlN = electronCalls.openExternal[0];
+  console.log('  Launched URL on openInDesktopApp virtual fallback:', openedUrlN);
+  assert.strictEqual(openedUrlN.includes('docid_app_fallback_999'), true, 'FATAL ERROR: openInDesktopApp virtual fallback must open document URL with doc_id! Got: ' + openedUrlN);
+  console.log('  ✓ Verified: openInDesktopApp correctly resolves doc_id from virtual file on association failure');
+
+  // TEST O: authuser query parameter replacement when URL already has an authuser param
+  console.log('\n[TEST O] authuser replacement when URL already has authuser query parameter');
+  electronCalls.openExternal = [];
+  const existingAuthUrl = 'https://docs.google.com/presentation/d/deck123/edit?authuser=old_account%40gmail.com';
+  await FileHandlers.openGoogleSuiteSession('slides', 'browser_tab', undefined, undefined, existingAuthUrl);
+  const openedUrlO = electronCalls.openExternal[0];
+  console.log('  Launched URL with updated authuser:', openedUrlO);
+  assert.strictEqual(openedUrlO.includes('authuser=astrosquad.pro%40gmail.com'), true, 'FATAL ERROR: Old authuser parameter was not replaced! Got: ' + openedUrlO);
+  assert.strictEqual(openedUrlO.includes('old_account'), false, 'FATAL ERROR: Old authuser still present in URL! Got: ' + openedUrlO);
+  console.log('  ✓ Verified: Existing authuser query parameter successfully updated to configured Pro account');
+
+  // TEST P: detectGoogleDrivePath detection of Windows Mirror mode (Google Drive without My Drive)
+  console.log('\n[TEST P] Google Drive detection in Mirror mode');
+  const mirrorDir = path.join(tempDir, 'Google Drive');
+  fs.mkdirSync(mirrorDir, { recursive: true });
+  const oldUserProfile = process.env.USERPROFILE;
+  const origExistsSync = fs.existsSync;
+  process.env.USERPROFILE = tempDir;
+  try {
+    fs.existsSync = (p) => {
+      if (typeof p === 'string' && (/^[D-Z]:\\My Drive/i.test(p) || /^G:\\/i.test(p))) return false;
+      return origExistsSync(p);
+    };
+    FileHandlers.detectGoogleDrivePath = originalDetectGoogleDrivePath;
+    const detected = FileHandlers.detectGoogleDrivePath();
+    console.log('  Detected Mirror Mode Drive:', detected);
+    assert.strictEqual(detected.driveRoot, mirrorDir, 'FATAL ERROR: Mirror mode folder was not detected as driveRoot!');
+    assert.strictEqual(detected.squadPath, path.join(mirrorDir, 'The-AstroSquad'), 'FATAL ERROR: squadPath not correctly mapped under mirror mode folder!');
+    console.log('  ✓ Verified: Google Drive Mirror mode in user profile detected successfully');
+  } finally {
+    fs.existsSync = origExistsSync;
+    process.env.USERPROFILE = oldUserProfile;
+    FileHandlers.detectGoogleDrivePath = originalDetectGoogleDrivePath;
+  }
+
   // Clean up
   try {
     fs.rmSync(tempDir, { recursive: true, force: true });
   } catch {}
 
-  console.log('\n=== ALL 12 RUNTIME BEHAVIORAL TESTS PASSED PERFECTLY ===');
+  console.log('\n=== ALL 16 RUNTIME BEHAVIORAL TESTS PASSED PERFECTLY ===');
 }
 
 runRuntimeTests().catch(err => {
