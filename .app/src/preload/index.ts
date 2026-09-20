@@ -128,6 +128,27 @@ export interface ApiBridge {
       webViewLink?: string;
       message: string;
     }>;
+    syncFromDrive: () => Promise<{
+      success: boolean;
+      syncedCount: number;
+      updatedCount: number;
+      updatedFiles: string[];
+      message: string;
+    }>;
+    syncToDrive: () => Promise<{
+      success: boolean;
+      syncedCount: number;
+      updatedCount: number;
+      updatedFiles: string[];
+      message: string;
+    }>;
+    twoWaySync: () => Promise<{
+      success: boolean;
+      syncedCount: number;
+      updatedCount: number;
+      updatedFiles: string[];
+      message: string;
+    }>;
   };
 }
 
@@ -176,7 +197,10 @@ const api: ApiBridge = {
     getStatus: () => ipcRenderer.invoke('drive:getStatus'),
     startAuth: (args) => ipcRenderer.invoke('drive:startAuth', args),
     disconnect: () => ipcRenderer.invoke('drive:disconnect'),
-    uploadAndOpen: (filePath) => ipcRenderer.invoke('drive:uploadAndOpen', filePath)
+    uploadAndOpen: (filePath) => ipcRenderer.invoke('drive:uploadAndOpen', filePath),
+    syncFromDrive: () => ipcRenderer.invoke('drive:syncFromDrive'),
+    syncToDrive: () => ipcRenderer.invoke('drive:syncToDrive'),
+    twoWaySync: () => ipcRenderer.invoke('drive:twoWaySync')
   }
 };
 

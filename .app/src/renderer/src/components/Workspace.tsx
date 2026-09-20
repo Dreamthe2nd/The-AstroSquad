@@ -36,6 +36,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isEditMorphed, setIsEditMorphed] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [isDriveSyncing, setIsDriveSyncing] = useState<boolean>(false);
 
   // Request cancellation ref to prevent out-of-order state updates during fast clicks
   const activeRequestIdRef = useRef<number>(0);
@@ -193,6 +194,33 @@ export const Workspace: React.FC<WorkspaceProps> = ({
     }
   };
 
+  const handleSyncFromDrive = async () => {
+    setIsDriveSyncing(true);
+    try {
+      showToast('info', 'Syncing Google Drive', 'Checking G:\\My Drive\\The-AstroSquad for cloud updates...');
+      const res = await window.api.drive.syncFromDrive();
+      if (res.success) {
+        if (res.updatedCount > 0) {
+          const fileSummary = res.updatedFiles.slice(0, 3).join(', ') + (res.updatedFiles.length > 3 ? '...' : '');
+          showToast('success', 'Google Drive Synced', `Pulled ${res.updatedCount} updated file(s) from Drive: ${fileSummary}`);
+          setIsEditMorphed(true); // Glow Save & Share so user can push the cloud edits to GitHub
+          await onRefreshFiles();
+          if (selectedFile) {
+            await loadFile(selectedFile);
+          }
+        } else {
+          showToast('info', 'Already Up to Date', 'Google Drive is in sync with your local workspace.');
+        }
+      } else {
+        showToast('warning', 'Google Drive Sync', res.message);
+      }
+    } catch (err: any) {
+      showToast('error', 'Drive Sync Error', err.message || 'Failed to sync with Google Drive.');
+    } finally {
+      setIsDriveSyncing(false);
+    }
+  };
+
   const handleSaveAndShare = async () => {
     setIsSyncing(true);
     try {
@@ -207,6 +235,8 @@ export const Workspace: React.FC<WorkspaceProps> = ({
         setIsEditMorphed(false);
         await onRefreshFiles();
         if (selectedFile) await loadFile(selectedFile);
+        // Also mirror latest repository files to Google Drive
+        window.api.drive.syncToDrive().catch(() => {});
       } else if (pushRes.conflictsResolved && pushRes.conflictsResolved.length > 0) {
         showToast('conflict', 'Guardrail Protected Data', pushRes.message);
       } else {
@@ -374,8 +404,10 @@ export const Workspace: React.FC<WorkspaceProps> = ({
           onCreateNote={handleCreateNote}
           onEditInDesktop={handleEditInDesktop}
           onSaveAndShare={handleSaveAndShare}
+          onSyncDrive={handleSyncFromDrive}
           onOpenSettings={onOpenSettings}
           isSyncing={isSyncing}
+          isDriveSyncing={isDriveSyncing}
           showToast={showToast}
         />
 

@@ -23,8 +23,10 @@ interface TopActionBarProps {
   onCreateNote: (name: string, title?: string) => Promise<void>;
   onEditInDesktop: () => Promise<void>;
   onSaveAndShare: () => Promise<void>;
+  onSyncDrive?: () => Promise<void>;
   onOpenSettings?: () => void;
   isSyncing: boolean;
+  isDriveSyncing?: boolean;
   showToast?: (type: 'info' | 'success' | 'warning' | 'error' | 'conflict', title: string, message: string) => void;
 }
 
@@ -37,8 +39,10 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
   onCreateNote,
   onEditInDesktop,
   onSaveAndShare,
+  onSyncDrive,
   onOpenSettings,
   isSyncing,
+  isDriveSyncing = false,
   showToast
 }) => {
   const [showNewDropdown, setShowNewDropdown] = useState<boolean>(false);
@@ -200,6 +204,23 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
               <FileEdit className="w-3.5 h-3.5 text-cyan-400" />
             )}
             <span>Edit</span>
+          </button>
+        )}
+
+        {/* Sync from Google Drive Desktop */}
+        {onSyncDrive && (
+          <button
+            onClick={onSyncDrive}
+            disabled={isDriveSyncing || isSyncing}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-emerald-500/30 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 hover:text-white transition-colors text-xs font-mono shadow-sm active:scale-95 disabled:opacity-50"
+            title="Pull updated slides, sheets, and documents from Google Drive (G:\My Drive\The-AstroSquad)"
+          >
+            {isDriveSyncing ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5 text-emerald-400" />
+            )}
+            <span className="font-semibold">Sync Drive</span>
           </button>
         )}
 

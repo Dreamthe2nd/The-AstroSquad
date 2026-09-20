@@ -6,6 +6,7 @@ import { GitEngine } from './gitEngine';
 import { FileHandlers } from './fileHandlers';
 import { GoogleDriveManager } from './googleDriveManager';
 import { SettingsManager, StationSettings } from './settingsManager';
+import { DriveSyncBridge } from './driveSyncBridge';
 
 let mainWindow: BrowserWindow | null = null;
 let gitEngine: GitEngine;
@@ -145,7 +146,15 @@ function registerIpcHandlers(): void {
   });
 
   ipcMain.handle('git:commitAndPush', async (_, notes?: string) => {
-    return gitEngine.commitAndPush(notes);
+    const res = await gitEngine.commitAndPush(notes);
+    if (res.success) {
+      try {
+        DriveSyncBridge.syncToDrive(gitEngine.getRepoDir());
+      } catch (err) {
+        console.warn('[GitEngine] Post-push Drive mirror error:', err);
+      }
+    }
+    return res;
   });
 
   ipcMain.handle('git:getStatus', async () => {
@@ -294,6 +303,52 @@ function registerIpcHandlers(): void {
     } catch (err: any) {
       console.error('[IPC] drive:uploadAndOpen error:', err);
       return { success: false, message: err.message || 'Upload failed.' };
+    }
+  });
+
+  // Google Drive Desktop Content Mirror & Sync Bridge
+  ipcMain.handle('drive:syncFromDrive', async () => {
+    try {
+      return DriveSyncBridge.syncFromDrive(gitEngine.getRepoDir());
+    } catch (err: any) {
+      console.error('[IPC] drive:syncFromDrive error:', err);
+      return {
+        success: false,
+        syncedCount: 0,
+        updatedCount: 0,
+        updatedFiles: [],
+        message: err.message || 'Failed to sync from Google Drive.'
+      };
+    }
+  });
+
+  ipcMain.handle('drive:syncToDrive', async () => {
+    try {
+      return DriveSyncBridge.syncToDrive(gitEngine.getRepoDir());
+    } catch (err: any) {
+      console.error('[IPC] drive:syncToDrive error:', err);
+      return {
+        success: false,
+        syncedCount: 0,
+        updatedCount: 0,
+        updatedFiles: [],
+        message: err.message || 'Failed to mirror to Google Drive.'
+      };
+    }
+  });
+
+  ipcMain.handle('drive:twoWaySync', async () => {
+    try {
+      return DriveSyncBridge.twoWaySync(gitEngine.getRepoDir());
+    } catch (err: any) {
+      console.error('[IPC] drive:twoWaySync error:', err);
+      return {
+        success: false,
+        syncedCount: 0,
+        updatedCount: 0,
+        updatedFiles: [],
+        message: err.message || 'Failed to perform two-way sync.'
+      };
     }
   });
 

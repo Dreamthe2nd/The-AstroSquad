@@ -61,7 +61,10 @@ var api = {
     getStatus: () => import_electron.ipcRenderer.invoke("drive:getStatus"),
     startAuth: (args) => import_electron.ipcRenderer.invoke("drive:startAuth", args),
     disconnect: () => import_electron.ipcRenderer.invoke("drive:disconnect"),
-    uploadAndOpen: (filePath) => import_electron.ipcRenderer.invoke("drive:uploadAndOpen", filePath)
+    uploadAndOpen: (filePath) => import_electron.ipcRenderer.invoke("drive:uploadAndOpen", filePath),
+    syncFromDrive: () => import_electron.ipcRenderer.invoke("drive:syncFromDrive"),
+    syncToDrive: () => import_electron.ipcRenderer.invoke("drive:syncToDrive"),
+    twoWaySync: () => import_electron.ipcRenderer.invoke("drive:twoWaySync")
   }
 };
 import_electron.contextBridge.exposeInMainWorld("api", api);
