@@ -350,38 +350,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 select-none">
-      <div className="w-full max-w-2xl max-h-[85vh] rounded-2xl bg-slate-900 border border-slate-700/80 shadow-2xl flex flex-col overflow-hidden text-slate-100">
+      <div className="w-full max-w-2xl max-h-[85vh] rounded-xl bg-slate-900 border border-slate-800 shadow-2xl flex flex-col overflow-hidden text-slate-100">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/60">
+        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-950/80">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-rose-500 p-0.5 shadow-doppler-blue">
-              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-                <Settings className="w-4 h-4 text-cyan-400" />
-              </div>
+            <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center shadow-sm">
+              <Settings className="w-4 h-4 text-cyan-400" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-white tracking-wide">
-                Station Mission Settings
+              <h2 className="text-sm font-semibold text-white tracking-wide">
+                Station Settings
               </h2>
-              <p className="text-[11px] font-mono text-cyan-400/80">
-                Configure default applications, repositories, and comms links
+              <p className="text-[11px] font-mono text-slate-400">
+                Application bindings, repository, and comms links
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 px-6 pt-3 border-b border-slate-800 bg-slate-950/30 text-xs font-mono">
+        <div className="flex items-center gap-1.5 px-6 pt-2 border-b border-slate-800 bg-slate-950/40 text-xs font-mono">
           <button
             onClick={() => setActiveTab('apps')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 font-semibold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-t-md border-b-2 font-medium transition-all ${
               activeTab === 'apps'
                 ? 'border-cyan-400 text-cyan-300 bg-slate-850/60'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -393,7 +391,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <button
             onClick={() => setActiveTab('repo')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 font-semibold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-t-md border-b-2 font-medium transition-all ${
               activeTab === 'repo'
                 ? 'border-cyan-400 text-cyan-300 bg-slate-850/60'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -405,7 +403,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <button
             onClick={() => setActiveTab('discord')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 font-semibold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-t-md border-b-2 font-medium transition-all ${
               activeTab === 'discord'
                 ? 'border-cyan-400 text-cyan-300 bg-slate-850/60'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -417,7 +415,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <button
             onClick={() => setActiveTab('meeting')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-t-lg border-b-2 font-semibold transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-t-md border-b-2 font-medium transition-all ${
               activeTab === 'meeting'
                 ? 'border-cyan-400 text-cyan-300 bg-slate-850/60'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -433,32 +431,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {/* TAB 1: FILE ASSOCIATIONS */}
           {activeTab === 'apps' && (
             <div className="space-y-4">
-              <div className="p-3 rounded-xl bg-cyan-950/20 border border-cyan-500/30 text-slate-300 leading-relaxed font-sans text-xs">
-                Configure which desktop program opens when clicking <span className="font-mono text-cyan-300 font-bold">Edit</span> or <span className="font-mono text-cyan-300 font-bold">Open in Desktop App</span>. You can choose your default desktop app (PowerPoint / Excel), standalone local sessions of the <strong className="text-amber-300 font-semibold">Google Productivity Suite</strong>, or any custom <code className="text-cyan-400 font-mono">.exe</code>.
-              </div>
-
-              {/* Google Drive Desktop Status & Workspace Switcher */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-indigo-500/40 space-y-3.5 shadow-lg shadow-indigo-950/20">
+              {/* Google Drive & Workspace Configuration Card */}
+              <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-3.5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
-                    <span className="p-2 rounded-lg bg-indigo-950/80 border border-indigo-500/30 text-indigo-400">
-                      <Sparkles className="w-4 h-4 text-indigo-400" />
+                    <span className="p-1.5 rounded-md bg-indigo-500/15 border border-indigo-500/30 text-indigo-400">
+                      <Sparkles className="w-3.5 h-3.5" />
                     </span>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-white text-xs">Google Drive &amp; Workspace Integration</h4>
-                        <span className={`text-[9px] font-mono px-2 py-0.5 rounded font-semibold border ${
+                        <h4 className="font-semibold text-white text-xs">Google Workspace &amp; Drive Integration</h4>
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-medium border ${
                           browserInfo?.hasGoogleDrive
-                            ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40'
-                            : 'bg-slate-900 text-slate-400 border-slate-700'
+                            ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/30'
+                            : 'bg-slate-900 text-slate-400 border-slate-800'
                         }`}>
-                          {browserInfo?.hasGoogleDrive ? '● Google Drive Desktop Active' : 'Desktop Drive Not Detected'}
+                          {browserInfo?.hasGoogleDrive ? '● Drive Desktop Active' : 'Drive Desktop Not Detected'}
                         </span>
                       </div>
                       <p className="text-[10px] text-slate-400">
                         {browserInfo?.hasGoogleDrive
-                          ? `Linked to ${browserInfo.googleDrivePath || 'G:\\My Drive\\The-AstroSquad'}. Local presentations and catalogs sync automatically.`
-                          : 'Google Drive for Desktop enables automatic cloud sync and 1-click Google Slides / Sheets editing.'}
+                          ? `Synced with ${browserInfo.googleDrivePath || 'G:\\My Drive\\The-AstroSquad'}.`
+                          : 'Install Google Drive for Desktop to enable local file auto-sync.'}
                       </p>
                     </div>
                   </div>
@@ -473,230 +467,151 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           showToast('error', 'Open Folder Failed', err.message);
                         }
                       }}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-950/60 hover:bg-indigo-900/70 border border-indigo-500/40 text-indigo-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+                      className="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white text-xs font-medium flex items-center gap-1.5 transition-colors"
                       title="Reveal local Google Drive folder in Windows Explorer"
                     >
                       <FolderOpen className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>Open Drive Folder</span>
+                      <span>Open Folder</span>
                     </button>
                   )}
                 </div>
 
-                {/* 3-Way Window Display Mode Switcher */}
-                <div className="pt-2 border-t border-slate-900 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
+                {/* Window Mode Segmented Control */}
+                <div className="pt-2 border-t border-slate-900 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300 font-medium flex items-center gap-1.5">
                       <Monitor className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Google Workspace Window Mode:</span>
+                      <span>Workspace Launch Mode:</span>
                     </span>
-                    <span className="text-[10px] text-slate-400 font-sans">
-                      Select how Google Slides, Sheets, and Docs launch
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {(settings.googleSuite?.windowMode ?? 'app_window') === 'app_window' && 'Standalone window without browser UI'}
+                      {settings.googleSuite?.windowMode === 'browser_tab' && 'Standard browser tab'}
+                      {settings.googleSuite?.windowMode === 'station_window' && 'Dedicated station session'}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {/* Mode 1: Standalone App Window */}
+                  <div className="grid grid-cols-3 gap-1.5 p-1 rounded-lg bg-slate-900/90 border border-slate-800/80">
                     <button
                       type="button"
                       onClick={() => {
                         setSettings((prev) => prev ? {
                           ...prev,
-                          googleSuite: {
-                            ...prev.googleSuite,
-                            windowMode: 'app_window'
-                          }
+                          googleSuite: { ...prev.googleSuite, windowMode: 'app_window' }
                         } : prev);
                       }}
-                      className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
                         (settings.googleSuite?.windowMode ?? 'app_window') === 'app_window'
-                          ? 'bg-emerald-950/40 border-emerald-500 shadow-md ring-1 ring-emerald-500/50 text-white'
-                          : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                          ? 'bg-slate-800 text-white shadow-sm border border-slate-700/60'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-[11px] flex items-center gap-1.5 text-white">
-                          <Monitor className="w-3 h-3 text-emerald-400" />
-                          Standalone App
-                        </span>
-                        <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-emerald-950 text-emerald-300 font-semibold border border-emerald-500/30">
-                          Recommended
-                        </span>
-                      </div>
-                      <p className="text-[9px] text-slate-400 leading-tight">
-                        Dedicated PWA window via Chrome, Edge, or Brave without browser toolbars.
-                      </p>
-                      <span className="text-[9px] font-mono text-emerald-400 font-semibold">
-                        {(settings.googleSuite?.windowMode ?? 'app_window') === 'app_window' ? '✓ Selected' : 'Select'}
-                      </span>
+                      <Monitor className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Standalone App</span>
                     </button>
 
-                    {/* Mode 2: Browser Tab */}
                     <button
                       type="button"
                       onClick={() => {
                         setSettings((prev) => prev ? {
                           ...prev,
-                          googleSuite: {
-                            ...prev.googleSuite,
-                            windowMode: 'browser_tab'
-                          }
+                          googleSuite: { ...prev.googleSuite, windowMode: 'browser_tab' }
                         } : prev);
                       }}
-                      className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
                         settings.googleSuite?.windowMode === 'browser_tab'
-                          ? 'bg-cyan-950/40 border-cyan-500 shadow-md ring-1 ring-cyan-500/50 text-white'
-                          : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                          ? 'bg-slate-800 text-white shadow-sm border border-slate-700/60'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-[11px] flex items-center gap-1.5 text-white">
-                          <Globe className="w-3 h-3 text-cyan-400" />
-                          Browser Tab
-                        </span>
-                        <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-cyan-950 text-cyan-300 font-semibold border border-cyan-500/30">
-                          Default OS
-                        </span>
-                      </div>
-                      <p className="text-[9px] text-slate-400 leading-tight">
-                        Opens directly as a standard tab in your default browser (Vivaldi, Chrome, Edge).
-                      </p>
-                      <span className="text-[9px] font-mono text-cyan-400 font-semibold">
-                        {settings.googleSuite?.windowMode === 'browser_tab' ? '✓ Selected' : 'Select'}
-                      </span>
+                      <Globe className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Browser Tab</span>
                     </button>
 
-                    {/* Mode 3: Station Window */}
                     <button
                       type="button"
                       onClick={() => {
                         setSettings((prev) => prev ? {
                           ...prev,
-                          googleSuite: {
-                            ...prev.googleSuite,
-                            windowMode: 'station_window'
-                          }
+                          googleSuite: { ...prev.googleSuite, windowMode: 'station_window' }
                         } : prev);
                       }}
-                      className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-all ${
                         settings.googleSuite?.windowMode === 'station_window'
-                          ? 'bg-amber-950/40 border-amber-500 shadow-md ring-1 ring-amber-500/50 text-white'
-                          : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
+                          ? 'bg-slate-800 text-white shadow-sm border border-slate-700/60'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-[11px] flex items-center gap-1.5 text-white">
-                          <Layers className="w-3 h-3 text-amber-400" />
-                          Station Window
-                        </span>
-                        <span className="text-[8px] font-mono px-1 py-0.2 rounded bg-amber-950 text-amber-300 font-semibold border border-amber-500/30">
-                          Embedded
-                        </span>
-                      </div>
-                      <p className="text-[9px] text-slate-400 leading-tight">
-                        Integrated native desktop window inside the station container.
-                      </p>
-                      <span className="text-[9px] font-mono text-amber-400 font-semibold">
-                        {settings.googleSuite?.windowMode === 'station_window' ? '✓ Selected' : 'Select'}
-                      </span>
+                      <Layers className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Station Window</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Google Account Selector & Web Fallback Authuser */}
-                <div className="pt-2 border-t border-slate-900 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>Target Google Account (Web Fallbacks):</span>
-                    </label>
-                    <span className="text-[10px] text-slate-400 font-sans">
-                      Controls ?authuser= parameter
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3">
+                {/* Google Account Selector */}
+                <div className="pt-2 border-t border-slate-900 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <User className="w-3.5 h-3.5 text-indigo-400" />
+                    <span className="text-xs text-slate-300 font-medium">Target Account:</span>
                     <input
                       type="text"
-                      placeholder="0 (e.g. 0, 1, or your.pro@gmail.com)"
+                      placeholder="0 or pro email"
                       value={settings.googleSuite?.accountIndex ?? '0'}
                       onChange={(e) => {
                         const val = e.target.value;
                         setSettings((prev) => prev ? {
                           ...prev,
-                          googleSuite: {
-                            ...prev.googleSuite,
-                            accountIndex: val
-                          }
+                          googleSuite: { ...prev.googleSuite, accountIndex: val }
                         } : prev);
                       }}
-                      className="w-56 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs focus:outline-none focus:border-indigo-400 font-mono"
+                      className="w-32 px-2 py-1 bg-slate-900 border border-slate-800 rounded-md text-slate-200 text-xs focus:outline-none focus:border-indigo-400 font-mono"
                     />
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSettings((prev) => prev ? {
-                            ...prev,
-                            googleSuite: {
-                              ...prev.googleSuite,
-                              accountIndex: '0'
-                            }
-                          } : prev);
-                        }}
-                        className={`px-2 py-1 rounded text-[10px] font-mono border transition-colors ${
-                          (settings.googleSuite?.accountIndex ?? '0') === '0'
-                            ? 'bg-indigo-950 border-indigo-400 text-indigo-300 font-bold'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        Account 0 (Default)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSettings((prev) => prev ? {
-                            ...prev,
-                            googleSuite: {
-                              ...prev.googleSuite,
-                              accountIndex: '1'
-                            }
-                          } : prev);
-                        }}
-                        className={`px-2 py-1 rounded text-[10px] font-mono border transition-colors ${
-                          settings.googleSuite?.accountIndex === '1'
-                            ? 'bg-indigo-950 border-indigo-400 text-indigo-300 font-bold'
-                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        Account 1 (Pro / Second)
-                      </button>
-                    </div>
                   </div>
-
-                  {/* Browser Account Isolation & Desktop Google Drive Callout */}
-                  <div className="p-3 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-[11px] text-slate-300 font-sans leading-relaxed space-y-1.5">
-                    <div className="flex items-center gap-1.5 font-bold text-indigo-300 text-xs">
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>Why Local Google Drive Desktop is 100% Reliable</span>
-                    </div>
-                    <p>
-                      Files opened via <strong>Google Drive Desktop</strong> (<code className="text-indigo-200 font-mono">G:\My Drive\The-AstroSquad</code>) launch directly in PowerPoint or Excel. When you press <kbd className="px-1 py-0.5 rounded bg-slate-800 text-slate-200 font-mono text-[10px]">Ctrl+S</kbd>, the local Google Drive client instantly syncs to your authenticated Pro account in the cloud—completely bypassing browser cookies and eliminating account mismatch.
-                    </p>
-                    <p className="text-slate-400 text-[10px]">
-                      <strong className="text-amber-300">Browser Tip:</strong> Microsoft Edge and Chrome assign <code className="text-slate-200 font-mono">/u/0/</code> to whichever Google account was signed into the browser first. To fix web links opening your catfish/secondary account: in Edge, go to <code className="text-slate-200 font-mono">accounts.google.com</code>, sign out of all accounts, and sign into your Pro account FIRST.
-                    </p>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettings((prev) => prev ? {
+                          ...prev,
+                          googleSuite: { ...prev.googleSuite, accountIndex: '0' }
+                        } : prev);
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-colors ${
+                        (settings.googleSuite?.accountIndex ?? '0') === '0'
+                          ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-300 font-semibold'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Account 0 (Default)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSettings((prev) => prev ? {
+                          ...prev,
+                          googleSuite: { ...prev.googleSuite, accountIndex: '1' }
+                        } : prev);
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono border transition-colors ${
+                        settings.googleSuite?.accountIndex === '1'
+                          ? 'bg-indigo-500/20 border-indigo-400/40 text-indigo-300 font-semibold'
+                          : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      Account 1 (Pro)
+                    </button>
                   </div>
                 </div>
               </div>
 
               {/* PPTX Association */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="p-1 rounded bg-amber-950/80 border border-amber-500/30 text-amber-400">
+                    <span className="p-1 rounded bg-amber-500/15 border border-amber-500/30 text-amber-400">
                       <Presentation className="w-3.5 h-3.5" />
                     </span>
-                    <span className="font-bold text-slate-200">Presentation Decks (.pptx)</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                    <span className="font-semibold text-slate-200">Presentation Decks (.pptx)</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
                       PowerPoint / Google Slides
                     </span>
                   </div>
@@ -722,13 +637,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         ? 'Google Slides (Standalone Web Session)'
                         : settings.fileAssociations.pptx || ''
                     }
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate font-mono"
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-md text-slate-200 text-xs truncate font-mono"
                   />
                   <button
                     onClick={() => handleBrowseApp('pptx')}
-                    className="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm shrink-0"
+                    className="px-2.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-medium text-xs flex items-center gap-1.5 transition-colors shadow-sm shrink-0"
                   >
-                    <FolderOpen className="w-3.5 h-3.5" />
+                    <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Browse .exe...</span>
                   </button>
                 </div>
@@ -783,14 +698,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
               {/* PDF Association */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="p-1 rounded bg-rose-950/80 border border-rose-500/30 text-rose-400">
+                    <span className="p-1 rounded bg-rose-500/15 border border-rose-500/30 text-rose-400">
                       <FileText className="w-3.5 h-3.5" />
                     </span>
-                    <span className="font-bold text-slate-200">PDF Documents &amp; Proposal (.pdf)</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                    <span className="font-semibold text-slate-200">PDF Documents &amp; Proposal (.pdf)</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
                       Google Docs / Acrobat / Preview
                     </span>
                   </div>
@@ -816,11 +731,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         ? '⚡ Google Docs (Dedicated Standalone Session via Local App Engine)'
                         : settings.fileAssociations.pdf || ''
                     }
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate font-mono"
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-md text-slate-200 text-xs truncate font-mono"
                   />
                   <button
                     onClick={() => handleBrowseApp('pdf')}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 transition-colors shrink-0"
+                    className="px-2.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-medium text-xs flex items-center gap-1.5 transition-colors shadow-sm shrink-0"
                   >
                     <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Browse .exe...</span>
@@ -877,14 +792,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
               {/* Markdown Association */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="p-1 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-400">
+                    <span className="p-1 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400">
                       <FileCode className="w-3.5 h-3.5" />
                     </span>
-                    <span className="font-bold text-slate-200">Markdown Notes (.md)</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-500/30 text-purple-300 font-semibold">
+                    <span className="font-semibold text-slate-200">Markdown Notes (.md)</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-950/60 border border-purple-500/20 text-purple-300 font-medium">
                       Obsidian Recommended
                     </span>
                   </div>
@@ -908,11 +823,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         ? '⚡ Obsidian (Markdown Knowledge Base & Notes)'
                         : settings.fileAssociations.md || ''
                     }
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate font-mono"
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-md text-slate-200 text-xs truncate font-mono"
                   />
                   <button
                     onClick={() => handleBrowseApp('md')}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 transition-colors shrink-0"
+                    className="px-2.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-medium text-xs flex items-center gap-1.5 transition-colors shrink-0"
                   >
                     <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Browse .exe...</span>
@@ -957,14 +872,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
               {/* CSV Association */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="p-1 rounded bg-teal-950/80 border border-teal-500/30 text-teal-400">
+                    <span className="p-1 rounded bg-teal-500/15 border border-teal-500/30 text-teal-400">
                       <FileSpreadsheet className="w-3.5 h-3.5" />
                     </span>
-                    <span className="font-bold text-slate-200">Data Catalogs (.csv)</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                    <span className="font-semibold text-slate-200">Data Catalogs (.csv)</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400">
                       Excel / Google Sheets / Calc
                     </span>
                   </div>
@@ -990,11 +905,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         ? 'Google Sheets (Standalone Web Session)'
                         : settings.fileAssociations.csv || 'In-App Editor (Built-in — No Excel Required)'
                     }
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate font-mono"
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-md text-slate-200 text-xs truncate font-mono"
                   />
                   <button
                     onClick={() => handleBrowseApp('csv')}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 transition-colors shrink-0"
+                    className="px-2.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-medium text-xs flex items-center gap-1.5 transition-colors shrink-0"
                   >
                     <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Browse .exe...</span>
@@ -1051,13 +966,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
               {/* Astronomical Images Association */}
-              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="p-1 rounded bg-emerald-950/80 border border-emerald-500/30 text-emerald-400">
+                    <span className="p-1 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
                       <ImageIcon className="w-3.5 h-3.5" />
                     </span>
-                    <span className="font-bold text-slate-200">Astronomical Images (.png, .jpg, .webp)</span>
+                    <span className="font-semibold text-slate-200">Astronomical Images (.png, .jpg, .webp)</span>
                   </div>
                   {settings.fileAssociations.images && (
                     <button
@@ -1075,11 +990,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     readOnly
                     placeholder="System Default"
                     value={settings.fileAssociations.images || ''}
-                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs truncate"
+                    className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-md text-slate-200 text-xs truncate"
                   />
                   <button
                     onClick={() => handleBrowseApp('images')}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs flex items-center gap-1.5 transition-colors shrink-0"
+                    className="px-2.5 py-1.5 rounded-md bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-medium text-xs flex items-center gap-1.5 transition-colors shrink-0"
                   >
                     <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Browse .exe...</span>
@@ -1091,8 +1006,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           {/* TAB 2: REPOSITORY CONFIGURATION */}
           {activeTab === 'repo' && (
-            <div className="space-y-5">
-              <div className="p-3 rounded-xl bg-rose-950/20 border border-rose-500/30 text-slate-300 leading-relaxed font-sans text-xs">
+            <div className="space-y-4">
+              <div className="p-2.5 rounded-md bg-slate-900/60 border border-slate-800 text-slate-300 leading-relaxed font-sans text-xs">
                 Switch or target any GitHub repository or local research directory. The station automatically synchronizes, watches, and renders files from the specified target.
               </div>
 

@@ -65,9 +65,7 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
   const handleOpenDiscord = async () => {
     setLoadingAction('discord');
     try {
-      showToast('info', 'Connecting to Discord', 'Launching The-AstroSquad Discord server in browser or app...');
       await window.api.shell.openDiscord();
-      showToast('success', 'Discord Active', 'Launched The-AstroSquad Discord channel.');
     } catch (err: any) {
       showToast('error', 'Discord Launch Failed', err.message);
     } finally {

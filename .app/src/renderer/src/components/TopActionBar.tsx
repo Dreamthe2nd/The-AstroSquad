@@ -71,21 +71,21 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
   const pathParts = currentPath ? currentPath.split(/[/\\]/).filter(Boolean) : [];
 
   return (
-    <div className="relative z-20 flex items-center justify-between px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md select-none">
+    <div className="relative z-20 flex items-center justify-between px-4 h-11 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-md select-none">
       {/* Left: Persistent Green "+ New" Button & Breadcrumbs */}
-      <div className="flex items-center gap-4 min-w-0">
+      <div className="flex items-center gap-3.5 min-w-0">
         {/* Persistent Green "+ New" Button with Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowNewDropdown(!showNewDropdown)}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-bold text-xs bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-md hover:shadow-emerald-500/25 transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium text-xs bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition-all active:scale-95 shadow-sm"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>+ New</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>New</span>
           </button>
 
           {showNewDropdown && (
-            <div className="absolute left-0 mt-2 w-64 rounded-xl bg-slate-900 border border-slate-700/80 shadow-2xl backdrop-blur-xl p-1.5 z-30 font-sans text-xs">
+            <div className="absolute left-0 mt-1.5 w-60 rounded-lg bg-slate-900/95 border border-slate-800 shadow-xl backdrop-blur-xl p-1 z-30 font-sans text-xs">
               <button
                 onClick={() => {
                   setShowNewDropdown(false);
@@ -163,24 +163,24 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
       </div>
 
       {/* Right: Contextual Edit Button / Glowing "Save & Share" */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {isEditMorphed ? (
           /* Glowing "Save & Share" Button */
           <button
             onClick={onSaveAndShare}
             disabled={isSyncing}
-            className="group relative flex items-center gap-2 px-4 py-1.5 rounded-xl font-bold text-xs text-white bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 hover:from-rose-400 hover:to-pink-400 transition-all shadow-doppler-red animate-pulse-glow disabled:opacity-50"
+            className="group flex items-center gap-1.5 px-3 py-1 rounded-md font-semibold text-xs text-white bg-rose-600 hover:bg-rose-500 border border-rose-500/40 transition-all shadow-sm active:scale-95 disabled:opacity-50"
           >
             {isSyncing ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Syncing with main...</span>
+                <span>Syncing...</span>
               </>
             ) : (
               <>
-                <Share2 className="w-3.5 h-3.5 group-hover:rotate-12 transition-transform" />
+                <Share2 className="w-3.5 h-3.5" />
                 <span>Save & Share</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-rose-950/80 border border-rose-400/40 text-rose-200">
+                <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-rose-950/80 border border-rose-400/40 text-rose-200">
                   PUSH
                 </span>
               </>
@@ -191,7 +191,7 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
           <button
             onClick={onEditInDesktop}
             disabled={!selectedFile || isSyncing}
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-semibold text-xs border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white disabled:opacity-40 disabled:hover:bg-slate-800/80 disabled:cursor-not-allowed transition-all shadow-sm"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium text-xs border border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-200 hover:text-white disabled:opacity-40 disabled:hover:bg-slate-900/80 disabled:cursor-not-allowed transition-all shadow-sm active:scale-95"
             title={selectedFile ? "Pulls remote changes & opens file in default desktop app" : "Select a file to edit"}
           >
             {isSyncing ? (
@@ -219,20 +219,20 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
               }
             }
           }}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-500/30 bg-indigo-950/60 hover:bg-indigo-900/70 text-indigo-300 hover:text-white transition-colors text-xs font-mono shadow-sm"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-800 bg-slate-900/60 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors text-xs font-mono shadow-sm active:scale-95"
           title="Open The-AstroSquad Google Drive Desktop Folder (G:\My Drive\The-AstroSquad)"
         >
           <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-          <span className="hidden md:inline font-semibold">Google Drive</span>
+          <span className="hidden md:inline font-medium">Google Drive</span>
         </button>
 
         {onOpenSettings && (
           <button
             onClick={onOpenSettings}
-            className="p-1.5 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-cyan-400 transition-colors shadow-sm"
+            className="p-1 rounded-md border border-slate-800 bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-cyan-300 transition-colors shadow-sm active:scale-95"
             title="Station Mission Settings (Custom Apps, Repositories, Discord)"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-3.5 h-3.5" />
           </button>
         )}
       </div>

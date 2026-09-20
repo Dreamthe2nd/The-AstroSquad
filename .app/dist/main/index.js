@@ -26636,25 +26636,27 @@ var FileHandlers = class {
       return { success: false, message: `File not found: ${filePath}` };
     }
     const fileName = import_path3.default.basename(filePath);
-    const destPath = import_path3.default.join(squadFolder, fileName);
-    try {
-      import_fs2.default.copyFileSync(filePath, destPath);
-      import_electron3.clipboard.writeText(destPath);
-    } catch (e) {
-      console.warn("Error syncing file to Google Drive Desktop:", e);
+    const ext = import_path3.default.extname(filePath).toLowerCase();
+    const isGoogleVirtual = ext === ".gslides" || ext === ".gsheet" || ext === ".gdoc";
+    const destPath = isGoogleVirtual ? filePath : import_path3.default.join(squadFolder, fileName);
+    if (!isGoogleVirtual) {
+      try {
+        import_fs2.default.copyFileSync(filePath, destPath);
+        import_electron3.clipboard.writeText(destPath);
+      } catch (e) {
+        console.warn("Error syncing file to Google Drive Desktop:", e);
+      }
     }
     const openResult = await import_electron3.shell.openPath(destPath);
     if (!openResult) {
       return {
         success: true,
-        message: `Opened "${fileName}" in desktop app via Google Drive Desktop (${destPath}). Auto-syncing to your pro account.`
+        message: `Opened "${fileName}" via Google Drive Desktop (${destPath}). Auto-syncing to your account.`
       };
     }
-    import_electron3.shell.showItemInFolder(destPath);
-    return {
-      success: true,
-      message: `Revealed "${fileName}" in Google Drive Desktop (${destPath}).`
-    };
+    console.log(`[GoogleDriveDesktop] shell.openPath returned: "${openResult}". Routing to Google Workspace with document context.`);
+    const appType = ext === ".pptx" || ext === ".ppt" || ext === ".gslides" ? "slides" : ext === ".csv" || ext === ".xlsx" || ext === ".xls" || ext === ".gsheet" ? "sheets" : "docs";
+    return this.openGoogleSuiteSession(appType, "browser_tab", destPath);
   }
   /**
    * Opens local standalone session of Google Productivity Suite (Docs, Sheets, Slides, Drive)
@@ -26690,13 +26692,15 @@ var FileHandlers = class {
         targetUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}`;
       } else if (driveInfo.driveRoot) {
         targetUrl = `https://drive.google.com/drive/u/0/search?q=${encodeURIComponent(targetFileName)}`;
+      } else {
+        targetUrl = `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}`;
       }
     }
     if (!targetUrl) {
       const defaultUrls = {
-        docs: "https://docs.google.com/document/u/0/",
-        sheets: "https://docs.google.com/spreadsheets/u/0/",
-        slides: "https://docs.google.com/presentation/u/0/",
+        docs: targetFileName ? `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}` : "https://docs.google.com/document/u/0/",
+        sheets: targetFileName ? `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}` : "https://docs.google.com/spreadsheets/u/0/",
+        slides: targetFileName ? `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}` : "https://docs.google.com/presentation/u/0/",
         drive: driveFolderUrl
       };
       targetUrl = defaultUrls[appType] || driveFolderUrl;
@@ -26783,6 +26787,18 @@ var FileHandlers = class {
     const ext = import_path3.default.extname(filePath).toLowerCase();
     const fileName = import_path3.default.basename(filePath);
     const isPdf = this.isPdfFile(filePath);
+    const isGoogleVirtual = ext === ".gslides" || ext === ".gsheet" || ext === ".gdoc";
+    if (isGoogleVirtual) {
+      const openResult = await import_electron3.shell.openPath(filePath);
+      if (!openResult) {
+        return {
+          success: true,
+          message: `Opened "${fileName}" via Google Drive Desktop.`
+        };
+      }
+      const appType = ext === ".gslides" ? "slides" : ext === ".gsheet" ? "sheets" : "docs";
+      return this.openGoogleSuiteSession(appType, preferredMode, filePath);
+    }
     if (customAppPath && customAppPath.trim()) {
       const trimmed = customAppPath.trim();
       if (trimmed === "google_slides") {
@@ -27049,11 +27065,25 @@ var FileHandlers = class {
     };
   }
   /**
-   * Open Discord Server: Launches the official Discord invite link in the default browser / desktop app
+   * Open Discord Server: Launches via Discord protocol handler with seamless browser invite fallback
    */
   static async openDiscord(customInviteUrl, customAppUri) {
     const inviteUrl = customInviteUrl?.trim() || "https://discord.gg/yk7cgnd6E";
-    await import_electron3.shell.openExternal(inviteUrl);
+    const appUri = customAppUri?.trim() || "discord://discord.com/channels/1545465896481333258";
+    try {
+      if (appUri) {
+        await import_electron3.shell.openExternal(appUri);
+      } else {
+        await import_electron3.shell.openExternal(inviteUrl);
+      }
+    } catch (err) {
+      console.warn("[FileHandlers] Discord protocol URI failed, falling back to web invite:", err);
+      try {
+        await import_electron3.shell.openExternal(inviteUrl);
+      } catch (e) {
+        console.error("[FileHandlers] Failed to open Discord web invite:", e);
+      }
+    }
   }
 };
 
