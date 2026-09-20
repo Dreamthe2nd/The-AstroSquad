@@ -26544,50 +26544,107 @@ var FileHandlers = class {
     return false;
   }
   /**
+   * Resolves public raw GitHub URL for a file in the repository
+   */
+  static getRawGitHubUrl(filePath) {
+    try {
+      if (!filePath || !import_fs2.default.existsSync(filePath)) return null;
+      let currentDir = import_path3.default.dirname(import_path3.default.resolve(filePath));
+      let gitRoot = null;
+      let remoteUrl = "https://github.com/Dreamthe2nd/The-AstroSquad";
+      let branch = "main";
+      while (currentDir && currentDir !== import_path3.default.dirname(currentDir)) {
+        const gitDir = import_path3.default.join(currentDir, ".git");
+        if (import_fs2.default.existsSync(gitDir)) {
+          gitRoot = currentDir;
+          const configPath = import_path3.default.join(gitDir, "config");
+          if (import_fs2.default.existsSync(configPath)) {
+            try {
+              const content = import_fs2.default.readFileSync(configPath, "utf-8");
+              const urlMatch = content.match(/url\s*=\s*(.+)/);
+              if (urlMatch) {
+                remoteUrl = urlMatch[1].trim();
+              }
+              const headPath = import_path3.default.join(gitDir, "HEAD");
+              if (import_fs2.default.existsSync(headPath)) {
+                const headContent = import_fs2.default.readFileSync(headPath, "utf-8").trim();
+                const branchMatch = headContent.match(/ref:\s*refs\/heads\/(.+)/);
+                if (branchMatch) {
+                  branch = branchMatch[1].trim();
+                }
+              }
+            } catch (e) {
+              console.warn("[FileHandlers] Failed to parse git config:", e);
+            }
+          }
+          break;
+        }
+        currentDir = import_path3.default.dirname(currentDir);
+      }
+      if (!gitRoot) {
+        const idx = filePath.toLowerCase().indexOf("astrosquad");
+        if (idx !== -1) {
+          gitRoot = filePath.substring(0, idx + "astrosquad".length);
+        }
+      }
+      if (!gitRoot) return null;
+      const relPath = import_path3.default.relative(gitRoot, filePath).replace(/\\/g, "/");
+      if (!relPath || relPath.startsWith("..")) return null;
+      const repoMatch = remoteUrl.match(/github\.com[/:]([^/]+)\/([^/.]+)/);
+      if (!repoMatch) return null;
+      const owner = repoMatch[1];
+      const repo = repoMatch[2].replace(/\.git$/, "");
+      const encodedPath = relPath.split("/").map((segment) => encodeURIComponent(segment)).join("/");
+      return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${encodedPath}`;
+    } catch (err) {
+      console.warn("[FileHandlers] getRawGitHubUrl error:", err);
+      return null;
+    }
+  }
+  /**
    * Opens local standalone session of Google Productivity Suite (Docs, Sheets, Slides, Drive)
    * Universal across macOS, Windows, and Linux.
    */
   static async openGoogleSuiteSession(appType, windowMode = "station_window", targetFilePath, preferredEngine) {
     const driveFolderUrl = "https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing";
-    const urls = {
-      docs: targetFilePath ? driveFolderUrl : "https://docs.google.com/document/u/0/",
-      sheets: targetFilePath ? driveFolderUrl : "https://docs.google.com/spreadsheets/u/0/",
-      slides: targetFilePath ? driveFolderUrl : "https://docs.google.com/presentation/u/0/",
-      drive: driveFolderUrl
-    };
-    const targetUrl = urls[appType] || driveFolderUrl;
-    const isMac = process.platform === "darwin";
-    const isWin = process.platform === "win32";
     const driveInfo = this.detectGoogleDrivePath();
     let fileHint = "";
+    let targetUrl = "";
+    let targetFileName = "";
     if (targetFilePath && import_fs2.default.existsSync(targetFilePath)) {
-      const fileName = import_path3.default.basename(targetFilePath);
+      targetFileName = import_path3.default.basename(targetFilePath);
       if (driveInfo.driveRoot) {
         try {
           const squadFolder = driveInfo.squadPath || import_path3.default.join(driveInfo.driveRoot, "The-AstroSquad");
           if (!import_fs2.default.existsSync(squadFolder)) {
             import_fs2.default.mkdirSync(squadFolder, { recursive: true });
           }
-          const destPath = import_path3.default.join(squadFolder, fileName);
+          const destPath = import_path3.default.join(squadFolder, targetFileName);
           import_fs2.default.copyFileSync(targetFilePath, destPath);
           import_electron3.clipboard.writeText(destPath);
-          import_electron3.shell.showItemInFolder(destPath);
-          fileHint = ` Synced to Google Drive Desktop (${destPath}) and revealed in Explorer.`;
+          fileHint = ` (Synced to Google Drive: ${destPath})`;
         } catch (e) {
           console.warn("Could not sync to Google Drive folder:", e);
-          import_electron3.clipboard.writeText(targetFilePath);
-          import_electron3.shell.showItemInFolder(targetFilePath);
-          fileHint = ` Opened Google Drive Cloud Hub for "${fileName}" (path copied & revealed in folder).`;
         }
-      } else {
-        try {
-          import_electron3.clipboard.writeText(targetFilePath);
-          import_electron3.shell.showItemInFolder(targetFilePath);
-        } catch (e) {
-        }
-        fileHint = ` Opened Google Drive Cloud Hub for "${fileName}" (path copied & revealed in folder).`;
+      }
+      const rawUrl = this.getRawGitHubUrl(targetFilePath);
+      if (rawUrl) {
+        targetUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}`;
+      } else if (driveInfo.driveRoot) {
+        targetUrl = `https://drive.google.com/drive/u/0/search?q=${encodeURIComponent(targetFileName)}`;
       }
     }
+    if (!targetUrl) {
+      const defaultUrls = {
+        docs: "https://docs.google.com/document/u/0/",
+        sheets: "https://docs.google.com/spreadsheets/u/0/",
+        slides: "https://docs.google.com/presentation/u/0/",
+        drive: driveFolderUrl
+      };
+      targetUrl = defaultUrls[appType] || driveFolderUrl;
+    }
+    const isMac = process.platform === "darwin";
+    const isWin = process.platform === "win32";
     if (appType === "drive") {
       if (driveInfo.squadPath && import_fs2.default.existsSync(driveInfo.squadPath)) {
         await import_electron3.shell.openPath(driveInfo.squadPath);
@@ -26602,11 +26659,13 @@ var FileHandlers = class {
         message: `Opened The-AstroSquad Google Drive Cloud Hub in your default browser.${fileHint}`
       };
     }
+    const appDisplayName = `Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}`;
+    const fileSuffix = targetFileName ? ` for "${targetFileName}"` : "";
     if (windowMode === "station_window") {
       GoogleWindowManager.openSession(appType, targetUrl, targetFilePath);
       return {
         success: true,
-        message: `Launched dedicated AstroSquad Station Window for Google ${appType.charAt(0).toUpperCase() + appType.slice(1)}.${fileHint} (Note: If Google asks you to sign in and blocks Electron, switch to Standalone App Mode in Settings).`
+        message: `Launched dedicated AstroSquad Station Window for ${appDisplayName}${fileSuffix}.${fileHint}`
       };
     }
     if (windowMode === "app_window") {
@@ -26622,7 +26681,7 @@ var FileHandlers = class {
             child.unref();
             return {
               success: true,
-              message: `Launched standalone session in ${appBrowser.name}.${fileHint}`
+              message: `Launched ${appDisplayName}${fileSuffix} in ${appBrowser.name}.${fileHint}`
             };
           } else if (isMac) {
             const child = import_child_process.default.spawn("open", ["-na", appBrowser.path, "--args", `--app=${targetUrl}`], {
@@ -26632,7 +26691,7 @@ var FileHandlers = class {
             child.unref();
             return {
               success: true,
-              message: `Launched standalone session in ${appBrowser.name} (macOS).${fileHint}`
+              message: `Launched ${appDisplayName}${fileSuffix} in ${appBrowser.name} (macOS).${fileHint}`
             };
           }
         } catch (err) {
@@ -26642,13 +26701,13 @@ var FileHandlers = class {
       await import_electron3.shell.openExternal(targetUrl);
       return {
         success: true,
-        message: isMac ? `Opened Google ${appType} in Safari / Default Browser.${fileHint}` : `Opened Google ${appType} in default browser.${fileHint}`
+        message: isMac ? `Opened ${appDisplayName}${fileSuffix} in Safari / Default Browser.${fileHint}` : `Opened ${appDisplayName}${fileSuffix} in default browser.${fileHint}`
       };
     }
     await import_electron3.shell.openExternal(targetUrl);
     return {
       success: true,
-      message: `Opened Google ${appType.charAt(0).toUpperCase() + appType.slice(1)} in default browser.${fileHint}`
+      message: `Opened ${appDisplayName}${fileSuffix} in default browser.${fileHint}`
     };
   }
   /**

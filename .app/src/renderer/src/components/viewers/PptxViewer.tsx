@@ -71,7 +71,7 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
         if (!res.success) {
           console.warn('[PptxViewer] Drive upload failed:', res.message);
           window.api.shell.openGoogleSuite({
-            appType: 'drive',
+            appType: 'slides',
             windowMode: 'browser_tab',
             targetFilePath: filePath
           });
@@ -79,7 +79,7 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
       } catch (err: any) {
         console.warn('[PptxViewer] Drive upload error:', err?.message);
         window.api.shell.openGoogleSuite({
-          appType: 'drive',
+          appType: 'slides',
           windowMode: 'browser_tab',
           targetFilePath: filePath
         });
@@ -88,7 +88,7 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
       }
     } else {
       window.api.shell.openGoogleSuite({
-        appType: 'drive',
+        appType: 'slides',
         windowMode: 'browser_tab',
         targetFilePath: filePath
       });
@@ -116,10 +116,10 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
             onClick={handleOpenGoogleDrive}
             disabled={isUploading}
             className="px-3 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-xs text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
-            title={isDriveConnected ? "Upload to Google Drive & launch directly in Google Slides" : "Reveal presentation in Explorer and open The-AstroSquad Google Drive to edit in Google Slides online"}
+            title="Open presentation directly in Google Slides"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>{isUploading ? 'Uploading to Slides...' : (isDriveConnected ? '⚡ Open in Google Slides' : 'Edit in Google Drive')}</span>
+            <span>{isUploading ? 'Opening in Slides...' : '⚡ Open in Google Slides'}</span>
           </button>
 
           <button
