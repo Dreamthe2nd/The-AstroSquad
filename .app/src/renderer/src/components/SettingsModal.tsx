@@ -22,7 +22,9 @@ import {
   Globe,
   Layers,
   Info,
-  User
+  User,
+  RefreshCw,
+  Telescope
 } from 'lucide-react';
 import { StationSettings, AuthStatus } from '../types';
 
@@ -231,6 +233,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     });
   };
 
+  const handleBrowseKStarsPath = async () => {
+    try {
+      const selected = await window.api.settings.browseApp();
+      if (selected) {
+        setSettings((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            kstarsPath: selected
+          };
+        });
+        showToast('info', 'KStars Path Set', `Configured KStars executable: ${selected.split(/[/\\]/).pop()}`);
+      }
+    } catch (err: any) {
+      showToast('error', 'Browse Error', err.message);
+    }
+  };
+
+  const handleTestKStars = async () => {
+    try {
+      const res = await window.api.shell.openKStars(settings?.kstarsPath);
+      if (res && res.success) {
+        showToast('success', 'KStars Active', res.message);
+      } else {
+        showToast('warning', 'KStars Launcher', res?.message || 'Could not launch KStars.');
+      }
+    } catch (err: any) {
+      showToast('error', 'KStars Launch Error', err.message || 'Error executing KStars.');
+    }
+  };
+
   const handleBrowseRepoFolder = async () => {
     try {
       const folder = await window.api.settings.browseRepoDir();
@@ -349,85 +382,85 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 select-none">
-      <div className="w-full max-w-2xl max-h-[85vh] rounded-xl bg-slate-900 border border-slate-800 shadow-2xl flex flex-col overflow-hidden text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian-950/80 backdrop-blur-2xl p-4 select-none">
+      <div className="w-full max-w-2xl max-h-[85vh] rounded-2xl bg-obsidian-900 border border-white/[0.08] shadow-2xl flex flex-col overflow-hidden text-slate-100 font-sans">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-800 bg-slate-950/80">
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-white/[0.08] bg-obsidian-950/80">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center shadow-sm">
-              <Settings className="w-4 h-4 text-cyan-400" />
+            <div className="w-8 h-8 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-slate-300">
+              <Settings className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-white tracking-wide">
+              <h2 className="text-sm font-semibold text-white tracking-tight font-sans">
                 Station Settings
               </h2>
-              <p className="text-[11px] font-mono text-slate-400">
-                Application bindings, repository, and comms links
+              <p className="text-[11px] text-slate-400 font-sans">
+                Application bindings, repository, and communications links
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center gap-1.5 px-6 pt-2 border-b border-slate-800 bg-slate-950/40 text-xs font-mono">
+        <div className="flex items-center gap-1.5 px-6 pt-2 border-b border-white/[0.08] bg-obsidian-950/40 text-xs font-sans font-medium">
           <button
             onClick={() => setActiveTab('apps')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-t-md border-b-2 font-medium transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-t-lg border-b-2 transition-all ${
               activeTab === 'apps'
-                ? 'border-cyan-400 text-cyan-300 bg-slate-850/60'
+                ? 'border-white text-white bg-white/[0.04]'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+            <Sliders className="w-3.5 h-3.5 text-slate-300" />
             <span>Filetype Apps</span>
           </button>
 
           <button
             onClick={() => setActiveTab('repo')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-t-md border-b-2 font-medium transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-t-lg border-b-2 transition-all ${
               activeTab === 'repo'
-                ? 'border-cyan-400 text-cyan-300 bg-slate-850/60'
+                ? 'border-white text-white bg-white/[0.04]'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <FolderGit2 className="w-3.5 h-3.5 text-rose-400" />
-            <span>Repository & Clones</span>
+            <FolderGit2 className="w-3.5 h-3.5 text-slate-300" />
+            <span>Repository &amp; Clones</span>
           </button>
 
           <button
             onClick={() => setActiveTab('discord')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-t-md border-b-2 font-medium transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-t-lg border-b-2 transition-all ${
               activeTab === 'discord'
-                ? 'border-cyan-400 text-cyan-300 bg-slate-850/60'
+                ? 'border-white text-white bg-white/[0.04]'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <MessageSquare className="w-3.5 h-3.5 text-indigo-400" />
+            <MessageSquare className="w-3.5 h-3.5 text-slate-300" />
             <span>Discord Comms</span>
           </button>
 
           <button
             onClick={() => setActiveTab('meeting')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-t-md border-b-2 font-medium transition-all ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-t-lg border-b-2 transition-all ${
               activeTab === 'meeting'
-                ? 'border-cyan-400 text-cyan-300 bg-slate-850/60'
+                ? 'border-white text-white bg-white/[0.04]'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
             }`}
           >
-            <Video className="w-3.5 h-3.5 text-amber-400" />
-            <span>Meetings & Video</span>
+            <Video className="w-3.5 h-3.5 text-slate-300" />
+            <span>Meetings &amp; Video</span>
           </button>
         </div>
 
         {/* Tab Content Area */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs font-mono">
+        <div className="flex-1 overflow-y-auto p-6 space-y-5 text-xs font-sans">
           {/* TAB 1: FILE ASSOCIATIONS */}
           {activeTab === 'apps' && (
             <div className="space-y-4">
@@ -1097,6 +1130,67 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   </button>
                 </div>
               </div>
+
+              {/* External Astronomy & Observatory Tools: KStars */}
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] text-slate-200">
+                      <Telescope className="w-3.5 h-3.5" />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-white text-xs">KStars Observatory Software</span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-slate-400 border border-white/[0.08]">
+                          Desktop Planetarium
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Executable path used by the telescope quick-launcher in the top bar.
+                      </p>
+                    </div>
+                  </div>
+                  {settings.kstarsPath && (
+                    <button
+                      type="button"
+                      onClick={() => setSettings((prev) => prev ? { ...prev, kstarsPath: '' } : prev)}
+                      className="text-[11px] text-nothing-400 hover:text-nothing-300 underline"
+                    >
+                      Clear Custom Path
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    type="text"
+                    placeholder="Auto-detect (C:\Program Files\KStars\bin\kstars.exe, system PATH)"
+                    value={settings.kstarsPath || ''}
+                    onChange={(e) => setSettings((prev) => prev ? { ...prev, kstarsPath: e.target.value } : prev)}
+                    className="flex-1 px-3 py-1.5 bg-black/40 border border-white/[0.08] rounded-xl text-slate-100 text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-white/30 truncate"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleBrowseKStarsPath}
+                    className="px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 font-medium text-xs flex items-center gap-1.5 transition-all shrink-0 active:scale-[0.98]"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
+                    <span>Browse .exe...</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleTestKStars}
+                    className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-200 text-black font-medium text-xs flex items-center gap-1.5 transition-all shrink-0 shadow-sm active:scale-[0.98]"
+                    title="Test launching KStars right now"
+                  >
+                    <Telescope className="w-3.5 h-3.5" />
+                    <span>Test Launch</span>
+                  </button>
+                </div>
+                <p className="text-[10px] text-slate-500">
+                  Leave blank for automatic detection in default installation directories. Download KStars free at <span className="text-slate-400 underline cursor-pointer" onClick={() => window.api.shell.openExternal('https://kstars.kde.org')}>kstars.kde.org</span>.
+                </p>
+              </div>
             </div>
           )}
 
@@ -1404,10 +1498,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-800 bg-slate-950/60 font-mono text-xs">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-white/[0.08] bg-obsidian-950/80 font-sans text-xs">
           <button
             onClick={handleResetAll}
-            className="flex items-center gap-1.5 text-slate-500 hover:text-rose-400 transition-colors"
+            className="flex items-center gap-1.5 text-slate-500 hover:text-nothing-400 transition-colors"
             title="Reset all settings to factory defaults"
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -1417,14 +1511,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div className="flex items-center gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+              className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.08] transition-all active:scale-[0.98] font-medium"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-teal-400 hover:from-cyan-300 hover:to-teal-300 text-slate-950 font-bold flex items-center gap-2 shadow-doppler-blue transition-all active:scale-95 disabled:opacity-50"
+              className="px-5 py-2 rounded-xl bg-nothing-600 hover:bg-nothing-500 text-white font-medium flex items-center gap-2 shadow-crimson transition-all active:scale-[0.98] disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{saving ? 'Saving...' : 'Save Settings'}</span>

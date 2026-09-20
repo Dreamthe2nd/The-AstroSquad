@@ -370,6 +370,12 @@ function registerIpcHandlers(): void {
     await shell.openExternal(url);
   });
 
+  ipcMain.handle('shell:openKStars', async (_, customPathOverride?: string) => {
+    const settings = settingsManager.getSettings();
+    const customPath = customPathOverride || settings.kstarsPath;
+    return FileHandlers.openKStars(customPath);
+  });
+
   ipcMain.handle('shell:openRepoFolder', async () => {
     await shell.openPath(gitEngine.getRepoDir());
   });

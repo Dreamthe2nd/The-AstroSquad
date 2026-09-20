@@ -266,18 +266,20 @@ export const Workspace: React.FC<WorkspaceProps> = ({
   const renderActiveViewer = () => {
     if (!selectedFile) {
       return (
-        <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-3">
-          <Orbit className="w-12 h-12 text-slate-700 animate-spin" style={{ animationDuration: '20s' }} />
-          <p className="text-xs font-mono">Select a file from the repository sidebar to view spectra or documents.</p>
+        <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-3 select-none">
+          <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-center text-slate-600">
+            <Orbit className="w-6 h-6 animate-spin" style={{ animationDuration: '30s' }} />
+          </div>
+          <p className="text-xs text-slate-500 font-sans">Select a document or data file from the sidebar to inspect.</p>
         </div>
       );
     }
 
     if (isLoadingFile) {
       return (
-        <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
-          <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
-          <p className="text-xs font-mono">Loading telemetry payload...</p>
+        <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3 select-none">
+          <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-white/60 animate-spin" />
+          <p className="text-xs text-slate-400 font-sans tracking-wide">Loading document...</p>
         </div>
       );
     }
@@ -362,15 +364,17 @@ export const Workspace: React.FC<WorkspaceProps> = ({
 
     // Fallback for unknown file types
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4">
-        <FileQuestion className="w-12 h-12 text-slate-600" />
-        <div>
-          <h3 className="text-sm font-bold text-slate-300">{selectedFile}</h3>
-          <p className="text-xs text-slate-500 mt-1">Binary format. Launch in desktop app to inspect.</p>
+      <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4 select-none">
+        <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-slate-500">
+          <FileQuestion className="w-6 h-6" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-sm font-semibold text-slate-200">{selectedFile}</h3>
+          <p className="text-xs text-slate-500 max-w-sm font-sans">Binary format. Open in your default system application to inspect.</p>
         </div>
         <button
           onClick={handleEditInDesktop}
-          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-mono"
+          className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 hover:text-white text-xs font-sans font-medium transition-all active:scale-[0.98]"
         >
           Open with System Default App
         </button>
@@ -379,7 +383,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
   };
 
   return (
-    <div className="flex h-screen w-full bg-slate-950 overflow-hidden">
+    <div className="flex h-screen w-full bg-obsidian-950 overflow-hidden">
       {/* Collapsible Left Sidebar */}
       <FileSidebar
         files={files}

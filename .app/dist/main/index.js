@@ -27238,6 +27238,52 @@ var FileHandlers = class {
       }
     }
   }
+  /**
+   * Open KStars Desktop Planetarium & Astronomy Suite
+   */
+  static openKStars(customPath) {
+    const candidates = [];
+    if (customPath && customPath.trim()) {
+      candidates.push(customPath.trim());
+    }
+    if (process.platform === "win32") {
+      const localAppData = process.env.LOCALAPPDATA || "";
+      const programFiles = process.env.ProgramFiles || "C:\\Program Files";
+      const programFilesX86 = process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+      candidates.push(
+        import_path3.default.join(programFiles, "KStars", "bin", "kstars.exe"),
+        import_path3.default.join(programFiles, "kstars", "bin", "kstars.exe"),
+        import_path3.default.join(programFilesX86, "KStars", "bin", "kstars.exe"),
+        "C:\\KStars\\bin\\kstars.exe",
+        import_path3.default.join(programFiles, "KStars", "kstars.exe"),
+        import_path3.default.join(localAppData, "Programs", "KStars", "bin", "kstars.exe"),
+        import_path3.default.join(localAppData, "Programs", "kstars", "bin", "kstars.exe")
+      );
+    } else if (process.platform === "darwin") {
+      candidates.push("/Applications/kstars.app/Contents/MacOS/kstars");
+    } else {
+      candidates.push("/usr/bin/kstars", "/usr/local/bin/kstars");
+    }
+    for (const cand of candidates) {
+      if (cand && import_fs2.default.existsSync(cand)) {
+        try {
+          import_child_process.default.spawn(cand, [], { detached: true, stdio: "ignore" }).unref();
+          return { success: true, message: `Launched KStars from ${cand}`, path: cand };
+        } catch (err) {
+          console.error("[FileHandlers] Failed to spawn KStars at path:", cand, err);
+        }
+      }
+    }
+    try {
+      import_child_process.default.spawn("kstars", [], { detached: true, stdio: "ignore" }).unref();
+      return { success: true, message: "Launched KStars via system PATH" };
+    } catch {
+    }
+    return {
+      success: false,
+      message: "KStars executable not found. Please set its executable path in Settings or download it from kstars.kde.org."
+    };
+  }
 };
 
 // src/main/googleDriveManager.ts
@@ -27802,6 +27848,7 @@ var SettingsManager = class {
   getDefaultSettings() {
     const docs = import_electron5.app ? import_electron5.app.getPath("documents") : process.cwd();
     return {
+      kstarsPath: "",
       fileAssociations: {
         pptx: "google_drive",
         // Google Drive Desktop (direct desktop app with pro account auto-sync)
@@ -27843,6 +27890,7 @@ var SettingsManager = class {
         const raw = import_fs4.default.readFileSync(this.filePath, "utf-8");
         const parsed = JSON.parse(raw);
         const merged = {
+          kstarsPath: parsed.kstarsPath !== void 0 ? parsed.kstarsPath : defaults.kstarsPath,
           fileAssociations: { ...defaults.fileAssociations, ...parsed.fileAssociations || {} },
           repository: { ...defaults.repository, ...parsed.repository || {} },
           discord: { ...defaults.discord, ...parsed.discord || {} },
@@ -28468,6 +28516,11 @@ function registerIpcHandlers() {
     const settings = settingsManager.getSettings();
     const url2 = customUrl || settings.meeting?.url || "https://meet.google.com/new";
     await import_electron6.shell.openExternal(url2);
+  });
+  import_electron6.ipcMain.handle("shell:openKStars", async (_, customPathOverride) => {
+    const settings = settingsManager.getSettings();
+    const customPath = customPathOverride || settings.kstarsPath;
+    return FileHandlers.openKStars(customPath);
   });
   import_electron6.ipcMain.handle("shell:openRepoFolder", async () => {
     await import_electron6.shell.openPath(gitEngine.getRepoDir());

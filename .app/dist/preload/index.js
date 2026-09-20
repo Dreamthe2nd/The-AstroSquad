@@ -51,6 +51,7 @@ var api = {
     openExternal: (url) => import_electron.ipcRenderer.invoke("shell:openExternal", url),
     openDiscord: (customInviteUrl, customAppUri) => import_electron.ipcRenderer.invoke("shell:openDiscord", { customInviteUrl, customAppUri }),
     openMeeting: (customUrl) => import_electron.ipcRenderer.invoke("shell:openMeeting", customUrl),
+    openKStars: (customPath) => import_electron.ipcRenderer.invoke("shell:openKStars", customPath),
     openRepoFolder: () => import_electron.ipcRenderer.invoke("shell:openRepoFolder"),
     copyToClipboard: (text) => import_electron.clipboard.writeText(text),
     openGoogleSuite: (args) => import_electron.ipcRenderer.invoke("shell:openGoogleSuite", args),

@@ -21,18 +21,18 @@ const REHYPE_PLUGINS: any[] = [[rehypeKatex, { throwOnError: false, strict: fals
 
 const MARKDOWN_COMPONENTS: Record<string, React.FC<any>> = {
   h1: ({ children }) => (
-    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white border-b border-slate-800 pb-3 flex items-center gap-3">
-      <Sparkles className="w-6 h-6 text-cyan-400 shrink-0" />
+    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white border-b border-white/[0.08] pb-3 flex items-center gap-2.5 font-sans">
+      <span className="w-2 h-2 rounded-full bg-nothing shrink-0" />
       <span>{children}</span>
     </h1>
   ),
   h2: ({ children }) => (
-    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-cyan-300 mt-8 mb-3 border-b border-slate-800/60 pb-2">
+    <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-slate-100 mt-8 mb-3 border-b border-white/[0.06] pb-2 font-sans">
       {children}
     </h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-lg font-bold text-slate-200 mt-6 mb-2">
+    <h3 className="text-base sm:text-lg font-semibold text-slate-200 mt-6 mb-2 font-sans">
       {children}
     </h3>
   ),
@@ -42,12 +42,12 @@ const MARKDOWN_COMPONENTS: Record<string, React.FC<any>> = {
     </p>
   ),
   ul: ({ children }) => (
-    <ul className="list-disc list-inside space-y-1.5 text-slate-300 text-sm sm:text-base pl-2">
+    <ul className="list-disc list-inside space-y-1.5 text-slate-300 text-sm sm:text-base pl-2 font-sans">
       {children}
     </ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal list-inside space-y-1.5 text-slate-300 text-sm sm:text-base pl-2">
+    <ol className="list-decimal list-inside space-y-1.5 text-slate-300 text-sm sm:text-base pl-2 font-sans">
       {children}
     </ol>
   ),
@@ -57,45 +57,45 @@ const MARKDOWN_COMPONENTS: Record<string, React.FC<any>> = {
     </li>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="border-l-4 border-cyan-400 bg-cyan-950/20 px-4 py-2 rounded-r-lg text-slate-300 italic my-4 text-sm font-sans">
+    <blockquote className="border-l-2 border-nothing bg-white/[0.02] px-4 py-2.5 rounded-r-xl text-slate-300 italic my-4 text-sm font-sans">
       {children}
     </blockquote>
   ),
   table: ({ children }) => (
-    <div className="overflow-x-auto my-6 rounded-xl border border-slate-800 bg-slate-900/60 shadow-md">
-      <table className="min-w-full divide-y divide-slate-800 text-left text-xs font-mono">
+    <div className="overflow-x-auto my-6 rounded-xl border border-white/[0.08] bg-obsidian-900/60 shadow-sm">
+      <table className="min-w-full divide-y divide-white/[0.06] text-left text-xs font-mono">
         {children}
       </table>
     </div>
   ),
   thead: ({ children }) => (
-    <thead className="bg-slate-900 text-cyan-400 uppercase tracking-wider font-semibold">
+    <thead className="bg-obsidian-950/80 text-slate-300 uppercase tracking-wider font-semibold border-b border-white/[0.08]">
       {children}
     </thead>
   ),
   tbody: ({ children }) => (
-    <tbody className="divide-y divide-slate-800/60">
+    <tbody className="divide-y divide-white/[0.04]">
       {children}
     </tbody>
   ),
   th: ({ children }) => (
-    <th className="px-4 py-3 text-xs font-bold tracking-wider">
+    <th className="px-4 py-2.5 text-xs font-medium text-slate-400">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="px-4 py-3 text-xs text-slate-300 whitespace-nowrap">
+    <td className="px-4 py-2 text-xs text-slate-200 whitespace-nowrap">
       {children}
     </td>
   ),
   code: ({ className, children }: any) => {
     const isInline = !className;
     return isInline ? (
-      <code className="px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 font-mono text-xs border border-slate-700">
+      <code className="px-1.5 py-0.5 rounded-md bg-white/[0.06] text-slate-200 font-mono text-xs border border-white/[0.08]">
         {children}
       </code>
     ) : (
-      <pre className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 font-mono text-xs overflow-x-auto">
+      <pre className="p-4 rounded-xl bg-obsidian-950 border border-white/[0.08] text-slate-200 font-mono text-xs overflow-x-auto my-4">
         <code>{children}</code>
       </pre>
     );
@@ -144,30 +144,30 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-950 text-slate-100 select-text overflow-hidden">
+    <div className="flex flex-col h-full w-full bg-obsidian-950 text-slate-100 select-text overflow-hidden font-sans">
       {/* Top Action Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md select-none">
-        <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/30 text-cyan-400">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-obsidian-950/80 border-b border-white/[0.08] backdrop-blur-xl select-none shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-nothing-400 shrink-0">
             <FileText className="w-4 h-4" />
           </span>
-          <span className="text-xs font-mono text-slate-300 font-semibold truncate max-w-xs">
+          <span className="text-xs text-slate-200 font-semibold truncate max-w-xs">
             {filePath.split(/[/\\]/).pop()}
           </span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-500/20">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-slate-400 border border-white/[0.08] shrink-0 font-medium">
             Markdown + KaTeX Math
           </span>
         </div>
 
         {/* Edit / View Mode toggles */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-slate-950 px-1 py-0.5 rounded-lg border border-slate-800">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.08]">
             <button
               onClick={() => setIsEditing(false)}
-              className={`px-2.5 py-1 rounded text-xs font-mono flex items-center gap-1.5 transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all ${
                 !isEditing
-                  ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.08]'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
@@ -175,10 +175,10 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
             </button>
             <button
               onClick={() => setIsEditing(true)}
-              className={`px-2.5 py-1 rounded text-xs font-mono flex items-center gap-1.5 transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all ${
                 isEditing
-                  ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.08]'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Code2 className="w-3.5 h-3.5" />
@@ -190,7 +190,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs font-mono flex items-center gap-1.5 transition-colors shadow-doppler-blue"
+              className="px-3 py-1.5 rounded-lg bg-nothing hover:bg-nothing-600 text-white font-medium text-xs flex items-center gap-1.5 transition-all shadow-crimson border border-nothing-400/30 active:scale-[0.98]"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{isSaving ? 'Saving...' : 'Save Notes'}</span>
@@ -199,7 +199,7 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
 
           <button
             onClick={handleCopyMarkdown}
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.08] transition-colors active:scale-[0.98]"
             title="Copy Raw Content"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -207,28 +207,28 @@ export const MarkdownViewer: React.FC<MarkdownViewerProps> = ({
 
           <button
             onClick={onOpenInDesktop}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-slate-200 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-2.5 py-1.5 rounded-lg bg-transparent hover:bg-white/[0.04] text-xs text-slate-400 hover:text-white border border-white/[0.08] font-medium flex items-center gap-1.5 transition-all shadow-sm active:scale-[0.98]"
             title="Open in Obsidian, VS Code, or default editor"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             <span>Open in Desktop</span>
           </button>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 w-full overflow-y-auto p-6 md:p-10">
+      <div className="flex-1 w-full overflow-y-auto p-6 md:p-10 dot-matrix-bg">
         {isEditing ? (
           <div className="h-full flex flex-col">
             <textarea
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              className="w-full h-full min-h-[500px] p-4 bg-slate-900/90 border border-slate-700 rounded-xl text-slate-200 font-mono text-sm leading-relaxed focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 resize-none"
+              className="w-full h-full min-h-[500px] p-4 bg-black/40 border border-white/[0.08] rounded-xl text-slate-100 font-mono text-sm leading-relaxed focus:outline-none focus:border-white/30 resize-none"
               placeholder="Write Markdown and Doppler LaTeX equations ($z = \Delta\lambda/\lambda_0$)..."
             />
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto prose prose-invert prose-cyan max-w-none space-y-6">
+          <div className="max-w-4xl mx-auto space-y-6">
             <ReactMarkdown
               remarkPlugins={REMARK_PLUGINS}
               rehypePlugins={REHYPE_PLUGINS}

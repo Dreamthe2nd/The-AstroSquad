@@ -306,9 +306,9 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
 
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-950 text-slate-100 overflow-hidden select-none font-sans">
+    <div className="flex flex-col h-full w-full bg-obsidian-950 text-slate-100 overflow-hidden select-none font-sans">
       {/* Top Action Toolbar */}
-      <div className="flex items-center justify-between px-4 h-11 bg-slate-950/90 border-b border-slate-800 backdrop-blur-md shrink-0">
+      <div className="flex items-center justify-between px-4 h-11 bg-obsidian-950/80 border-b border-white/[0.08] backdrop-blur-xl shrink-0">
         {/* Left: Presentation Info */}
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="p-1.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-400 shrink-0">
@@ -317,31 +317,31 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
           <span className="text-xs text-slate-200 font-semibold truncate max-w-xs sm:max-w-sm">
             {fileName}
           </span>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-amber-300 border border-amber-500/20 font-medium shrink-0">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-slate-400 border border-white/[0.08] font-medium shrink-0">
             Deck
           </span>
         </div>
 
         {/* Center: Pagination Controls */}
         {slides.length > 0 && (
-          <div className="flex items-center gap-1 bg-slate-900/80 px-2 py-1 rounded-md border border-slate-800 shadow-sm">
+          <div className="flex items-center gap-1 bg-white/[0.03] px-2 py-1 rounded-lg border border-white/[0.08] shadow-sm">
             <button
               onClick={() => setCurrentSlideIndex((prev) => Math.max(prev - 1, 0))}
               disabled={currentSlideIndex === 0}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               title="Previous Slide (Left Arrow)"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
 
-            <span className="text-xs font-mono text-cyan-400 px-2 min-w-[80px] text-center font-medium">
+            <span className="text-xs font-mono text-slate-300 px-2 min-w-[70px] text-center font-medium">
               {currentSlideIndex + 1} / {slides.length}
             </span>
 
             <button
               onClick={() => setCurrentSlideIndex((prev) => Math.min(prev + 1, slides.length - 1))}
               disabled={currentSlideIndex === slides.length - 1}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              className="p-1 rounded text-slate-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               title="Next Slide (Right Arrow)"
             >
               <ChevronRight className="w-3.5 h-3.5" />
@@ -350,19 +350,19 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
         )}
 
         {/* Right: Action Buttons */}
-        <div className="flex items-center gap-2 shrink-0 font-mono text-xs">
+        <div className="flex items-center gap-2 shrink-0 text-xs">
           <button
             onClick={handleOpenDriveDesktop}
-            className="px-2.5 py-1 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold flex items-center gap-1.5 transition-colors shadow-sm active:scale-95"
+            className="px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 hover:text-white border border-white/[0.08] font-medium flex items-center gap-1.5 transition-all shadow-sm active:scale-[0.98]"
             title="Open in Google Drive for Desktop — edits sync to your Pro account via Google Slides"
           >
-            <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-            <span>⚡ Open in Drive</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Open in Drive</span>
           </button>
 
           <button
             onClick={onOpenInDesktop}
-            className="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-2.5 py-1 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] text-slate-300 hover:text-white border border-white/[0.08] font-medium flex items-center gap-1.5 transition-all shadow-sm active:scale-[0.98]"
             title="Launch in default system presentation editor"
           >
             <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
@@ -372,19 +372,19 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
       </div>
 
       {/* Main Slide Presentation Stage */}
-      <div className="flex-1 w-full flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-slate-950 relative">
+      <div className="flex-1 w-full flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-obsidian-950 dot-matrix-bg relative">
         {loading ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3 font-mono">
-            <RefreshCw className="w-7 h-7 text-cyan-400 animate-spin" />
-            <p className="text-xs">Rendering slide deck graphics &amp; assets...</p>
+          <div className="flex flex-col items-center justify-center h-full text-slate-400 space-y-3">
+            <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-white/60 animate-spin" />
+            <p className="text-xs text-slate-400 font-sans">Rendering slide graphics...</p>
           </div>
         ) : error || !currentSlide ? (
           <div className="h-full w-full flex flex-col items-center justify-center p-8 text-center space-y-4">
-            <div className="w-12 h-12 rounded-xl bg-amber-950/80 border border-amber-500/40 flex items-center justify-center text-amber-400">
+            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-amber-400">
               <AlertCircle className="w-6 h-6" />
             </div>
             <div className="space-y-1 max-w-md">
-              <h3 className="text-sm font-bold text-slate-200">Presentation Deck Notice</h3>
+              <h3 className="text-sm font-semibold text-slate-200">Presentation Deck Notice</h3>
               <p className="text-xs text-slate-400 font-sans leading-relaxed">
                 {error || 'Presentation could not be displayed.'} Open directly in Google Drive for Desktop to edit in Google Slides.
               </p>
@@ -392,16 +392,16 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
             <div className="flex items-center gap-2 pt-2">
               <button
                 onClick={handleOpenDriveDesktop}
-                className="px-3.5 py-1.5 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-2 transition-colors shadow-sm"
+                className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-white font-medium text-xs flex items-center gap-2 border border-white/[0.12] transition-all active:scale-[0.98]"
               >
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>⚡ Open in Drive</span>
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Open in Drive</span>
               </button>
             </div>
           </div>
         ) : (
           /* Centered 16:9 Slide Canvas with Aspect-Ratio Preservation */
-          <div className="w-full max-w-5xl aspect-[16/9] max-h-[calc(100vh-12rem)] rounded-xl bg-slate-900 border border-slate-800 shadow-2xl overflow-hidden flex items-center justify-center">
+          <div className="w-full max-w-5xl aspect-[16/9] max-h-[calc(100vh-12rem)] rounded-xl bg-obsidian-900 border border-white/[0.08] shadow-ambient overflow-hidden flex items-center justify-center">
             <svg
               viewBox="0 0 1920 1080"
               className="w-full h-full object-contain select-none"
@@ -491,7 +491,7 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
 
       {/* Slide Filmstrip / Thumbnail Carousel */}
       {slides.length > 1 && (
-        <div className="h-20 bg-slate-950/95 border-t border-slate-800 px-4 py-2 flex items-center gap-2 overflow-x-auto shrink-0 select-none">
+        <div className="h-20 bg-obsidian-950/90 border-t border-white/[0.08] px-4 py-2 flex items-center gap-2 overflow-x-auto shrink-0 select-none backdrop-blur-md">
           <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0 px-1 font-semibold">
             Slides:
           </span>
@@ -501,14 +501,14 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
               <button
                 key={idx}
                 onClick={() => setCurrentSlideIndex(idx)}
-                className={`h-14 w-24 shrink-0 rounded-md p-1.5 border text-left flex flex-col justify-between transition-all active:scale-95 ${
+                className={`h-14 w-24 shrink-0 rounded-lg p-1.5 border text-left flex flex-col justify-between transition-all active:scale-[0.98] ${
                   isSelected
-                    ? 'border-cyan-400 bg-slate-900 shadow-sm ring-1 ring-cyan-500/40'
-                    : 'border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/70'
+                    ? 'border-white/30 bg-white/[0.08] shadow-sm ring-1 ring-white/10'
+                    : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04]'
                 }`}
               >
                 <div className="flex items-center justify-between w-full">
-                  <span className={`text-[10px] font-mono font-semibold ${isSelected ? 'text-cyan-400' : 'text-slate-400'}`}>
+                  <span className={`text-[10px] font-mono font-medium ${isSelected ? 'text-white' : 'text-slate-500'}`}>
                     #{slide.slideNumber}
                   </span>
                   {slide.hasImage && (

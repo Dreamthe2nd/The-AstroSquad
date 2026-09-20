@@ -30,6 +30,7 @@ export interface ToastNotification {
 }
 
 export interface StationSettings {
+  kstarsPath?: string;
   fileAssociations: {
     pptx?: string;
     pdf?: string;

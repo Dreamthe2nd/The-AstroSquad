@@ -99,33 +99,33 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-950 text-slate-100 select-text overflow-hidden font-mono">
+    <div className="flex flex-col h-full w-full bg-obsidian-950 text-slate-100 select-text overflow-hidden font-sans">
       {/* Top Action Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md select-none">
-        <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg bg-sky-950/80 border border-sky-500/30 text-sky-400">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2 bg-obsidian-950/80 border-b border-white/[0.08] backdrop-blur-xl select-none shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="p-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-sapphire-400 shrink-0">
             <FileCode className="w-4 h-4" />
           </span>
           <span className="text-xs text-slate-200 font-semibold truncate max-w-xs">
             {filePath.split(/[/\\]/).pop()}
           </span>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-sky-950/60 text-sky-400 border border-sky-500/20 font-semibold">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-slate-400 border border-white/[0.08] font-medium shrink-0">
             {languageLabel}
           </span>
-          <span className="text-[10px] text-slate-500 hidden sm:inline">
+          <span className="text-[10px] font-mono text-slate-500 hidden sm:inline">
             {lines.length} lines · {content.length} chars
           </span>
         </div>
 
         {/* View / Edit Mode toggles & Actions */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-slate-950 px-1 py-0.5 rounded-lg border border-slate-800">
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center bg-white/[0.04] p-0.5 rounded-lg border border-white/[0.08]">
             <button
               onClick={() => setIsEditing(false)}
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all ${
                 !isEditing
-                  ? 'bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.08]'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Eye className="w-3.5 h-3.5" />
@@ -133,10 +133,10 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             </button>
             <button
               onClick={() => setIsEditing(true)}
-              className={`px-2.5 py-1 rounded text-xs flex items-center gap-1.5 transition-colors ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-all ${
                 isEditing
-                  ? 'bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-white/[0.1] text-white shadow-sm border border-white/[0.08]'
+                  : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Code2 className="w-3.5 h-3.5" />
@@ -148,7 +148,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-doppler-blue"
+              className="px-3 py-1.5 rounded-lg bg-nothing hover:bg-nothing-600 text-white font-medium text-xs flex items-center gap-1.5 transition-all shadow-crimson border border-nothing-400/30 active:scale-[0.98]"
             >
               <Save className="w-3.5 h-3.5" />
               <span>{isSaving ? 'Saving...' : 'Save File'}</span>
@@ -157,7 +157,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
 
           <button
             onClick={handleCopy}
-            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white border border-white/[0.08] transition-colors active:scale-[0.98]"
             title="Copy Content"
           >
             {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
@@ -165,32 +165,32 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
 
           <button
             onClick={onOpenInDesktop}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-2.5 py-1.5 rounded-lg bg-transparent hover:bg-white/[0.04] text-xs text-slate-400 hover:text-white border border-white/[0.08] font-medium flex items-center gap-1.5 transition-all shadow-sm active:scale-[0.98]"
             title="Open in default code editor (VS Code, Cursor, CLion, etc.)"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-sky-400" />
+            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             <span>Open in Desktop App</span>
           </button>
         </div>
       </div>
 
       {/* Code Body Area */}
-      <div className="flex-1 w-full overflow-auto bg-slate-950 p-4">
+      <div className="flex-1 w-full overflow-auto bg-obsidian-950 p-4">
         {isEditing ? (
           <div className="h-full flex flex-col">
             <textarea
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              className="w-full h-full min-h-[500px] p-4 bg-slate-900/95 border border-slate-700 rounded-xl text-slate-200 font-mono text-xs leading-relaxed focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 resize-none font-mono"
+              className="w-full h-full min-h-[500px] p-4 bg-black/40 border border-white/[0.08] rounded-xl text-slate-100 font-mono text-xs leading-relaxed focus:outline-none focus:border-white/30 resize-none"
               spellCheck={false}
               placeholder="Source code or configuration content..."
             />
           </div>
         ) : (
-          <div className="flex flex-col rounded-xl bg-slate-900/80 border border-slate-800 overflow-hidden shadow-inner">
+          <div className="flex flex-col rounded-xl bg-obsidian-900/60 border border-white/[0.08] overflow-hidden shadow-sm">
             <div className="flex overflow-x-auto">
               {/* Line numbers gutter */}
-              <div className="bg-slate-950/60 py-4 px-3 select-none text-right text-slate-600 border-r border-slate-800/80 shrink-0 font-mono text-xs leading-relaxed">
+              <div className="bg-obsidian-950/60 py-4 px-3 select-none text-right text-slate-600 border-r border-white/[0.06] shrink-0 font-mono text-xs leading-relaxed">
                 {displayedLines.map((_, i) => (
                   <div key={i} className="h-5">
                     {i + 1}
@@ -199,7 +199,7 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
               </div>
 
               {/* Code content */}
-              <div className="p-4 overflow-x-auto flex-1 font-mono text-xs leading-relaxed text-slate-300">
+              <div className="p-4 overflow-x-auto flex-1 font-mono text-xs leading-relaxed text-slate-200">
                 {displayedLines.map((line, i) => (
                   <div key={i} className="h-5 whitespace-pre">
                     {line || ' '}
@@ -209,11 +209,11 @@ export const CodeViewer: React.FC<CodeViewerProps> = ({
             </div>
 
             {lines.length > 2000 && (
-              <div className="p-3 bg-sky-950/50 border-t border-sky-800/60 text-sky-300 text-xs flex items-center justify-between">
+              <div className="p-3 bg-white/[0.02] border-t border-white/[0.06] text-slate-400 text-xs flex items-center justify-between font-sans">
                 <span>Showing first 2,000 of {lines.length.toLocaleString()} lines for optimal performance.</span>
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="px-2.5 py-1 bg-sky-600 hover:bg-sky-500 text-white rounded font-semibold text-xs transition-colors"
+                  className="px-2.5 py-1 bg-white hover:bg-slate-200 text-black rounded-lg font-medium text-xs transition-colors"
                 >
                   Switch to Editor to view full file
                 </button>

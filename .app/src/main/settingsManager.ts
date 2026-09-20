@@ -3,6 +3,7 @@ import path from 'path';
 import { app, dialog, BrowserWindow } from 'electron';
 
 export interface StationSettings {
+  kstarsPath?: string;
   fileAssociations: {
     pptx?: string;
     pdf?: string;
@@ -55,6 +56,7 @@ export class SettingsManager {
   private getDefaultSettings(): StationSettings {
     const docs = app ? app.getPath('documents') : process.cwd();
     return {
+      kstarsPath: '',
       fileAssociations: {
         pptx: 'google_drive', // Google Drive Desktop (direct desktop app with pro account auto-sync)
         pdf: 'google_drive',  // Google Drive Desktop / System Default
@@ -94,6 +96,7 @@ export class SettingsManager {
         const raw = fs.readFileSync(this.filePath, 'utf-8');
         const parsed = JSON.parse(raw);
         const merged: StationSettings = {
+          kstarsPath: parsed.kstarsPath !== undefined ? parsed.kstarsPath : defaults.kstarsPath,
           fileAssociations: { ...defaults.fileAssociations, ...(parsed.fileAssociations || {}) },
           repository: { ...defaults.repository, ...(parsed.repository || {}) },
           discord: { ...defaults.discord, ...(parsed.discord || {}) },

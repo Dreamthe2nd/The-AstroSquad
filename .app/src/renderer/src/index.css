@@ -4,74 +4,76 @@
 
 @layer base {
   :root, body, html {
-    font-family: 'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color-scheme: dark;
+    background-color: #07080b;
+    color: #f1f5f9;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-* {
-  font-family: inherit;
-}
-
-/* Custom AstroSquad Doppler Scrollbars */
+/* Minimalist Unix/Nothing Scrollbars */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #030712;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #06b6d4;
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* Starfield Subtle Background */
+/* Nothing OS Micro-Dot Matrix Pattern */
+.dot-matrix-bg,
 .cosmic-grid {
-  background-image: radial-gradient(rgba(34, 211, 238, 0.08) 1px, transparent 1px),
-                    radial-gradient(rgba(244, 63, 94, 0.05) 1px, transparent 1px);
-  background-size: 32px 32px;
-  background-position: 0 0, 16px 16px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0;
 }
 
-/* Glowing Doppler Borders */
+/* Refined Micro-Borders */
+.micro-border {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .doppler-border-cyan {
-  border: 1px solid rgba(6, 182, 212, 0.4);
-  box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.06);
 }
 
 .doppler-border-cyan:hover {
-  border-color: rgba(34, 211, 238, 0.7);
-  box-shadow: 0 0 25px rgba(6, 182, 212, 0.3);
+  border-color: rgba(56, 189, 248, 0.45);
 }
 
 .doppler-border-red {
-  border: 1px solid rgba(244, 63, 94, 0.4);
-  box-shadow: 0 0 15px rgba(244, 63, 94, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.08);
 }
 
 .doppler-border-red:hover {
-  border-color: rgba(251, 113, 133, 0.7);
-  box-shadow: 0 0 25px rgba(244, 63, 94, 0.3);
+  border-color: rgba(239, 68, 68, 0.5);
 }
 
-/* KaTeX custom overrides for dark background */
+/* KaTeX Clean Overrides */
 .katex-display {
   padding: 0.75rem 1rem;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(18, 21, 30, 0.5);
   border-radius: 0.5rem;
-  border-left: 3px solid #06b6d4;
+  border-left: 2px solid #ef4444;
   overflow-x: auto;
   overflow-y: hidden;
 }
 
 .katex {
   font-size: 1.05em;
-  color: #38bdf8;
+  color: #f1f5f9;
 }

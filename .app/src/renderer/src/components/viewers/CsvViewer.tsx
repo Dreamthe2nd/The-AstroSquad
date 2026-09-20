@@ -154,22 +154,23 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
   }, [editedContent]);
 
   return (
-    <div className="flex flex-col h-full w-full bg-slate-950 text-slate-100 select-none overflow-hidden font-mono">
+    <div className="flex flex-col h-full w-full bg-obsidian-950 text-slate-100 select-none overflow-hidden font-sans">
       {/* Top Action Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 backdrop-blur-md shrink-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-obsidian-950/80 border-b border-white/[0.08] backdrop-blur-xl shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="p-1.5 rounded-lg bg-teal-950/80 border border-teal-500/30 text-teal-400 shrink-0">
-            <FileSpreadsheet className="w-4 h-4" />
+          <span className="p-1.5 rounded-lg bg-teal-500/15 border border-teal-500/30 text-teal-400 shrink-0">
+            <FileSpreadsheet className="w-3.5 h-3.5" />
           </span>
-          <span className="text-xs text-slate-300 font-semibold truncate max-w-xs">
+          <span className="text-xs text-slate-200 font-semibold truncate max-w-xs font-sans">
             {filePath.split(/[/\\]/).pop()}
           </span>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-teal-950/60 text-teal-400 border border-teal-500/20 shrink-0">
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-slate-400 border border-white/[0.08] shrink-0">
             {data.length} Rows · {headers.length} Cols
           </span>
           {isDirty && (
-            <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950/80 text-amber-300 border border-amber-500/30 shrink-0 font-semibold animate-pulse">
-              ● Unsaved Changes
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-nothing-950/70 text-nothing-300 border border-nothing-500/30 shrink-0 font-medium flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-nothing-500 animate-pulse" />
+              Unsaved Changes
             </span>
           )}
         </div>
@@ -177,12 +178,12 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
         {/* View Mode Toggle, Save, Google Drive & Desktop Buttons */}
         <div className="flex items-center gap-2 shrink-0">
           {/* View Mode Segmented Control */}
-          <div className="flex items-center bg-slate-950 rounded-lg p-0.5 border border-slate-800">
+          <div className="flex items-center bg-white/[0.03] rounded-lg p-0.5 border border-white/[0.08]">
             <button
               onClick={() => setViewMode('table')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'table'
-                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
+                  ? 'bg-white/10 text-white shadow-sm font-semibold'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
               title="Table Grid View"
@@ -192,9 +193,9 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
             </button>
             <button
               onClick={() => setViewMode('editor')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'editor'
-                  ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
+                  ? 'bg-white/10 text-white shadow-sm font-semibold'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
               title="Direct In-App CSV Editor (No Excel Required)"
@@ -209,12 +210,12 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
             <button
               onClick={handleSave}
               disabled={!isDirty || isSaving}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm active:scale-[0.98] ${
                 saveSuccess
                   ? 'bg-emerald-600 text-white'
                   : isDirty
-                  ? 'bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-slate-950 shadow-doppler-blue animate-pulse-glow cursor-pointer'
-                  : 'bg-slate-800 text-slate-500 border border-slate-700/50 cursor-not-allowed opacity-60'
+                  ? 'bg-nothing-600 hover:bg-nothing-500 text-white cursor-pointer shadow-crimson'
+                  : 'bg-white/[0.03] text-slate-500 border border-white/[0.06] cursor-not-allowed opacity-50'
               }`}
               title="Save CSV changes directly to disk"
             >
@@ -236,7 +237,7 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
           {isDirty && (
             <button
               onClick={handleRevert}
-              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-300 border border-slate-700 transition-colors"
+              className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-nothing-400 border border-white/[0.08] transition-colors"
               title="Discard unsaved edits and reload from disk"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -246,17 +247,17 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
           {/* Google Drive — open via Drive for Desktop */}
           <button
             onClick={handleOpenDriveDesktop}
-            className="px-2.5 py-1.5 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 hover:text-white font-medium text-xs flex items-center gap-1.5 transition-all shadow-sm active:scale-[0.98]"
             title="Open in Google Drive for Desktop — edits sync via Google Sheets on your pro account"
           >
-            <Sparkles className="w-3.5 h-3.5 text-slate-950" />
-            <span>⚡ Open in Drive</span>
+            <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+            <span>Open in Drive</span>
           </button>
 
           {/* System Desktop Fallback */}
           <button
             onClick={onOpenInDesktop}
-            className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"
+            className="px-2.5 py-1.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] text-xs text-slate-300 hover:text-white border border-white/[0.08] font-medium flex items-center gap-1.5 transition-all shadow-sm active:scale-[0.98]"
             title="Open in default desktop application"
           >
             <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
@@ -269,31 +270,31 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
       {viewMode === 'table' && (
         <>
           {/* Search bar inside Table View */}
-          <div className="px-4 py-2 bg-slate-900/60 border-b border-slate-800/80 flex items-center justify-between gap-3">
+          <div className="px-4 py-2 bg-obsidian-900/60 border-b border-white/[0.06] flex items-center justify-between gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Filter observational records, objects, redshift..."
+                placeholder="Filter catalog records, objects, redshift..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full pl-8 pr-3 py-1 bg-slate-950 border border-slate-700/80 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-teal-400"
+                className="w-full pl-8 pr-3 py-1 bg-obsidian-950 border border-white/[0.08] rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-white/20 focus:ring-1 focus:ring-white/10"
               />
             </div>
-            <div className="text-[11px] text-slate-400">
-              Click column header to sort · Switch to <button onClick={() => setViewMode('editor')} className="text-teal-400 hover:underline">Editor</button> to edit data
+            <div className="text-[11px] text-slate-400 font-sans">
+              Click header to sort · Switch to <button onClick={() => setViewMode('editor')} className="text-slate-200 hover:underline font-medium">Editor</button> to modify
             </div>
           </div>
 
           {/* Table Viewport */}
-          <div className="flex-1 w-full overflow-auto bg-slate-950/80 select-text">
-            <table className="min-w-full divide-y divide-slate-800 text-left border-collapse">
-              <thead className="bg-slate-900 sticky top-0 z-10 select-none shadow-sm">
+          <div className="flex-1 w-full overflow-auto bg-obsidian-950/80 select-text">
+            <table className="min-w-full divide-y divide-white/[0.06] text-left border-collapse">
+              <thead className="bg-obsidian-900 sticky top-0 z-10 select-none shadow-sm">
                 <tr>
-                  <th className="px-3 py-2.5 text-[11px] text-slate-500 uppercase tracking-wider w-12 border-b border-slate-800">
+                  <th className="px-3 py-2.5 text-[11px] font-mono text-slate-500 uppercase tracking-wider w-12 border-b border-white/[0.08]">
                     #
                   </th>
                   {headers.map((header, colIndex) => {
@@ -302,26 +303,26 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
                       <th
                         key={colIndex}
                         onClick={() => handleSort(colIndex)}
-                        className="px-4 py-2.5 text-xs font-bold text-teal-300 uppercase tracking-wider border-b border-slate-800 hover:bg-slate-800/80 cursor-pointer transition-colors"
+                        className="px-4 py-2.5 text-xs font-semibold text-slate-300 uppercase tracking-wider border-b border-white/[0.08] hover:bg-white/[0.04] cursor-pointer transition-colors"
                       >
                         <div className="flex items-center gap-1.5">
                           <span>{header}</span>
-                          <ArrowUpDown className={`w-3 h-3 ${isSorted ? 'text-teal-400' : 'text-slate-600'}`} />
+                          <ArrowUpDown className={`w-3 h-3 ${isSorted ? 'text-white' : 'text-slate-600'}`} />
                         </div>
                       </th>
                     );
                   })}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 text-xs">
+              <tbody className="divide-y divide-white/[0.04] text-xs">
                 {paginatedData.length > 0 ? (
                   paginatedData.map((row, rowIndex) => (
-                    <tr key={rowIndex} className="hover:bg-slate-900/60 transition-colors">
-                      <td className="px-3 py-2 text-slate-500 text-[10px]">
+                    <tr key={rowIndex} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="px-3 py-2 text-slate-500 text-[10px] font-mono">
                         {(currentPage - 1) * pageSize + rowIndex + 1}
                       </td>
                       {headers.map((_, colIndex) => (
-                        <td key={colIndex} className="px-4 py-2 text-slate-300 whitespace-nowrap">
+                        <td key={colIndex} className="px-4 py-2 text-slate-300 font-mono whitespace-nowrap">
                           {row[colIndex] ?? ''}
                         </td>
                       ))}
@@ -329,8 +330,8 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={headers.length + 1} className="py-12 text-center text-slate-500 text-xs">
-                      No matching observational records found.
+                    <td colSpan={headers.length + 1} className="py-12 text-center text-slate-500 text-xs font-sans">
+                      No matching records found.
                     </td>
                   </tr>
                 )}
@@ -339,14 +340,14 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
           </div>
 
           {/* Pagination & Telemetry Bar */}
-          <div className="px-4 py-2 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 select-none shrink-0">
+          <div className="px-4 py-2 bg-obsidian-900/90 border-t border-white/[0.08] flex items-center justify-between text-xs text-slate-400 select-none shrink-0 font-sans">
             <div className="flex items-center gap-2">
               <span>
                 Showing {filteredData.length > 0 ? (currentPage - 1) * pageSize + 1 : 0} -{' '}
                 {Math.min(currentPage * pageSize, filteredData.length)} of {filteredData.length} entries
               </span>
               {searchQuery && (
-                <span className="text-[11px] text-teal-400">
+                <span className="text-[11px] font-mono text-teal-400">
                   (Filtered from {data.length} total)
                 </span>
               )}
@@ -359,18 +360,18 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none"
+                className="bg-obsidian-950 border border-white/[0.08] rounded-lg px-2 py-1 text-xs text-slate-300 focus:outline-none"
               >
                 <option value={25}>25 per page</option>
                 <option value={50}>50 per page</option>
                 <option value={100}>100 per page</option>
               </select>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 font-mono">
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
-                  className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300 transition-colors"
+                  className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-30 text-slate-300 transition-colors"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
@@ -380,7 +381,7 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                   disabled={currentPage === totalPages}
-                  className="p-1 rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-30 text-slate-300 transition-colors"
+                  className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.08] disabled:opacity-30 text-slate-300 transition-colors"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -392,17 +393,17 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
 
       {/* VIEW 2: IN-APP DIRECT CSV EDITOR */}
       {viewMode === 'editor' && (
-        <div className="flex-1 w-full flex flex-col overflow-hidden bg-slate-950 select-text">
+        <div className="flex-1 w-full flex flex-col overflow-hidden bg-obsidian-950 select-text">
           {/* Editor Header Banner */}
-          <div className="px-4 py-2 bg-teal-950/30 border-b border-teal-500/20 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 text-teal-300">
+          <div className="px-4 py-2 bg-obsidian-900/60 border-b border-white/[0.08] flex items-center justify-between text-xs font-sans">
+            <div className="flex items-center gap-2 text-slate-200">
               <Edit3 className="w-3.5 h-3.5 text-teal-400" />
-              <span>In-App CSV Data Editor</span>
-              <span className="text-[10px] text-slate-400">
+              <span className="font-medium">In-App CSV Data Editor</span>
+              <span className="text-[10px] text-slate-500 font-normal">
                 (Edit values directly — no Microsoft Excel or Office installation required)
               </span>
             </div>
-            <div className="text-[11px] text-slate-400">
+            <div className="text-[11px] font-mono text-slate-500">
               {editorLines.length} lines · {editedContent.length} chars
             </div>
           </div>
@@ -410,7 +411,7 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
           {/* Editor Area with Line Numbers */}
           <div className="flex-1 flex overflow-hidden">
             {/* Line Numbers Gutter */}
-            <div className="w-12 bg-slate-900/70 border-r border-slate-800/80 py-3 text-right pr-2 select-none overflow-hidden shrink-0 font-mono text-xs text-slate-600">
+            <div className="w-12 bg-obsidian-950/80 border-r border-white/[0.06] py-3 text-right pr-2 select-none overflow-hidden shrink-0 font-mono text-xs text-slate-600">
               {editorLines.map((_, i) => (
                 <div key={i} className="leading-6">
                   {i + 1}
@@ -422,30 +423,31 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
             <textarea
               value={editedContent}
               onChange={(e) => setEditedContent(e.target.value)}
-              className="flex-1 h-full bg-slate-950 text-slate-200 p-3 font-mono text-xs leading-6 resize-none focus:outline-none border-none selection:bg-teal-500/30 selection:text-white"
+              className="flex-1 h-full bg-obsidian-950 text-slate-200 p-3 font-mono text-xs leading-6 resize-none focus:outline-none border-none selection:bg-white/20 selection:text-white"
               spellCheck={false}
               placeholder="id,object_name,radial_velocity_km_s,redshift_z,notes..."
             />
           </div>
 
           {/* Editor Footer Status */}
-          <div className="px-4 py-2 bg-slate-900/90 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 select-none shrink-0">
+          <div className="px-4 py-2 bg-obsidian-900/90 border-t border-white/[0.08] flex items-center justify-between text-xs text-slate-400 select-none shrink-0 font-sans">
             <div className="flex items-center gap-2">
               {isDirty ? (
-                <span className="text-amber-400 font-semibold flex items-center gap-1">
-                  ● Modified — click &quot;Save File&quot; above to commit locally
+                <span className="text-nothing-400 font-medium flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-nothing-500 animate-pulse" />
+                  Modified — click &quot;Save File&quot; above to commit locally
                 </span>
               ) : (
-                <span className="text-slate-500 flex items-center gap-1">
+                <span className="text-slate-500 flex items-center gap-1.5">
                   ✓ Synced with local repository file
                 </span>
               )}
             </div>
             <div className="flex items-center gap-3 text-[11px]">
-              <span>Comma-Separated Values (CSV)</span>
+              <span className="font-mono text-slate-500">CSV</span>
               <button
                 onClick={() => setViewMode('table')}
-                className="text-teal-400 hover:text-teal-300 underline font-semibold"
+                className="text-slate-300 hover:text-white underline font-medium"
               >
                 Return to Table View →
               </button>

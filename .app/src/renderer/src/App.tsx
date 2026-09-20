@@ -151,7 +151,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="w-screen h-screen bg-slate-950 text-slate-100 overflow-hidden relative">
+    <div className="w-screen h-screen bg-obsidian-950 text-slate-100 overflow-hidden relative">
       {viewMode === 'auth' && (
         <AuthScreen
           onAuthenticated={handleAuthenticated}

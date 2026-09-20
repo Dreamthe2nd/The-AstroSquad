@@ -11,6 +11,7 @@ export interface FileNode {
 }
 
 export interface StationSettings {
+  kstarsPath?: string;
   fileAssociations: {
     pptx?: string;
     pdf?: string;
@@ -85,6 +86,7 @@ export interface ApiBridge {
     openExternal: (url: string) => Promise<void>;
     openDiscord: (customInviteUrl?: string, customAppUri?: string) => Promise<void>;
     openMeeting: (customUrl?: string) => Promise<void>;
+    openKStars: (customPath?: string) => Promise<{ success: boolean; message: string; path?: string }>;
     openRepoFolder: () => Promise<void>;
     copyToClipboard: (text: string) => void;
     openGoogleSuite: (args: {
@@ -187,6 +189,7 @@ const api: ApiBridge = {
     openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
     openDiscord: (customInviteUrl?: string, customAppUri?: string) => ipcRenderer.invoke('shell:openDiscord', { customInviteUrl, customAppUri }),
     openMeeting: (customUrl?: string) => ipcRenderer.invoke('shell:openMeeting', customUrl),
+    openKStars: (customPath?: string) => ipcRenderer.invoke('shell:openKStars', customPath),
     openRepoFolder: () => ipcRenderer.invoke('shell:openRepoFolder'),
     copyToClipboard: (text) => clipboard.writeText(text),
     openGoogleSuite: (args) => ipcRenderer.invoke('shell:openGoogleSuite', args),

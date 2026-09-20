@@ -1321,4 +1321,58 @@ export class FileHandlers {
       }
     }
   }
+
+  /**
+   * Open KStars Desktop Planetarium & Astronomy Suite
+   */
+  public static openKStars(customPath?: string): { success: boolean; message: string; path?: string } {
+    const candidates: string[] = [];
+    if (customPath && customPath.trim()) {
+      candidates.push(customPath.trim());
+    }
+
+    if (process.platform === 'win32') {
+      const localAppData = process.env.LOCALAPPDATA || '';
+      const programFiles = process.env.ProgramFiles || 'C:\\Program Files';
+      const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+
+      candidates.push(
+        path.join(programFiles, 'KStars', 'bin', 'kstars.exe'),
+        path.join(programFiles, 'kstars', 'bin', 'kstars.exe'),
+        path.join(programFilesX86, 'KStars', 'bin', 'kstars.exe'),
+        'C:\\KStars\\bin\\kstars.exe',
+        path.join(programFiles, 'KStars', 'kstars.exe'),
+        path.join(localAppData, 'Programs', 'KStars', 'bin', 'kstars.exe'),
+        path.join(localAppData, 'Programs', 'kstars', 'bin', 'kstars.exe')
+      );
+    } else if (process.platform === 'darwin') {
+      candidates.push('/Applications/kstars.app/Contents/MacOS/kstars');
+    } else {
+      candidates.push('/usr/bin/kstars', '/usr/local/bin/kstars');
+    }
+
+    for (const cand of candidates) {
+      if (cand && fs.existsSync(cand)) {
+        try {
+          child_process.spawn(cand, [], { detached: true, stdio: 'ignore' }).unref();
+          return { success: true, message: `Launched KStars from ${cand}`, path: cand };
+        } catch (err: any) {
+          console.error('[FileHandlers] Failed to spawn KStars at path:', cand, err);
+        }
+      }
+    }
+
+    // Try launching directly via system PATH
+    try {
+      child_process.spawn('kstars', [], { detached: true, stdio: 'ignore' }).unref();
+      return { success: true, message: 'Launched KStars via system PATH' };
+    } catch {
+      // Failed via PATH
+    }
+
+    return {
+      success: false,
+      message: 'KStars executable not found. Please set its executable path in Settings or download it from kstars.kde.org.'
+    };
+  }
 }
