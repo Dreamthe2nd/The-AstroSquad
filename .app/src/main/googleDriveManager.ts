@@ -281,7 +281,7 @@ export class GoogleDriveManager {
         this.activeAuthServer = server;
 
         const scopes = [
-          'https://www.googleapis.com/auth/drive.file',
+          'https://www.googleapis.com/auth/drive',
           'https://www.googleapis.com/auth/userinfo.email',
           'https://www.googleapis.com/auth/userinfo.profile'
         ].join(' ');
@@ -467,49 +467,74 @@ export class GoogleDriveManager {
       let fileId = '';
       let webViewLink = '';
 
-      if (existingFile) {
-        fileId = existingFile.id;
-        console.log(`[GoogleDriveManager] Found existing file ${fileId}, deleting before recreate...`);
-        await this.httpRequest({
-          hostname: 'www.googleapis.com',
-          path: `/drive/v3/files/${fileId}?supportsAllDrives=true`,
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
-
-      // Create new file
-      console.log(`[GoogleDriveManager] Creating new file "${fileName}" in folder ${folderId}...`);
-      const metadata = {
-        name: fileName,
-        parents: [folderId],
-        mimeType: targetMimeType
-      };
-
       const boundary = '-------AstroSquadBoundary' + crypto.randomBytes(8).toString('hex');
       const multipartBody = Buffer.concat([
-        Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`),
         Buffer.from(`--${boundary}\r\nContent-Type: ${sourceMimeType}\r\n\r\n`),
         fileBuffer,
         Buffer.from(`\r\n--${boundary}--`)
       ]);
 
-      const uploadRes = await this.httpRequest(
-        {
-          hostname: 'www.googleapis.com',
-          path: `/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true`,
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` }
-        },
-        multipartBody,
-        `multipart/related; boundary=${boundary}`
-      );
+      if (existingFile) {
+        // Update existing file content in-place (PATCH) — preserves fileId, sharing links & version history
+        fileId = existingFile.id;
+        webViewLink = existingFile.webViewLink || '';
+        console.log(`[GoogleDriveManager] Updating existing file ${fileId} in-place (PATCH)...`);
+        const updateRes = await this.httpRequest(
+          {
+            hostname: 'www.googleapis.com',
+            path: `/upload/drive/v3/files/${fileId}?uploadType=media&supportsAllDrives=true`,
+            method: 'PATCH',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': sourceMimeType,
+              'Content-Length': fileBuffer.length
+            }
+          },
+          fileBuffer,
+          sourceMimeType
+        );
+        if (updateRes.statusCode < 200 || updateRes.statusCode >= 300) {
+          console.warn(`[GoogleDriveManager] PATCH update returned ${updateRes.statusCode}, falling back to create new...`);
+          fileId = '';
+          webViewLink = '';
+        } else {
+          console.log(`[GoogleDriveManager] PATCH update successful.`);
+        }
+      }
 
-      if (uploadRes.statusCode >= 200 && uploadRes.statusCode < 300) {
-        fileId = uploadRes.data?.id;
-        webViewLink = uploadRes.data?.webViewLink;
-      } else {
-        throw new Error(uploadRes.data?.error?.message || `Upload failed with HTTP ${uploadRes.statusCode}`);
+      if (!fileId) {
+        // Create new file
+        console.log(`[GoogleDriveManager] Creating new file "${fileName}" in folder ${folderId}...`);
+        const metadata = {
+          name: fileName,
+          parents: [folderId],
+          mimeType: targetMimeType
+        };
+        const createBody = Buffer.concat([
+          Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`),
+          Buffer.from(`--${boundary}\r\nContent-Type: ${sourceMimeType}\r\n\r\n`),
+          fileBuffer,
+          Buffer.from(`\r\n--${boundary}--`)
+        ]);
+        const uploadRes = await this.httpRequest(
+          {
+            hostname: 'www.googleapis.com',
+            path: `/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true`,
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Length': createBody.length
+            }
+          },
+          createBody,
+          `multipart/related; boundary=${boundary}`
+        );
+        if (uploadRes.statusCode >= 200 && uploadRes.statusCode < 300) {
+          fileId = uploadRes.data?.id;
+          webViewLink = uploadRes.data?.webViewLink;
+        } else {
+          throw new Error(uploadRes.data?.error?.message || `Upload failed with HTTP ${uploadRes.statusCode}`);
+        }
       }
 
       // Ensure we have a direct webViewLink
@@ -521,6 +546,12 @@ export class GoogleDriveManager {
         } else {
           webViewLink = `https://drive.google.com/file/d/${fileId}/view`;
         }
+      }
+
+      // Attach authuser so file opens in the configured Google account
+      const accountIndex = settingsManager.getSettings().googleSuite?.accountIndex;
+      if (accountIndex && webViewLink.includes('google.com')) {
+        webViewLink += (webViewLink.includes('?') ? '&' : '?') + `authuser=${encodeURIComponent(accountIndex)}`;
       }
 
       console.log(`[GoogleDriveManager] Upload complete! webViewLink: ${webViewLink}`);

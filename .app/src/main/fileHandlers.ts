@@ -561,8 +561,19 @@ export class FileHandlers {
     const squadFolder = driveInfo.squadPath || (driveInfo.driveRoot ? path.join(driveInfo.driveRoot, 'The-AstroSquad') : null);
 
     if (!squadFolder) {
-      if (filePath) {
-        return this.openInDesktopApp(filePath);
+      if (filePath && fs.existsSync(filePath)) {
+        // Safe fallback: try shell.openPath first (native OS association), then Google Suite web
+        const ext = path.extname(filePath).toLowerCase();
+        const openResult = await shell.openPath(filePath);
+        if (!openResult) {
+          return { success: true, message: `Opened "${path.basename(filePath)}" in system default app.` };
+        }
+        // No native app found — route to Google Suite web without calling openInDesktopApp (avoids recursion)
+        const appType = (ext === '.pptx' || ext === '.ppt') ? 'slides'
+          : (ext === '.csv' || ext === '.xlsx' || ext === '.xls') ? 'sheets'
+          : (ext === '.pdf') ? 'docs'
+          : 'drive';
+        return this.openGoogleSuiteSession(appType, 'browser_tab', filePath);
       }
       return {
         success: false,

@@ -26610,8 +26610,14 @@ var FileHandlers = class {
     const driveInfo = this.detectGoogleDrivePath();
     const squadFolder = driveInfo.squadPath || (driveInfo.driveRoot ? import_path3.default.join(driveInfo.driveRoot, "The-AstroSquad") : null);
     if (!squadFolder) {
-      if (filePath) {
-        return this.openInDesktopApp(filePath);
+      if (filePath && import_fs2.default.existsSync(filePath)) {
+        const ext2 = import_path3.default.extname(filePath).toLowerCase();
+        const openResult2 = await import_electron3.shell.openPath(filePath);
+        if (!openResult2) {
+          return { success: true, message: `Opened "${import_path3.default.basename(filePath)}" in system default app.` };
+        }
+        const appType2 = ext2 === ".pptx" || ext2 === ".ppt" ? "slides" : ext2 === ".csv" || ext2 === ".xlsx" || ext2 === ".xls" ? "sheets" : ext2 === ".pdf" ? "docs" : "drive";
+        return this.openGoogleSuiteSession(appType2, "browser_tab", filePath);
       }
       return {
         success: false,
@@ -27311,7 +27317,7 @@ var GoogleDriveManager = class {
         const redirectUri = `http://127.0.0.1:${port}/oauth2callback`;
         this.activeAuthServer = server;
         const scopes = [
-          "https://www.googleapis.com/auth/drive.file",
+          "https://www.googleapis.com/auth/drive",
           "https://www.googleapis.com/auth/userinfo.email",
           "https://www.googleapis.com/auth/userinfo.profile"
         ].join(" ");
@@ -27467,29 +27473,8 @@ var GoogleDriveManager = class {
       const existingFile = searchRes.data?.files && searchRes.data.files.length > 0 ? searchRes.data.files[0] : null;
       let fileId = "";
       let webViewLink = "";
-      if (existingFile) {
-        fileId = existingFile.id;
-        console.log(`[GoogleDriveManager] Found existing file ${fileId}, deleting before recreate...`);
-        await this.httpRequest({
-          hostname: "www.googleapis.com",
-          path: `/drive/v3/files/${fileId}?supportsAllDrives=true`,
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-      }
-      console.log(`[GoogleDriveManager] Creating new file "${fileName}" in folder ${folderId}...`);
-      const metadata = {
-        name: fileName,
-        parents: [folderId],
-        mimeType: targetMimeType
-      };
       const boundary = "-------AstroSquadBoundary" + import_crypto.default.randomBytes(8).toString("hex");
       const multipartBody = Buffer.concat([
-        Buffer.from(`--${boundary}\r
-Content-Type: application/json; charset=UTF-8\r
-\r
-${JSON.stringify(metadata)}\r
-`),
         Buffer.from(`--${boundary}\r
 Content-Type: ${sourceMimeType}\r
 \r
@@ -27498,21 +27483,72 @@ Content-Type: ${sourceMimeType}\r
         Buffer.from(`\r
 --${boundary}--`)
       ]);
-      const uploadRes = await this.httpRequest(
-        {
-          hostname: "www.googleapis.com",
-          path: `/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true`,
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` }
-        },
-        multipartBody,
-        `multipart/related; boundary=${boundary}`
-      );
-      if (uploadRes.statusCode >= 200 && uploadRes.statusCode < 300) {
-        fileId = uploadRes.data?.id;
-        webViewLink = uploadRes.data?.webViewLink;
-      } else {
-        throw new Error(uploadRes.data?.error?.message || `Upload failed with HTTP ${uploadRes.statusCode}`);
+      if (existingFile) {
+        fileId = existingFile.id;
+        webViewLink = existingFile.webViewLink || "";
+        console.log(`[GoogleDriveManager] Updating existing file ${fileId} in-place (PATCH)...`);
+        const updateRes = await this.httpRequest(
+          {
+            hostname: "www.googleapis.com",
+            path: `/upload/drive/v3/files/${fileId}?uploadType=media&supportsAllDrives=true`,
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": sourceMimeType,
+              "Content-Length": fileBuffer.length
+            }
+          },
+          fileBuffer,
+          sourceMimeType
+        );
+        if (updateRes.statusCode < 200 || updateRes.statusCode >= 300) {
+          console.warn(`[GoogleDriveManager] PATCH update returned ${updateRes.statusCode}, falling back to create new...`);
+          fileId = "";
+          webViewLink = "";
+        } else {
+          console.log(`[GoogleDriveManager] PATCH update successful.`);
+        }
+      }
+      if (!fileId) {
+        console.log(`[GoogleDriveManager] Creating new file "${fileName}" in folder ${folderId}...`);
+        const metadata = {
+          name: fileName,
+          parents: [folderId],
+          mimeType: targetMimeType
+        };
+        const createBody = Buffer.concat([
+          Buffer.from(`--${boundary}\r
+Content-Type: application/json; charset=UTF-8\r
+\r
+${JSON.stringify(metadata)}\r
+`),
+          Buffer.from(`--${boundary}\r
+Content-Type: ${sourceMimeType}\r
+\r
+`),
+          fileBuffer,
+          Buffer.from(`\r
+--${boundary}--`)
+        ]);
+        const uploadRes = await this.httpRequest(
+          {
+            hostname: "www.googleapis.com",
+            path: `/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true`,
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Length": createBody.length
+            }
+          },
+          createBody,
+          `multipart/related; boundary=${boundary}`
+        );
+        if (uploadRes.statusCode >= 200 && uploadRes.statusCode < 300) {
+          fileId = uploadRes.data?.id;
+          webViewLink = uploadRes.data?.webViewLink;
+        } else {
+          throw new Error(uploadRes.data?.error?.message || `Upload failed with HTTP ${uploadRes.statusCode}`);
+        }
       }
       if (!webViewLink && fileId) {
         if (targetMimeType === "application/vnd.google-apps.presentation") {
@@ -27522,6 +27558,10 @@ Content-Type: ${sourceMimeType}\r
         } else {
           webViewLink = `https://drive.google.com/file/d/${fileId}/view`;
         }
+      }
+      const accountIndex = settingsManager2.getSettings().googleSuite?.accountIndex;
+      if (accountIndex && webViewLink.includes("google.com")) {
+        webViewLink += (webViewLink.includes("?") ? "&" : "?") + `authuser=${encodeURIComponent(accountIndex)}`;
       }
       console.log(`[GoogleDriveManager] Upload complete! webViewLink: ${webViewLink}`);
       if (webViewLink) {

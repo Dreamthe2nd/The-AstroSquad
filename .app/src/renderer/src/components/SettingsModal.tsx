@@ -603,6 +603,102 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
 
+              {/* Google Drive Cloud Bridge — OAuth API Connection */}
+              <div className="p-4 rounded-lg bg-slate-950 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-1.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
+                      <Lock className="w-3.5 h-3.5" />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-white text-xs">Google Drive Cloud Bridge</h4>
+                        <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-medium border ${
+                          driveStatus?.connected
+                            ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/30'
+                            : 'bg-slate-900 text-slate-400 border-slate-800'
+                        }`}>
+                          {driveStatus?.connected
+                            ? `● Connected as ${driveStatus.userEmail || 'Drive User'}`
+                            : '○ Not Connected'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        Connect your Google account to upload files directly to Drive and open them in Slides / Sheets.
+                      </p>
+                    </div>
+                  </div>
+                  {driveStatus?.connected && (
+                    <button
+                      type="button"
+                      onClick={handleDisconnectGoogleDrive}
+                      className="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-rose-950/60 border border-slate-800 hover:border-rose-500/40 text-slate-400 hover:text-rose-300 text-xs font-medium flex items-center gap-1.5 transition-colors shrink-0"
+                    >
+                      <X className="w-3 h-3" />
+                      <span>Disconnect</span>
+                    </button>
+                  )}
+                </div>
+
+                {!driveStatus?.connected && (
+                  <div className="space-y-2 pt-1 border-t border-slate-900">
+                    <div className="flex-1 space-y-1.5">
+                      <label className="text-[10px] text-slate-400 font-mono">OAuth 2.0 Client ID <span className="text-rose-400">*</span></label>
+                      <input
+                        type="text"
+                        placeholder="xxxxxxxxxxxx-xxxxxxxx.apps.googleusercontent.com"
+                        value={clientIdInput}
+                        onChange={(e) => setClientIdInput(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-md text-slate-200 text-xs focus:outline-none focus:border-emerald-400/60 font-mono"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-1.5">
+                      <label className="text-[10px] text-slate-400 font-mono">Client Secret <span className="text-slate-500">(optional for PKCE)</span></label>
+                      <input
+                        type="password"
+                        placeholder="Optional — leave blank for PKCE-only Desktop apps"
+                        value={clientSecretInput}
+                        onChange={(e) => setClientSecretInput(e.target.value)}
+                        className="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-md text-slate-200 text-xs focus:outline-none focus:border-emerald-400/60 font-mono"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={handleConnectGoogleDrive}
+                        disabled={isConnectingDrive || !clientIdInput.trim()}
+                        className="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+                      >
+                        {isConnectingDrive ? (
+                          <><RefreshCw className="w-3 h-3 animate-spin" /><span>Authorizing...</span></>
+                        ) : (
+                          <><ExternalLink className="w-3 h-3" /><span>Connect Google Drive</span></>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowDriveInstructions((v) => !v)}
+                        className="text-[10px] text-slate-500 hover:text-slate-300 underline transition-colors"
+                      >
+                        {showDriveInstructions ? 'Hide setup guide' : 'How to get a Client ID?'}
+                      </button>
+                    </div>
+                    {showDriveInstructions && (
+                      <div className="mt-2 p-3 rounded-md bg-slate-900/80 border border-slate-800 text-[10px] text-slate-400 font-sans space-y-1.5 leading-relaxed">
+                        <p className="font-semibold text-slate-300">Quick Setup (2 minutes):</p>
+                        <ol className="list-decimal list-inside space-y-1 text-slate-400">
+                          <li>Go to <button type="button" onClick={() => window.api.shell.openExternal('https://console.cloud.google.com/apis/credentials')} className="text-cyan-400 hover:underline">Google Cloud Console Credentials</button></li>
+                          <li>Click <strong className="text-slate-300">+ Create Credentials</strong> → <strong className="text-slate-300">OAuth client ID</strong></li>
+                          <li>Application type: <strong className="text-slate-300">Desktop app</strong></li>
+                          <li>Copy the <strong className="text-slate-300">Client ID</strong> and paste it above</li>
+                          <li>Enable <strong className="text-slate-300">Google Drive API</strong> in API Library if not already done</li>
+                        </ol>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* PPTX Association */}
               <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between">
