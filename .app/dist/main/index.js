@@ -26892,6 +26892,9 @@ var GoogleDriveManager = class {
           }
         });
       });
+      req.setTimeout(3e4, () => {
+        req.destroy(new Error("HTTP request timed out after 30 seconds"));
+      });
       req.on("error", reject);
       if (body) req.write(body);
       req.end();
@@ -26939,6 +26942,7 @@ var GoogleDriveManager = class {
     const pkce = this.generatePkce();
     const state = this.base64UrlEncode(import_crypto.default.randomBytes(16));
     return new Promise((resolve, reject) => {
+      let authTimeout;
       const server = import_http.default.createServer(async (req, res) => {
         try {
           const reqUrl = new URL(req.url || "/", `http://127.0.0.1`);
@@ -26953,6 +26957,7 @@ var GoogleDriveManager = class {
           if (queryError) {
             res.writeHead(400, { "Content-Type": "text/html" });
             res.end(this.getCallbackHtml(false, `Google authorization denied: ${queryError}`));
+            if (authTimeout) clearTimeout(authTimeout);
             server.close();
             this.activeAuthServer = null;
             reject(new Error(`Authorization failed: ${queryError}`));
@@ -26961,6 +26966,7 @@ var GoogleDriveManager = class {
           if (!queryCode || queryState !== state) {
             res.writeHead(400, { "Content-Type": "text/html" });
             res.end(this.getCallbackHtml(false, "Invalid state parameter or authorization code."));
+            if (authTimeout) clearTimeout(authTimeout);
             server.close();
             this.activeAuthServer = null;
             reject(new Error("Invalid state or code returned from Google."));
@@ -26991,6 +26997,7 @@ var GoogleDriveManager = class {
             const errMsg = tokenRes.data?.error_description || tokenRes.data?.error || "Failed to exchange tokens";
             res.writeHead(400, { "Content-Type": "text/html" });
             res.end(this.getCallbackHtml(false, errMsg));
+            if (authTimeout) clearTimeout(authTimeout);
             server.close();
             this.activeAuthServer = null;
             reject(new Error(errMsg));
@@ -27028,6 +27035,7 @@ var GoogleDriveManager = class {
           res.writeHead(200, { "Content-Type": "text/html" });
           res.end(this.getCallbackHtml(true, `Connected as ${userEmail || "AstroSquad Researcher"}`));
           setTimeout(() => {
+            if (authTimeout) clearTimeout(authTimeout);
             try {
               server.close();
             } catch {
@@ -27040,17 +27048,26 @@ var GoogleDriveManager = class {
             email: userEmail
           });
         } catch (err) {
+          if (authTimeout) clearTimeout(authTimeout);
           server.close();
           this.activeAuthServer = null;
           reject(err);
         }
       });
       server.listen(0, "127.0.0.1", () => {
+        authTimeout = setTimeout(() => {
+          if (authTimeout) clearTimeout(authTimeout);
+          try {
+            server.close();
+          } catch {
+          }
+          this.activeAuthServer = null;
+          reject(new Error("Authorization timed out after 2 minutes. Please try again."));
+        }, 12e4);
         const port = server.address().port;
         const redirectUri = `http://127.0.0.1:${port}/oauth2callback`;
         this.activeAuthServer = server;
         const scopes = [
-          "https://www.googleapis.com/auth/drive",
           "https://www.googleapis.com/auth/drive.file",
           "https://www.googleapis.com/auth/userinfo.email",
           "https://www.googleapis.com/auth/userinfo.profile"
@@ -27132,10 +27149,24 @@ var GoogleDriveManager = class {
           googleSuite: {
             ...gs,
             accessToken: res.data.access_token,
+            refreshToken: res.data.refresh_token || gs.refreshToken,
             tokenExpiry: newExpiry
           }
         });
         return res.data.access_token;
+      } else if (res.statusCode === 400 && res.data?.error === "invalid_grant") {
+        const current = settingsManager2.getSettings();
+        settingsManager2.saveSettings({
+          googleSuite: {
+            ...current.googleSuite,
+            accessToken: void 0,
+            refreshToken: void 0,
+            tokenExpiry: void 0,
+            userEmail: void 0,
+            userName: void 0
+          }
+        });
+        console.warn("[GoogleDriveManager] Refresh token revoked/expired. Cleared stored credentials.");
       }
     } catch (err) {
       console.error("[GoogleDriveManager] Failed to refresh token:", err);
@@ -27160,15 +27191,21 @@ var GoogleDriveManager = class {
     const ext = import_path4.default.extname(filePath).toLowerCase();
     const fileBuffer = import_fs3.default.readFileSync(filePath);
     let targetMimeType = "application/octet-stream";
+    let sourceMimeType = "application/octet-stream";
     let appLabel = "Google Workspace";
     if (ext === ".pptx" || ext === ".ppt") {
       targetMimeType = "application/vnd.google-apps.presentation";
+      sourceMimeType = ext === ".pptx" ? "application/vnd.openxmlformats-officedocument.presentationml.presentation" : "application/vnd.ms-powerpoint";
       appLabel = "Google Slides";
     } else if (ext === ".csv" || ext === ".xlsx" || ext === ".xls") {
       targetMimeType = "application/vnd.google-apps.spreadsheet";
+      if (ext === ".csv") sourceMimeType = "text/csv";
+      else if (ext === ".xlsx") sourceMimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      else sourceMimeType = "application/vnd.ms-excel";
       appLabel = "Google Sheets";
     } else if (ext === ".pdf" || fileName.toLowerCase() === "proposal") {
       targetMimeType = "application/pdf";
+      sourceMimeType = "application/pdf";
       appLabel = "Google Drive";
     }
     const folderId = this.SHARED_FOLDER_ID;
@@ -27181,79 +27218,58 @@ var GoogleDriveManager = class {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` }
       });
+      if (searchRes.statusCode < 200 || searchRes.statusCode >= 300) {
+        throw new Error(`Failed to search Drive folder: ${searchRes.data?.error?.message || `HTTP ${searchRes.statusCode}`}`);
+      }
       const existingFile = searchRes.data?.files && searchRes.data.files.length > 0 ? searchRes.data.files[0] : null;
       let fileId = "";
       let webViewLink = "";
       if (existingFile) {
         fileId = existingFile.id;
-        console.log(`[GoogleDriveManager] Found existing file ${fileId}, updating content...`);
-        const boundary = "-------AstroSquadBoundary" + import_crypto.default.randomBytes(8).toString("hex");
-        const multipartBody = Buffer.concat([
-          Buffer.from(`--${boundary}\r
-Content-Type: application/json; charset=UTF-8\r
-\r
-{"name":"${fileName}"}\r
-`),
-          Buffer.from(`--${boundary}\r
-Content-Type: ${targetMimeType}\r
-\r
-`),
-          fileBuffer,
-          Buffer.from(`\r
---${boundary}--`)
-        ]);
-        const uploadRes = await this.httpRequest(
-          {
-            hostname: "www.googleapis.com",
-            path: `/upload/drive/v3/files/${fileId}?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true`,
-            method: "PATCH"
-          },
-          multipartBody,
-          `multipart/related; boundary=${boundary}`
-        );
-        if (uploadRes.statusCode >= 200 && uploadRes.statusCode < 300) {
-          webViewLink = uploadRes.data?.webViewLink || existingFile.webViewLink;
-        } else {
-          throw new Error(uploadRes.data?.error?.message || `Upload failed with HTTP ${uploadRes.statusCode}`);
-        }
-      } else {
-        console.log(`[GoogleDriveManager] Creating new file "${fileName}" in folder ${folderId}...`);
-        const metadata = {
-          name: fileName,
-          parents: [folderId],
-          mimeType: targetMimeType
-        };
-        const boundary = "-------AstroSquadBoundary" + import_crypto.default.randomBytes(8).toString("hex");
-        const multipartBody = Buffer.concat([
-          Buffer.from(`--${boundary}\r
+        console.log(`[GoogleDriveManager] Found existing file ${fileId}, deleting before recreate...`);
+        await this.httpRequest({
+          hostname: "www.googleapis.com",
+          path: `/drive/v3/files/${fileId}?supportsAllDrives=true`,
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+      console.log(`[GoogleDriveManager] Creating new file "${fileName}" in folder ${folderId}...`);
+      const metadata = {
+        name: fileName,
+        parents: [folderId],
+        mimeType: targetMimeType
+      };
+      const boundary = "-------AstroSquadBoundary" + import_crypto.default.randomBytes(8).toString("hex");
+      const multipartBody = Buffer.concat([
+        Buffer.from(`--${boundary}\r
 Content-Type: application/json; charset=UTF-8\r
 \r
 ${JSON.stringify(metadata)}\r
 `),
-          Buffer.from(`--${boundary}\r
-Content-Type: ${targetMimeType}\r
+        Buffer.from(`--${boundary}\r
+Content-Type: ${sourceMimeType}\r
 \r
 `),
-          fileBuffer,
-          Buffer.from(`\r
+        fileBuffer,
+        Buffer.from(`\r
 --${boundary}--`)
-        ]);
-        const uploadRes = await this.httpRequest(
-          {
-            hostname: "www.googleapis.com",
-            path: `/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true`,
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` }
-          },
-          multipartBody,
-          `multipart/related; boundary=${boundary}`
-        );
-        if (uploadRes.statusCode >= 200 && uploadRes.statusCode < 300) {
-          fileId = uploadRes.data?.id;
-          webViewLink = uploadRes.data?.webViewLink;
-        } else {
-          throw new Error(uploadRes.data?.error?.message || `Upload failed with HTTP ${uploadRes.statusCode}`);
-        }
+      ]);
+      const uploadRes = await this.httpRequest(
+        {
+          hostname: "www.googleapis.com",
+          path: `/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink&supportsAllDrives=true`,
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` }
+        },
+        multipartBody,
+        `multipart/related; boundary=${boundary}`
+      );
+      if (uploadRes.statusCode >= 200 && uploadRes.statusCode < 300) {
+        fileId = uploadRes.data?.id;
+        webViewLink = uploadRes.data?.webViewLink;
+      } else {
+        throw new Error(uploadRes.data?.error?.message || `Upload failed with HTTP ${uploadRes.statusCode}`);
       }
       if (!webViewLink && fileId) {
         if (targetMimeType === "application/vnd.google-apps.presentation") {
@@ -27286,6 +27302,7 @@ Content-Type: ${targetMimeType}\r
    * Branded HTML callback page
    */
   static getCallbackHtml(success, message) {
+    const escaped = message.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27332,7 +27349,7 @@ Content-Type: ${targetMimeType}\r
   <div class="card">
     <div class="badge">${success ? "Connection Established" : "Connection Anomaly"}</div>
     <h1>${success ? "AstroSquad Station Connected" : "Authorization Incomplete"}</h1>
-    <p>${message}</p>
+    <p>${escaped}</p>
     <div class="footer">You can safely close this browser window and return to the Station.</div>
   </div>
 </body>
@@ -27726,17 +27743,40 @@ function registerIpcHandlers() {
     return reset;
   });
   import_electron6.ipcMain.handle("drive:getStatus", async () => {
-    return GoogleDriveManager.getStatus(settingsManager);
+    try {
+      return GoogleDriveManager.getStatus(settingsManager);
+    } catch (err) {
+      console.error("[IPC] drive:getStatus error:", err);
+      return { connected: false, clientIdConfigured: false, folderId: "" };
+    }
   });
   import_electron6.ipcMain.handle("drive:startAuth", async (_, args) => {
-    return GoogleDriveManager.startAuthFlow(settingsManager, args?.clientId, args?.clientSecret);
+    try {
+      return await GoogleDriveManager.startAuthFlow(settingsManager, args?.clientId, args?.clientSecret);
+    } catch (err) {
+      console.error("[IPC] drive:startAuth error:", err);
+      return { success: false, message: err.message || "Authorization failed." };
+    }
   });
   import_electron6.ipcMain.handle("drive:disconnect", async () => {
-    return GoogleDriveManager.disconnect(settingsManager);
+    try {
+      return GoogleDriveManager.disconnect(settingsManager);
+    } catch (err) {
+      console.error("[IPC] drive:disconnect error:", err);
+      return false;
+    }
   });
   import_electron6.ipcMain.handle("drive:uploadAndOpen", async (_, targetFile) => {
-    const fullPath = import_path6.default.isAbsolute(targetFile) ? targetFile : import_path6.default.join(gitEngine.getRepoDir(), targetFile);
-    return GoogleDriveManager.uploadAndOpenInWorkspace(fullPath, settingsManager);
+    try {
+      if (!targetFile || typeof targetFile !== "string") {
+        return { success: false, message: "Invalid file path provided." };
+      }
+      const fullPath = import_path6.default.isAbsolute(targetFile) ? targetFile : import_path6.default.join(gitEngine.getRepoDir(), targetFile);
+      return await GoogleDriveManager.uploadAndOpenInWorkspace(fullPath, settingsManager);
+    } catch (err) {
+      console.error("[IPC] drive:uploadAndOpen error:", err);
+      return { success: false, message: err.message || "Upload failed." };
+    }
   });
   import_electron6.ipcMain.handle("shell:openExternal", async (_, urlToOpen) => {
     await import_electron6.shell.openExternal(urlToOpen);

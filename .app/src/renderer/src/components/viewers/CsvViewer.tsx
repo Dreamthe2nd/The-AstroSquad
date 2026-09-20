@@ -44,9 +44,14 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
   const [pageSize, setPageSize] = useState<number>(25);
 
   useEffect(() => {
-    window.api.drive.getStatus().then((status) => {
-      setIsDriveConnected(status.connected);
-    }).catch(() => {});
+    const checkStatus = () => {
+      window.api.drive.getStatus().then((status) => {
+        setIsDriveConnected(status.connected);
+      }).catch(() => {});
+    };
+    checkStatus();
+    window.addEventListener('focus', checkStatus);
+    return () => window.removeEventListener('focus', checkStatus);
   }, []);
 
   // Reset state when switching files or when external content updates
@@ -145,17 +150,27 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
 
   const handleOpenGoogleDrive = async () => {
     if (isDriveConnected) {
+      // Save any unsaved edits to disk before uploading
+      if (isDirty && onSave) {
+        try {
+          await onSave(editedContent);
+        } catch (e) {
+          console.warn('[CsvViewer] Could not save edits before upload:', e);
+        }
+      }
       setIsUploading(true);
       try {
         const res = await window.api.drive.uploadAndOpen(filePath);
         if (!res.success) {
+          console.warn('[CsvViewer] Drive upload failed:', res.message);
           window.api.shell.openGoogleSuite({
             appType: 'drive',
             windowMode: 'browser_tab',
             targetFilePath: filePath
           });
         }
-      } catch {
+      } catch (err: any) {
+        console.warn('[CsvViewer] Drive upload error:', err?.message);
         window.api.shell.openGoogleSuite({
           appType: 'drive',
           windowMode: 'browser_tab',

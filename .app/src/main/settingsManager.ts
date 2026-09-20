@@ -9,6 +9,7 @@ export interface StationSettings {
     md?: string;
     csv?: string;
     images?: string;
+    code?: string;
   };
   repository: {
     url: string;

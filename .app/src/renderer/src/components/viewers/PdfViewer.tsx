@@ -24,9 +24,14 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOp
   const [isUploading, setIsUploading] = useState<boolean>(false);
 
   useEffect(() => {
-    window.api.drive.getStatus().then((status) => {
-      setIsDriveConnected(status.connected);
-    }).catch(() => {});
+    const checkStatus = () => {
+      window.api.drive.getStatus().then((status) => {
+        setIsDriveConnected(status.connected);
+      }).catch(() => {});
+    };
+    checkStatus();
+    window.addEventListener('focus', checkStatus);
+    return () => window.removeEventListener('focus', checkStatus);
   }, []);
 
   const handleOpenGoogleDrive = async () => {
@@ -35,13 +40,15 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOp
       try {
         const res = await window.api.drive.uploadAndOpen(filePath);
         if (!res.success) {
+          console.warn('[PdfViewer] Drive upload failed:', res.message);
           window.api.shell.openGoogleSuite({
             appType: 'drive',
             windowMode: 'browser_tab',
             targetFilePath: filePath
           });
         }
-      } catch {
+      } catch (err: any) {
+        console.warn('[PdfViewer] Drive upload error:', err?.message);
         window.api.shell.openGoogleSuite({
           appType: 'drive',
           windowMode: 'browser_tab',
@@ -146,7 +153,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOp
             title={isDriveConnected ? "Upload PDF to Google Drive & view online" : "Open The-AstroSquad Google Drive to view PDF"}
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>{isUploading ? 'Uploading...' : (isDriveConnected ? '⚡ Open in Google Docs' : 'Google Drive')}</span>
+            <span>{isUploading ? 'Uploading...' : (isDriveConnected ? '⚡ View in Google Drive' : 'Google Drive')}</span>
           </button>
 
           <button

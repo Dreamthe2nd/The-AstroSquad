@@ -256,22 +256,45 @@ function registerIpcHandlers(): void {
 
   // Google Drive API handlers
   ipcMain.handle('drive:getStatus', async () => {
-    return GoogleDriveManager.getStatus(settingsManager);
+    try {
+      return GoogleDriveManager.getStatus(settingsManager);
+    } catch (err: any) {
+      console.error('[IPC] drive:getStatus error:', err);
+      return { connected: false, clientIdConfigured: false, folderId: '' };
+    }
   });
 
   ipcMain.handle('drive:startAuth', async (_, args?: { clientId?: string; clientSecret?: string }) => {
-    return GoogleDriveManager.startAuthFlow(settingsManager, args?.clientId, args?.clientSecret);
+    try {
+      return await GoogleDriveManager.startAuthFlow(settingsManager, args?.clientId, args?.clientSecret);
+    } catch (err: any) {
+      console.error('[IPC] drive:startAuth error:', err);
+      return { success: false, message: err.message || 'Authorization failed.' };
+    }
   });
 
   ipcMain.handle('drive:disconnect', async () => {
-    return GoogleDriveManager.disconnect(settingsManager);
+    try {
+      return GoogleDriveManager.disconnect(settingsManager);
+    } catch (err: any) {
+      console.error('[IPC] drive:disconnect error:', err);
+      return false;
+    }
   });
 
   ipcMain.handle('drive:uploadAndOpen', async (_, targetFile: string) => {
-    const fullPath = path.isAbsolute(targetFile)
-      ? targetFile
-      : path.join(gitEngine.getRepoDir(), targetFile);
-    return GoogleDriveManager.uploadAndOpenInWorkspace(fullPath, settingsManager);
+    try {
+      if (!targetFile || typeof targetFile !== 'string') {
+        return { success: false, message: 'Invalid file path provided.' };
+      }
+      const fullPath = path.isAbsolute(targetFile)
+        ? targetFile
+        : path.join(gitEngine.getRepoDir(), targetFile);
+      return await GoogleDriveManager.uploadAndOpenInWorkspace(fullPath, settingsManager);
+    } catch (err: any) {
+      console.error('[IPC] drive:uploadAndOpen error:', err);
+      return { success: false, message: err.message || 'Upload failed.' };
+    }
   });
 
   // Shell & utilities

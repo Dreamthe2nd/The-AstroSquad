@@ -312,6 +312,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     try {
       const reset = await window.api.settings.resetSettings();
       setSettings(reset);
+      try {
+        const dStatus = await window.api.drive.getStatus();
+        setDriveStatus(dStatus);
+      } catch {}
       showToast('info', 'Settings Reset', 'All settings restored to default values.');
     } catch (err: any) {
       showToast('error', 'Reset Failed', err.message);
@@ -921,6 +925,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <div>
                         <div className="font-semibold text-white">{driveStatus.userName || 'AstroSquad Researcher'}</div>
                         <div className="text-[11px] font-mono text-emerald-400">{driveStatus.userEmail}</div>
+                        {settings.googleSuite?.clientId && (
+                          <div className="text-[10px] font-mono text-slate-400 truncate max-w-xs">
+                            Client ID: {settings.googleSuite.clientId.slice(0, 16)}...
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -958,7 +967,39 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           type="text"
                           placeholder="e.g. 1234567890-abcdefg.apps.googleusercontent.com"
                           value={clientIdInput}
-                          onChange={(e) => setClientIdInput(e.target.value)}
+                          onChange={(e) => {
+                            setClientIdInput(e.target.value);
+                            setSettings((prev) => prev ? {
+                              ...prev,
+                              googleSuite: {
+                                ...prev.googleSuite,
+                                clientId: e.target.value
+                              }
+                            } : prev);
+                          }}
+                          className="w-full mt-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs font-mono focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
+                          <span>Google OAuth 2.0 Client Secret (Optional)</span>
+                          <span className="text-[10px] text-slate-500 font-mono">Only if required by client</span>
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="e.g. GOCSPX-..."
+                          value={clientSecretInput}
+                          onChange={(e) => {
+                            setClientSecretInput(e.target.value);
+                            setSettings((prev) => prev ? {
+                              ...prev,
+                              googleSuite: {
+                                ...prev.googleSuite,
+                                clientSecret: e.target.value
+                              }
+                            } : prev);
+                          }}
                           className="w-full mt-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs font-mono focus:outline-none focus:border-indigo-500"
                         />
                       </div>
@@ -1011,12 +1052,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       setSettings((prev) => prev ? {
                         ...prev,
                         googleSuite: {
-                          engine: prev.googleSuite?.engine || 'auto',
-                          windowMode: 'app_window',
-                          docsUrl: prev.googleSuite?.docsUrl,
-                          sheetsUrl: prev.googleSuite?.sheetsUrl,
-                          slidesUrl: prev.googleSuite?.slidesUrl,
-                          driveUrl: prev.googleSuite?.driveUrl
+                          ...prev.googleSuite,
+                          windowMode: 'app_window'
                         }
                       } : prev);
                     }}
@@ -1052,12 +1089,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       setSettings((prev) => prev ? {
                         ...prev,
                         googleSuite: {
-                          engine: prev.googleSuite?.engine || 'auto',
-                          windowMode: 'browser_tab',
-                          docsUrl: prev.googleSuite?.docsUrl,
-                          sheetsUrl: prev.googleSuite?.sheetsUrl,
-                          slidesUrl: prev.googleSuite?.slidesUrl,
-                          driveUrl: prev.googleSuite?.driveUrl
+                          ...prev.googleSuite,
+                          windowMode: 'browser_tab'
                         }
                       } : prev);
                     }}
@@ -1093,12 +1126,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       setSettings((prev) => prev ? {
                         ...prev,
                         googleSuite: {
-                          engine: prev.googleSuite?.engine || 'auto',
-                          windowMode: 'station_window',
-                          docsUrl: prev.googleSuite?.docsUrl,
-                          sheetsUrl: prev.googleSuite?.sheetsUrl,
-                          slidesUrl: prev.googleSuite?.slidesUrl,
-                          driveUrl: prev.googleSuite?.driveUrl
+                          ...prev.googleSuite,
+                          windowMode: 'station_window'
                         }
                       } : prev);
                     }}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { 
   Presentation, 
   ExternalLink, 
@@ -35,9 +35,14 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
   const fileName = useMemo(() => filePath.split(/[/\\]/).pop() || 'Presentation.pptx', [filePath]);
 
   useEffect(() => {
-    window.api.drive.getStatus().then((status) => {
-      setIsDriveConnected(status.connected);
-    }).catch(() => {});
+    const checkStatus = () => {
+      window.api.drive.getStatus().then((status) => {
+        setIsDriveConnected(status.connected);
+      }).catch(() => {});
+    };
+    checkStatus();
+    window.addEventListener('focus', checkStatus);
+    return () => window.removeEventListener('focus', checkStatus);
   }, []);
 
   // Convert base64 string to Uint8Array binary buffer
@@ -64,13 +69,15 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
       try {
         const res = await window.api.drive.uploadAndOpen(filePath);
         if (!res.success) {
+          console.warn('[PptxViewer] Drive upload failed:', res.message);
           window.api.shell.openGoogleSuite({
             appType: 'drive',
             windowMode: 'browser_tab',
             targetFilePath: filePath
           });
         }
-      } catch {
+      } catch (err: any) {
+        console.warn('[PptxViewer] Drive upload error:', err?.message);
         window.api.shell.openGoogleSuite({
           appType: 'drive',
           windowMode: 'browser_tab',
