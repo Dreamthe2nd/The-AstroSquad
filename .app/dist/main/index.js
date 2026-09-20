@@ -26393,7 +26393,7 @@ var FileHandlers = class {
         const squadPath = import_path3.default.join(primaryCandidate, "The-AstroSquad");
         return {
           driveRoot: primaryCandidate,
-          squadPath: import_fs2.default.existsSync(squadPath) ? squadPath : primaryCandidate
+          squadPath
         };
       }
       for (let c = 68; c <= 90; c++) {
@@ -26403,7 +26403,7 @@ var FileHandlers = class {
           const squadPath = import_path3.default.join(myDrive, "The-AstroSquad");
           return {
             driveRoot: myDrive,
-            squadPath: import_fs2.default.existsSync(squadPath) ? squadPath : myDrive
+            squadPath
           };
         }
       }
@@ -26413,7 +26413,7 @@ var FileHandlers = class {
         const squadPath = import_path3.default.join(localDrive, "The-AstroSquad");
         return {
           driveRoot: localDrive,
-          squadPath: import_fs2.default.existsSync(squadPath) ? squadPath : localDrive
+          squadPath
         };
       }
     } else if (isMac) {
@@ -26427,7 +26427,7 @@ var FileHandlers = class {
           const squadPath = import_path3.default.join(c, "The-AstroSquad");
           return {
             driveRoot: c,
-            squadPath: import_fs2.default.existsSync(squadPath) ? squadPath : c
+            squadPath
           };
         }
       }
@@ -26640,11 +26640,13 @@ var FileHandlers = class {
       }
       if (!isGoogleVirtual) {
         destPath = import_path3.default.join(squadFolder, fileName);
-        try {
-          import_fs2.default.copyFileSync(filePath, destPath);
-          import_electron3.clipboard.writeText(destPath);
-        } catch (e) {
-          console.warn("Error syncing file to Google Drive Desktop:", e);
+        if (filePath !== destPath) {
+          try {
+            import_fs2.default.copyFileSync(filePath, destPath);
+            import_electron3.clipboard.writeText(destPath);
+          } catch (e) {
+            console.warn("Error syncing file to Google Drive Desktop:", e);
+          }
         }
       }
     }
@@ -26685,9 +26687,12 @@ var FileHandlers = class {
       try {
         const vContent = import_fs2.default.readFileSync(virtualPath, "utf-8");
         const vData = JSON.parse(vContent);
-        if (vData && vData.url) {
-          const appType2 = ext === ".pptx" || ext === ".ppt" || ext === ".gslides" ? "slides" : ext === ".csv" || ext === ".xlsx" || ext === ".xls" || ext === ".gsheet" ? "sheets" : "docs";
-          return this.openGoogleSuiteSession(appType2, "browser_tab", filePath, void 0, vData.url);
+        const docId = vData?.doc_id || vData?.id;
+        const appType2 = ext === ".pptx" || ext === ".ppt" || ext === ".gslides" ? "slides" : ext === ".csv" || ext === ".xlsx" || ext === ".xls" || ext === ".gsheet" ? "sheets" : "docs";
+        const fallbackUrl = docId ? appType2 === "slides" ? `https://docs.google.com/presentation/d/${docId}/edit` : appType2 === "sheets" ? `https://docs.google.com/spreadsheets/d/${docId}/edit` : `https://docs.google.com/document/d/${docId}/edit` : void 0;
+        const targetVirtualUrl = vData?.url || fallbackUrl;
+        if (targetVirtualUrl) {
+          return this.openGoogleSuiteSession(appType2, "browser_tab", filePath, void 0, targetVirtualUrl);
         }
       } catch {
       }
@@ -26717,7 +26722,19 @@ var FileHandlers = class {
           }
           const destPath = import_path3.default.join(squadFolder, targetFileName);
           if (targetFilePath !== destPath) {
-            import_fs2.default.copyFileSync(targetFilePath, destPath);
+            let shouldCopy = !import_fs2.default.existsSync(destPath);
+            if (!shouldCopy) {
+              try {
+                const srcStat = import_fs2.default.statSync(targetFilePath);
+                const destStat = import_fs2.default.statSync(destPath);
+                shouldCopy = srcStat.size !== destStat.size || Math.abs(srcStat.mtimeMs - destStat.mtimeMs) > 1e3;
+              } catch {
+                shouldCopy = true;
+              }
+            }
+            if (shouldCopy) {
+              import_fs2.default.copyFileSync(targetFilePath, destPath);
+            }
           }
           import_electron3.clipboard.writeText(destPath);
           fileHint = ` (Synced to Google Drive: ${destPath})`;
@@ -26755,8 +26772,8 @@ var FileHandlers = class {
         }
       }
       if (account && targetUrl.includes("google.com")) {
-        if (targetUrl.includes("/u/0/")) {
-          targetUrl = targetUrl.replace("/u/0/", `/u/${encodeURIComponent(account)}/`);
+        if (targetUrl.includes("/u/0/") || /\/u\/[^/?#]+\//.test(targetUrl)) {
+          targetUrl = targetUrl.replace(/\/u\/[^/?#]+\//, `/u/${encodeURIComponent(account)}/`);
         }
         if (!targetUrl.includes("authuser=")) {
           targetUrl += (targetUrl.includes("?") ? "&" : "?") + `authuser=${encodeURIComponent(account)}`;
@@ -26844,7 +26861,19 @@ var FileHandlers = class {
     if (customAppPath && customAppPath.trim()) {
       const trimmed = customAppPath.trim();
       if (trimmed === "system_default") {
-        const openResult = await import_electron3.shell.openPath(filePath);
+        let targetOpenPath = filePath;
+        if (!ext && this.isPdfFile(filePath)) {
+          try {
+            const tempDir = import_path3.default.join(import_os.default.tmpdir(), "AstroSquad");
+            if (!import_fs2.default.existsSync(tempDir)) import_fs2.default.mkdirSync(tempDir, { recursive: true });
+            const tempPdf = import_path3.default.join(tempDir, `${fileName}.pdf`);
+            import_fs2.default.copyFileSync(filePath, tempPdf);
+            targetOpenPath = tempPdf;
+          } catch (e) {
+            console.warn("Could not create temporary .pdf file for extensionless PDF:", e);
+          }
+        }
+        const openResult = await import_electron3.shell.openPath(targetOpenPath);
         if (!openResult) {
           return {
             success: true,

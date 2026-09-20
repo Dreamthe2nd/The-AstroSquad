@@ -282,12 +282,70 @@ async function runRuntimeTests() {
   assert.strictEqual(openedUrlH.includes('native456'), true, 'FATAL ERROR: Virtual file fallback must open document URL! Got: ' + openedUrlH);
   console.log('  ✓ Verified: Virtual file error gracefully falls through to opening document URL with authuser');
 
+  // TEST I: Extensionless PDF Proposal with "System Default"
+  console.log('\n[TEST I] Extensionless PDF Proposal with "System Default"');
+  electronCalls.openPath = [];
+  electronCalls.openExternal = [];
+  electronCalls.mockOpenPathResult = '';
+
+  const resI = await FileHandlers.openInDesktopApp(testProposalExtless, 'system_default');
+  console.log('  Result:', resI);
+  assert.strictEqual(resI.success, true);
+  const openedPathI = electronCalls.openPath[0];
+  console.log('  Opened Path for System Default proposal:', openedPathI);
+  assert.strictEqual(openedPathI.endsWith('.pdf'), true, 'FATAL ERROR: Extensionless PDF must be opened via .pdf copy so Windows associates it with PDF viewer! Got: ' + openedPathI);
+  console.log('  ✓ Verified: Extensionless PDF opens with .pdf extension on System Default');
+
+  // TEST J: Native Google virtual file with only doc_id (no explicit url field)
+  console.log('\n[TEST J] Native Google virtual file with only doc_id');
+  fs.writeFileSync(virtualSlides, JSON.stringify({ doc_id: 'docid_789' }));
+  electronCalls.openPath = [];
+  electronCalls.openExternal = [];
+  electronCalls.mockOpenPathResult = 'Association failed';
+
+  await FileHandlers.openInGoogleDriveDesktop(testPptx);
+  const openedUrlJ = electronCalls.openExternal[0];
+  console.log('  Launched URL from doc_id:', openedUrlJ);
+  assert.strictEqual(openedUrlJ.includes('docid_789'), true, 'FATAL ERROR: doc_id must be resolved into document URL! Got: ' + openedUrlJ);
+  console.log('  ✓ Verified: Google virtual file with only doc_id is correctly resolved to full document URL');
+
+  // TEST K: Self-copy protection when opening file already in Google Drive squad folder
+  console.log('\n[TEST K] Self-copy protection when file already in squad folder');
+  const alreadyInSquad = path.join(mockSquadFolder, 'already_in_squad.pptx');
+  fs.writeFileSync(alreadyInSquad, 'SQUAD_PPTX_CONTENT');
+  electronCalls.openPath = [];
+  electronCalls.openExternal = [];
+
+  const resK = await FileHandlers.openInGoogleDriveDesktop(alreadyInSquad);
+  console.log('  Result:', resK);
+  assert.strictEqual(resK.success, true);
+  assert.strictEqual(fs.readFileSync(alreadyInSquad, 'utf-8'), 'SQUAD_PPTX_CONTENT');
+  console.log('  ✓ Verified: Self-copy guard prevented file truncation or error');
+
+  // TEST L: detectGoogleDrivePath when The-AstroSquad folder does not pre-exist
+  console.log('\n[TEST L] Google Drive squadPath detection and auto-creation when folder does not pre-exist');
+  const freshDriveRoot = path.join(tempDir, 'FreshDrive');
+  fs.mkdirSync(freshDriveRoot, { recursive: true });
+  // Set real FileHandlers.detectGoogleDrivePath mock simulating fresh drive
+  FileHandlers.detectGoogleDrivePath = () => ({
+    driveRoot: freshDriveRoot,
+    squadPath: path.join(freshDriveRoot, 'The-AstroSquad')
+  });
+
+  const resL = await FileHandlers.openInGoogleDriveDesktop(testPptx);
+  console.log('  Result:', resL);
+  assert.strictEqual(resL.success, true);
+  const targetCreatedSquadDir = path.join(freshDriveRoot, 'The-AstroSquad');
+  assert.strictEqual(fs.existsSync(targetCreatedSquadDir), true, 'FATAL ERROR: The-AstroSquad folder was not auto-created!');
+  assert.strictEqual(fs.existsSync(path.join(targetCreatedSquadDir, 'presentation.pptx')), true, 'FATAL ERROR: File was not copied into newly created The-AstroSquad folder!');
+  console.log('  ✓ Verified: The-AstroSquad folder is auto-created and synced under fresh Google Drive root');
+
   // Clean up
   try {
     fs.rmSync(tempDir, { recursive: true, force: true });
   } catch {}
 
-  console.log('\n=== ALL 8 RUNTIME BEHAVIORAL TESTS PASSED PERFECTLY ===');
+  console.log('\n=== ALL 12 RUNTIME BEHAVIORAL TESTS PASSED PERFECTLY ===');
 }
 
 runRuntimeTests().catch(err => {

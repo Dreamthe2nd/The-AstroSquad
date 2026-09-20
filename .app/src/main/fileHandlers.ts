@@ -316,7 +316,7 @@ export class FileHandlers {
         const squadPath = path.join(primaryCandidate, 'The-AstroSquad');
         return {
           driveRoot: primaryCandidate,
-          squadPath: fs.existsSync(squadPath) ? squadPath : primaryCandidate
+          squadPath: squadPath
         };
       }
 
@@ -328,7 +328,7 @@ export class FileHandlers {
           const squadPath = path.join(myDrive, 'The-AstroSquad');
           return {
             driveRoot: myDrive,
-            squadPath: fs.existsSync(squadPath) ? squadPath : myDrive
+            squadPath: squadPath
           };
         }
       }
@@ -340,7 +340,7 @@ export class FileHandlers {
         const squadPath = path.join(localDrive, 'The-AstroSquad');
         return {
           driveRoot: localDrive,
-          squadPath: fs.existsSync(squadPath) ? squadPath : localDrive
+          squadPath: squadPath
         };
       }
     } else if (isMac) {
@@ -354,7 +354,7 @@ export class FileHandlers {
           const squadPath = path.join(c, 'The-AstroSquad');
           return {
             driveRoot: c,
-            squadPath: fs.existsSync(squadPath) ? squadPath : c
+            squadPath: squadPath
           };
         }
       }
@@ -596,11 +596,13 @@ export class FileHandlers {
       }
       if (!isGoogleVirtual) {
         destPath = path.join(squadFolder, fileName);
-        try {
-          fs.copyFileSync(filePath, destPath);
-          clipboard.writeText(destPath);
-        } catch (e) {
-          console.warn('Error syncing file to Google Drive Desktop:', e);
+        if (filePath !== destPath) {
+          try {
+            fs.copyFileSync(filePath, destPath);
+            clipboard.writeText(destPath);
+          } catch (e) {
+            console.warn('Error syncing file to Google Drive Desktop:', e);
+          }
         }
       }
     }
@@ -647,11 +649,18 @@ export class FileHandlers {
       try {
         const vContent = fs.readFileSync(virtualPath, 'utf-8');
         const vData = JSON.parse(vContent);
-        if (vData && vData.url) {
-          const appType = (ext === '.pptx' || ext === '.ppt' || ext === '.gslides') ? 'slides'
-            : (ext === '.csv' || ext === '.xlsx' || ext === '.xls' || ext === '.gsheet') ? 'sheets'
-            : 'docs';
-          return this.openGoogleSuiteSession(appType, 'browser_tab', filePath, undefined, vData.url);
+        const docId = vData?.doc_id || vData?.id;
+        const appType = (ext === '.pptx' || ext === '.ppt' || ext === '.gslides') ? 'slides'
+          : (ext === '.csv' || ext === '.xlsx' || ext === '.xls' || ext === '.gsheet') ? 'sheets'
+          : 'docs';
+        const fallbackUrl = docId ? (
+          appType === 'slides' ? `https://docs.google.com/presentation/d/${docId}/edit`
+          : appType === 'sheets' ? `https://docs.google.com/spreadsheets/d/${docId}/edit`
+          : `https://docs.google.com/document/d/${docId}/edit`
+        ) : undefined;
+        const targetVirtualUrl = vData?.url || fallbackUrl;
+        if (targetVirtualUrl) {
+          return this.openGoogleSuiteSession(appType, 'browser_tab', filePath, undefined, targetVirtualUrl);
         }
       } catch {}
     }
@@ -700,7 +709,19 @@ export class FileHandlers {
           }
           const destPath = path.join(squadFolder, targetFileName);
           if (targetFilePath !== destPath) {
-            fs.copyFileSync(targetFilePath, destPath);
+            let shouldCopy = !fs.existsSync(destPath);
+            if (!shouldCopy) {
+              try {
+                const srcStat = fs.statSync(targetFilePath);
+                const destStat = fs.statSync(destPath);
+                shouldCopy = srcStat.size !== destStat.size || Math.abs(srcStat.mtimeMs - destStat.mtimeMs) > 1000;
+              } catch {
+                shouldCopy = true;
+              }
+            }
+            if (shouldCopy) {
+              fs.copyFileSync(targetFilePath, destPath);
+            }
           }
           clipboard.writeText(destPath);
           fileHint = ` (Synced to Google Drive: ${destPath})`;
@@ -742,8 +763,8 @@ export class FileHandlers {
         }
       }
       if (account && targetUrl.includes('google.com')) {
-        if (targetUrl.includes('/u/0/')) {
-          targetUrl = targetUrl.replace('/u/0/', `/u/${encodeURIComponent(account)}/`);
+        if (targetUrl.includes('/u/0/') || /\/u\/[^/?#]+\//.test(targetUrl)) {
+          targetUrl = targetUrl.replace(/\/u\/[^/?#]+\//, `/u/${encodeURIComponent(account)}/`);
         }
         if (!targetUrl.includes('authuser=')) {
           targetUrl += (targetUrl.includes('?') ? '&' : '?') + `authuser=${encodeURIComponent(account)}`;
@@ -853,7 +874,19 @@ export class FileHandlers {
 
       // Explicit system default request (local OS association via shell.openPath)
       if (trimmed === 'system_default') {
-        const openResult = await shell.openPath(filePath);
+        let targetOpenPath = filePath;
+        if (!ext && this.isPdfFile(filePath)) {
+          try {
+            const tempDir = path.join(os.tmpdir(), 'AstroSquad');
+            if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+            const tempPdf = path.join(tempDir, `${fileName}.pdf`);
+            fs.copyFileSync(filePath, tempPdf);
+            targetOpenPath = tempPdf;
+          } catch (e) {
+            console.warn('Could not create temporary .pdf file for extensionless PDF:', e);
+          }
+        }
+        const openResult = await shell.openPath(targetOpenPath);
         if (!openResult) {
           return {
             success: true,
