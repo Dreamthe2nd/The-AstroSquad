@@ -27239,7 +27239,7 @@ var FileHandlers = class {
     }
   }
   /**
-   * Open KStars Desktop Planetarium & Astronomy Suite
+   * Open KStars Desktop Planetarium & Astronomy Suite (macOS, Windows, Linux)
    */
   static openKStars(customPath) {
     const candidates = [];
@@ -27259,27 +27259,78 @@ var FileHandlers = class {
       const localAppData = process.env.LOCALAPPDATA || "";
       const programFiles = process.env.ProgramFiles || "C:\\Program Files";
       const programFilesX86 = process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+      const userProfile = process.env.USERPROFILE || "";
       candidates.push(
         import_path3.default.join(programFiles, "KStars", "bin", "kstars.exe"),
         import_path3.default.join(programFiles, "kstars", "bin", "kstars.exe"),
         import_path3.default.join(programFilesX86, "KStars", "bin", "kstars.exe"),
+        import_path3.default.join(programFilesX86, "kstars", "bin", "kstars.exe"),
         "C:\\KStars\\bin\\kstars.exe",
+        "C:\\kstars\\bin\\kstars.exe",
         import_path3.default.join(programFiles, "KStars", "kstars.exe"),
+        import_path3.default.join(programFiles, "kstars", "kstars.exe"),
         import_path3.default.join(localAppData, "Programs", "KStars", "bin", "kstars.exe"),
-        import_path3.default.join(localAppData, "Programs", "kstars", "bin", "kstars.exe")
+        import_path3.default.join(localAppData, "Programs", "kstars", "bin", "kstars.exe"),
+        import_path3.default.join(userProfile, "scoop", "apps", "kstars", "current", "bin", "kstars.exe"),
+        import_path3.default.join(userProfile, "scoop", "apps", "kstars", "current", "kstars.exe"),
+        import_path3.default.join(userProfile, "scoop", "shims", "kstars.exe"),
+        "C:\\ProgramData\\chocolatey\\bin\\kstars.exe"
       );
     } else if (process.platform === "darwin") {
-      candidates.push("/Applications/kstars.app/Contents/MacOS/kstars");
+      const homeDir = process.env.HOME || "";
+      const macAppBundles = [
+        "/Applications/KStars.app",
+        "/Applications/kstars.app",
+        import_path3.default.join(homeDir, "Applications", "KStars.app"),
+        import_path3.default.join(homeDir, "Applications", "kstars.app")
+      ];
+      for (const appBundle of macAppBundles) {
+        if (import_fs2.default.existsSync(appBundle)) {
+          try {
+            import_electron3.shell.openPath(appBundle);
+            return { success: true, message: `Launched KStars from ${appBundle}`, path: appBundle };
+          } catch (err) {
+            console.error("[FileHandlers] Failed to open KStars app bundle:", err);
+          }
+        }
+      }
+      candidates.push(
+        "/Applications/KStars.app/Contents/MacOS/kstars",
+        "/Applications/kstars.app/Contents/MacOS/kstars",
+        import_path3.default.join(homeDir, "Applications", "KStars.app", "Contents", "MacOS", "kstars"),
+        import_path3.default.join(homeDir, "Applications", "kstars.app", "Contents", "MacOS", "kstars"),
+        "/opt/homebrew/bin/kstars",
+        "/usr/local/bin/kstars",
+        "/usr/bin/kstars"
+      );
     } else {
-      candidates.push("/usr/bin/kstars", "/usr/local/bin/kstars");
+      candidates.push(
+        "/usr/bin/kstars",
+        "/usr/local/bin/kstars",
+        "/snap/bin/kstars",
+        "/var/lib/flatpak/exports/bin/org.kde.kstars"
+      );
     }
     for (const cand of candidates) {
       if (cand && import_fs2.default.existsSync(cand)) {
         try {
+          if (process.platform === "darwin" && cand.endsWith(".app")) {
+            import_electron3.shell.openPath(cand);
+            return { success: true, message: `Launched KStars from ${cand}`, path: cand };
+          }
           import_child_process.default.spawn(cand, [], { detached: true, stdio: "ignore" }).unref();
           return { success: true, message: `Launched KStars from ${cand}`, path: cand };
         } catch (err) {
           console.error("[FileHandlers] Failed to spawn KStars at path:", cand, err);
+        }
+      }
+    }
+    if (process.platform === "darwin") {
+      for (const name of ["KStars", "kstars"]) {
+        try {
+          import_child_process.default.execFileSync("open", ["-a", name], { timeout: 3e3, stdio: "ignore" });
+          return { success: true, message: `Launched KStars via open -a ${name}`, path: name };
+        } catch {
         }
       }
     }
@@ -27296,9 +27347,18 @@ var FileHandlers = class {
       } catch (err) {
         console.warn("[FileHandlers] Microsoft Store KStars detection skipped/timed out:", err.message);
       }
+      try {
+        const whereOut = import_child_process.default.execFileSync("where.exe", ["kstars"], { timeout: 2e3, encoding: "utf8" }).trim();
+        const firstLine = whereOut.split(/\r?\n/)[0]?.trim();
+        if (firstLine && import_fs2.default.existsSync(firstLine)) {
+          import_child_process.default.spawn(firstLine, [], { detached: true, stdio: "ignore" }).unref();
+          return { success: true, message: `Launched KStars from ${firstLine}`, path: firstLine };
+        }
+      } catch {
+      }
     }
     try {
-      import_child_process.default.spawn("kstars", [], { detached: true, stdio: "ignore" }).unref();
+      import_child_process.default.spawn("kstars", [], { detached: true, stdio: "ignore", shell: process.platform === "win32" }).unref();
       return { success: true, message: "Launched KStars via system PATH" };
     } catch {
     }

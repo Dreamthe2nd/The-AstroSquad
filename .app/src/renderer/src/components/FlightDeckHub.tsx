@@ -23,7 +23,9 @@ import {
   Eye,
   Video,
   Lock,
-  Key
+  Key,
+  Telescope,
+  Globe
 } from 'lucide-react';
 import { AuthStatus } from '../types';
 import { DopplerWavesBackground } from './DopplerWavesBackground';
@@ -45,7 +47,7 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
   onLogout,
   showToast
 }) => {
-  const [loadingAction, setLoadingAction] = useState<'repo' | 'discord' | 'proposal' | 'meeting' | null>(null);
+  const [loadingAction, setLoadingAction] = useState<'repo' | 'discord' | 'proposal' | 'meeting' | 'kstars' | 'website' | null>(null);
   const [showProposalMatrix, setShowProposalMatrix] = useState<boolean>(true);
   const isCollaborator = Boolean(authStatus?.authenticated && authStatus?.isCollaborator);
 
@@ -94,6 +96,37 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
       await onOpenProposal();
     } catch (err: any) {
       showToast('error', 'Proposal Sync Failed', err.message || 'Unable to open proposal.');
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  // 5. Open KStars Planetarium handler (Cross-Platform: Mac & Windows)
+  const handleOpenKStars = async () => {
+    setLoadingAction('kstars');
+    try {
+      const res = await window.api.shell.openKStars();
+      if (res.success) {
+        showToast('success', 'KStars Active', res.message || 'Launched KStars planetarium suite.');
+      } else {
+        showToast('warning', 'KStars Not Found', 'KStars was not detected locally. Opening official download page (kstars.kde.org)...');
+        await window.api.shell.openExternal('https://kstars.kde.org/download/');
+      }
+    } catch (err: any) {
+      showToast('error', 'KStars Launch Failed', err.message || 'Unable to launch KStars.');
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  // 6. Open thegeekshed.us Website handler
+  const handleOpenWebsite = async () => {
+    setLoadingAction('website');
+    try {
+      await window.api.shell.openExternal('https://thegeekshed.us');
+      showToast('info', 'The Geek Shed', 'Opening thegeekshed.us in default browser...');
+    } catch (err: any) {
+      showToast('error', 'Website Launch Failed', err.message || 'Unable to open website.');
     } finally {
       setLoadingAction(null);
     }
@@ -340,6 +373,41 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
               <ExternalLink className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </div>
           </div>
+        </div>
+
+        {/* Quick External Actions: KStars Planetarium & The Geek Shed Website */}
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            onClick={handleOpenKStars}
+            disabled={loadingAction === 'kstars'}
+            className="group px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/[0.2] text-xs font-sans text-slate-300 hover:text-white flex items-center gap-2 transition-all duration-150 active:scale-[0.98] shadow-sm backdrop-blur-xl disabled:opacity-50"
+            title="Launch KStars Planetarium & Telescope Control (macOS & Windows)"
+          >
+            {loadingAction === 'kstars' ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-nothing" />
+            ) : (
+              <Telescope className="w-3.5 h-3.5 text-sapphire-400 group-hover:text-sapphire-300 transition-colors" />
+            )}
+            <span className="font-medium">Open KStars</span>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-mono uppercase bg-white/[0.05] border border-white/[0.08] text-slate-400 group-hover:text-slate-200">
+              mac / win
+            </span>
+          </button>
+
+          <button
+            onClick={handleOpenWebsite}
+            disabled={loadingAction === 'website'}
+            className="group px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/[0.2] text-xs font-sans text-slate-300 hover:text-white flex items-center gap-2 transition-all duration-150 active:scale-[0.98] shadow-sm backdrop-blur-xl disabled:opacity-50"
+            title="Visit thegeekshed.us (AstroSquad Portal)"
+          >
+            {loadingAction === 'website' ? (
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-nothing" />
+            ) : (
+              <Globe className="w-3.5 h-3.5 text-emerald-400 group-hover:text-emerald-300 transition-colors" />
+            )}
+            <span className="font-medium">thegeekshed.us</span>
+            <ExternalLink className="w-3 h-3 text-slate-500 group-hover:text-slate-300 transition-colors" />
+          </button>
         </div>
 
         {/* Research Team Banner */}
