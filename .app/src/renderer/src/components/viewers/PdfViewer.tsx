@@ -7,7 +7,8 @@ import {
   ExternalLink, 
   FileText,
   Download,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 
 interface PdfViewerProps {
@@ -19,6 +20,44 @@ interface PdfViewerProps {
 export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOpenInDesktop }) => {
   const [zoom, setZoom] = useState<number>(100);
   const [rotation, setRotation] = useState<number>(0);
+  const [isDriveConnected, setIsDriveConnected] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+
+  useEffect(() => {
+    window.api.drive.getStatus().then((status) => {
+      setIsDriveConnected(status.connected);
+    }).catch(() => {});
+  }, []);
+
+  const handleOpenGoogleDrive = async () => {
+    if (isDriveConnected) {
+      setIsUploading(true);
+      try {
+        const res = await window.api.drive.uploadAndOpen(filePath);
+        if (!res.success) {
+          window.api.shell.openGoogleSuite({
+            appType: 'drive',
+            windowMode: 'browser_tab',
+            targetFilePath: filePath
+          });
+        }
+      } catch {
+        window.api.shell.openGoogleSuite({
+          appType: 'drive',
+          windowMode: 'browser_tab',
+          targetFilePath: filePath
+        });
+      } finally {
+        setIsUploading(false);
+      }
+    } else {
+      window.api.shell.openGoogleSuite({
+        appType: 'drive',
+        windowMode: 'browser_tab',
+        targetFilePath: filePath
+      });
+    }
+  };
 
   // Fast direct streaming URL using custom protocol
   const pdfSource = `astrosquad://repo/${encodeURIComponent(filePath.replace(/\\/g, '/'))}`;
@@ -98,8 +137,18 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ filePath, base64Data, onOp
           </button>
         </div>
 
-        {/* Desktop Launcher Button */}
+        {/* Desktop & Google Drive Launcher Buttons */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleOpenGoogleDrive}
+            disabled={isUploading}
+            className="px-3 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-xs text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+            title={isDriveConnected ? "Upload PDF to Google Drive & view online" : "Open The-AstroSquad Google Drive to view PDF"}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+            <span>{isUploading ? 'Uploading...' : (isDriveConnected ? '⚡ Open in Google Docs' : 'Google Drive')}</span>
+          </button>
+
           <button
             onClick={onOpenInDesktop}
             className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 hover:text-white border border-slate-700 flex items-center gap-1.5 transition-colors shadow-sm"

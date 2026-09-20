@@ -39,6 +39,13 @@ export interface StationSettings {
     sheetsUrl?: string;
     slidesUrl?: string;
     driveUrl?: string;
+    clientId?: string;
+    clientSecret?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    tokenExpiry?: number;
+    userEmail?: string;
+    userName?: string;
   };
 }
 
@@ -97,6 +104,27 @@ export interface ApiBridge {
       obsidianPath: string | null;
     }>;
   };
+  drive: {
+    getStatus: () => Promise<{
+      connected: boolean;
+      userEmail?: string;
+      userName?: string;
+      clientIdConfigured: boolean;
+      folderId: string;
+    }>;
+    startAuth: (args?: { clientId?: string; clientSecret?: string }) => Promise<{
+      success: boolean;
+      message: string;
+      email?: string;
+    }>;
+    disconnect: () => Promise<boolean>;
+    uploadAndOpen: (filePath: string) => Promise<{
+      success: boolean;
+      fileId?: string;
+      webViewLink?: string;
+      message: string;
+    }>;
+  };
 }
 
 const api: ApiBridge = {
@@ -138,6 +166,12 @@ const api: ApiBridge = {
     copyToClipboard: (text) => clipboard.writeText(text),
     openGoogleSuite: (args) => ipcRenderer.invoke('shell:openGoogleSuite', args),
     getDetectedBrowsers: () => ipcRenderer.invoke('shell:getDetectedBrowsers')
+  },
+  drive: {
+    getStatus: () => ipcRenderer.invoke('drive:getStatus'),
+    startAuth: (args) => ipcRenderer.invoke('drive:startAuth', args),
+    disconnect: () => ipcRenderer.invoke('drive:disconnect'),
+    uploadAndOpen: (filePath) => ipcRenderer.invoke('drive:uploadAndOpen', filePath)
   }
 };
 

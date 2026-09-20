@@ -59,6 +59,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     obsidianPath?: string | null;
   } | null>(null);
 
+  const [driveStatus, setDriveStatus] = useState<{
+    connected: boolean;
+    userEmail?: string;
+    userName?: string;
+    clientIdConfigured: boolean;
+    folderId: string;
+  } | null>(null);
+  const [isConnectingDrive, setIsConnectingDrive] = useState<boolean>(false);
+  const [clientIdInput, setClientIdInput] = useState<string>('');
+  const [clientSecretInput, setClientSecretInput] = useState<string>('');
+  const [showDriveInstructions, setShowDriveInstructions] = useState<boolean>(false);
+
   useEffect(() => {
     if (isOpen) {
       loadSettings();
@@ -81,6 +93,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       setSettings(s);
       setInitialRepoPath(s.repository.localPath);
       setInitialRepoUrl(s.repository.url);
+      if (s.googleSuite?.clientId) {
+        setClientIdInput(s.googleSuite.clientId);
+      }
+      if (s.googleSuite?.clientSecret) {
+        setClientSecretInput(s.googleSuite.clientSecret);
+      }
+      try {
+        const dStatus = await window.api.drive.getStatus();
+        setDriveStatus(dStatus);
+      } catch (e) {
+        console.warn('Could not load Google Drive status:', e);
+      }
     } catch (err: any) {
       showToast('error', 'Settings Load Error', err.message);
     }
@@ -103,6 +127,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       }
     } catch (err: any) {
       showToast('error', 'Launch Failed', err.message);
+    }
+  };
+
+  const handleConnectGoogleDrive = async () => {
+    if (!clientIdInput.trim()) {
+      showToast('error', 'Client ID Required', 'Please provide a Google Cloud OAuth 2.0 Client ID (Desktop Application type).');
+      return;
+    }
+
+    setIsConnectingDrive(true);
+    try {
+      showToast('info', 'Starting Authorization', 'Opening Google Sign-In in your default browser. Complete authorization to connect...');
+      const res = await window.api.drive.startAuth({
+        clientId: clientIdInput.trim(),
+        clientSecret: clientSecretInput.trim() || undefined
+      });
+
+      if (res.success) {
+        showToast('success', 'Google Drive Connected', res.message);
+        const updatedStatus = await window.api.drive.getStatus();
+        setDriveStatus(updatedStatus);
+        const updatedSettings = await window.api.settings.getSettings();
+        setSettings(updatedSettings);
+      } else {
+        showToast('error', 'Connection Failed', res.message);
+      }
+    } catch (err: any) {
+      showToast('error', 'Google Drive Auth Error', err.message || 'Authorization failed.');
+    } finally {
+      setIsConnectingDrive(false);
+    }
+  };
+
+  const handleDisconnectGoogleDrive = async () => {
+    try {
+      await window.api.drive.disconnect();
+      showToast('info', 'Google Drive Disconnected', 'Disconnected Google Drive API.');
+      const updatedStatus = await window.api.drive.getStatus();
+      setDriveStatus(updatedStatus);
+      const updatedSettings = await window.api.settings.getSettings();
+      setSettings(updatedSettings);
+    } catch (err: any) {
+      showToast('error', 'Disconnect Error', err.message);
     }
   };
 
@@ -808,6 +875,123 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Google Drive API Direct Cloud Bridge */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-indigo-500/40 space-y-3.5 shadow-lg shadow-indigo-950/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="p-2 rounded-lg bg-indigo-950/80 border border-indigo-500/30 text-indigo-400">
+                      <Sparkles className="w-4 h-4 text-indigo-400" />
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-white text-xs">Google Drive API Cloud Bridge</h4>
+                        <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-950 text-indigo-300 border border-indigo-500/30 font-semibold">
+                          Direct Workspace Launcher
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-400">Uploads files directly to The-AstroSquad shared folder and opens live Google Slides, Sheets, or Docs editors</p>
+                    </div>
+                  </div>
+
+                  {/* Connection Badge */}
+                  <div>
+                    {driveStatus?.connected ? (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-emerald-950 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5">
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>Connected</span>
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-slate-900 border border-slate-700 text-slate-400 flex items-center gap-1.5">
+                        <Lock className="w-3 h-3 text-slate-500" />
+                        <span>Not Connected</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Connected User Account Info or Connection Form */}
+                {driveStatus?.connected ? (
+                  <div className="p-3 rounded-lg bg-emerald-950/20 border border-emerald-500/30 flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2 text-slate-200">
+                      <div className="w-8 h-8 rounded-full bg-emerald-900/60 border border-emerald-500/40 flex items-center justify-center font-bold text-emerald-300">
+                        {(driveStatus.userName || driveStatus.userEmail || 'A').charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">{driveStatus.userName || 'AstroSquad Researcher'}</div>
+                        <div className="text-[11px] font-mono text-emerald-400">{driveStatus.userEmail}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-slate-400 hidden sm:inline">
+                        Shared Folder: {driveStatus.folderId.slice(0, 8)}...
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleDisconnectGoogleDrive}
+                        className="px-3 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/30 text-rose-300 text-xs font-semibold transition-colors"
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 pt-1">
+                    <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
+                      Connect with a Google Cloud OAuth 2.0 Client ID to enable automated cloud upload. When connected, clicking <strong>&quot;Open in Google Slides&quot;</strong> or <strong>&quot;Open in Google Sheets&quot;</strong> automatically converts and opens your presentations and catalogs in your browser without manual uploads.
+                    </p>
+
+                    <div className="space-y-2">
+                      <div>
+                        <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
+                          <span>Google OAuth 2.0 Client ID (Desktop Application)</span>
+                          <button
+                            type="button"
+                            onClick={() => setShowDriveInstructions(!showDriveInstructions)}
+                            className="text-[10px] text-indigo-400 hover:text-indigo-300 underline font-mono"
+                          >
+                            {showDriveInstructions ? 'Hide Guide' : 'How to get a free Client ID (2 min)?'}
+                          </button>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 1234567890-abcdefg.apps.googleusercontent.com"
+                          value={clientIdInput}
+                          onChange={(e) => setClientIdInput(e.target.value)}
+                          className="w-full mt-1 px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-slate-200 text-xs font-mono focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
+
+                      {showDriveInstructions && (
+                        <div className="p-3 rounded-lg bg-indigo-950/30 border border-indigo-500/20 text-[11px] text-indigo-200 space-y-1.5 font-sans">
+                          <div className="font-bold text-white flex items-center gap-1.5">
+                            <Info className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Google Cloud Console Setup:</span>
+                          </div>
+                          <ol className="list-decimal list-inside space-y-1 text-slate-300">
+                            <li>Visit <a href="#" onClick={(e) => { e.preventDefault(); window.api.shell.openExternal('https://console.cloud.google.com/apis/credentials'); }} className="text-cyan-400 underline">Google Cloud Credentials</a>.</li>
+                            <li>Click <strong>+ Create Credentials</strong> &rarr; <strong>OAuth client ID</strong>.</li>
+                            <li>Select Application type: <strong>Desktop app</strong>, name it <em>AstroSquad Station</em>.</li>
+                            <li>Copy the generated <strong>Client ID</strong> and paste it into the box above.</li>
+                          </ol>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleConnectGoogleDrive}
+                          disabled={isConnectingDrive || !clientIdInput.trim()}
+                          className="flex-1 py-2 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>{isConnectingDrive ? 'Waiting for Browser Login...' : 'Connect Google Drive'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 3-Way Window Display Mode Selector */}

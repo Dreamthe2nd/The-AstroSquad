@@ -30,7 +30,15 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
   onOpenInDesktop 
 }) => {
   const [error, setError] = useState<string | null>(null);
+  const [isDriveConnected, setIsDriveConnected] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const fileName = useMemo(() => filePath.split(/[/\\]/).pop() || 'Presentation.pptx', [filePath]);
+
+  useEffect(() => {
+    window.api.drive.getStatus().then((status) => {
+      setIsDriveConnected(status.connected);
+    }).catch(() => {});
+  }, []);
 
   // Convert base64 string to Uint8Array binary buffer
   const binaryData = useMemo(() => {
@@ -50,12 +58,34 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
     }
   }, [base64Data]);
 
-  const handleOpenGoogleDrive = () => {
-    window.api.shell.openGoogleSuite({
-      appType: 'drive',
-      windowMode: 'browser_tab',
-      targetFilePath: filePath
-    });
+  const handleOpenGoogleDrive = async () => {
+    if (isDriveConnected) {
+      setIsUploading(true);
+      try {
+        const res = await window.api.drive.uploadAndOpen(filePath);
+        if (!res.success) {
+          window.api.shell.openGoogleSuite({
+            appType: 'drive',
+            windowMode: 'browser_tab',
+            targetFilePath: filePath
+          });
+        }
+      } catch {
+        window.api.shell.openGoogleSuite({
+          appType: 'drive',
+          windowMode: 'browser_tab',
+          targetFilePath: filePath
+        });
+      } finally {
+        setIsUploading(false);
+      }
+    } else {
+      window.api.shell.openGoogleSuite({
+        appType: 'drive',
+        windowMode: 'browser_tab',
+        targetFilePath: filePath
+      });
+    }
   };
 
   return (
@@ -77,11 +107,12 @@ export const PptxViewer: React.FC<PptxViewerProps> = ({
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleOpenGoogleDrive}
-            className="px-3 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-xs text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm"
-            title="Reveal presentation in Explorer and open The-AstroSquad Google Drive to edit in Google Slides online"
+            disabled={isUploading}
+            className="px-3 py-1.5 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-xs text-indigo-300 hover:text-white border border-indigo-500/40 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+            title={isDriveConnected ? "Upload to Google Drive & launch directly in Google Slides" : "Reveal presentation in Explorer and open The-AstroSquad Google Drive to edit in Google Slides online"}
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Edit in Google Drive</span>
+            <span>{isUploading ? 'Uploading to Slides...' : (isDriveConnected ? '⚡ Open in Google Slides' : 'Edit in Google Drive')}</span>
           </button>
 
           <button

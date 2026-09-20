@@ -55,6 +55,12 @@ var api = {
     copyToClipboard: (text) => import_electron.clipboard.writeText(text),
     openGoogleSuite: (args) => import_electron.ipcRenderer.invoke("shell:openGoogleSuite", args),
     getDetectedBrowsers: () => import_electron.ipcRenderer.invoke("shell:getDetectedBrowsers")
+  },
+  drive: {
+    getStatus: () => import_electron.ipcRenderer.invoke("drive:getStatus"),
+    startAuth: (args) => import_electron.ipcRenderer.invoke("drive:startAuth", args),
+    disconnect: () => import_electron.ipcRenderer.invoke("drive:disconnect"),
+    uploadAndOpen: (filePath) => import_electron.ipcRenderer.invoke("drive:uploadAndOpen", filePath)
   }
 };
 import_electron.contextBridge.exposeInMainWorld("api", api);

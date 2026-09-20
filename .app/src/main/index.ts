@@ -4,6 +4,7 @@ import url from 'url';
 import fs from 'fs';
 import { GitEngine } from './gitEngine';
 import { FileHandlers } from './fileHandlers';
+import { GoogleDriveManager } from './googleDriveManager';
 import { SettingsManager, StationSettings } from './settingsManager';
 
 let mainWindow: BrowserWindow | null = null;
@@ -251,6 +252,26 @@ function registerIpcHandlers(): void {
     gitEngine.setRepoUrl(reset.repository.url);
     gitEngine.setBranch(reset.repository.branch);
     return reset;
+  });
+
+  // Google Drive API handlers
+  ipcMain.handle('drive:getStatus', async () => {
+    return GoogleDriveManager.getStatus(settingsManager);
+  });
+
+  ipcMain.handle('drive:startAuth', async (_, args?: { clientId?: string; clientSecret?: string }) => {
+    return GoogleDriveManager.startAuthFlow(settingsManager, args?.clientId, args?.clientSecret);
+  });
+
+  ipcMain.handle('drive:disconnect', async () => {
+    return GoogleDriveManager.disconnect(settingsManager);
+  });
+
+  ipcMain.handle('drive:uploadAndOpen', async (_, targetFile: string) => {
+    const fullPath = path.isAbsolute(targetFile)
+      ? targetFile
+      : path.join(gitEngine.getRepoDir(), targetFile);
+    return GoogleDriveManager.uploadAndOpenInWorkspace(fullPath, settingsManager);
   });
 
   // Shell & utilities

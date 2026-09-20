@@ -33,6 +33,8 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
   const [editedContent, setEditedContent] = useState<string>(csvContent);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const [isDriveConnected, setIsDriveConnected] = useState<boolean>(false);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   // Table view state
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -40,6 +42,12 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
   const [sortAsc, setSortAsc] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(25);
+
+  useEffect(() => {
+    window.api.drive.getStatus().then((status) => {
+      setIsDriveConnected(status.connected);
+    }).catch(() => {});
+  }, []);
 
   // Reset state when switching files or when external content updates
   useEffect(() => {
@@ -135,12 +143,34 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
     setEditedContent(csvContent);
   };
 
-  const handleOpenGoogleDrive = () => {
-    window.api.shell.openGoogleSuite({
-      appType: 'drive',
-      windowMode: 'browser_tab',
-      targetFilePath: filePath
-    });
+  const handleOpenGoogleDrive = async () => {
+    if (isDriveConnected) {
+      setIsUploading(true);
+      try {
+        const res = await window.api.drive.uploadAndOpen(filePath);
+        if (!res.success) {
+          window.api.shell.openGoogleSuite({
+            appType: 'drive',
+            windowMode: 'browser_tab',
+            targetFilePath: filePath
+          });
+        }
+      } catch {
+        window.api.shell.openGoogleSuite({
+          appType: 'drive',
+          windowMode: 'browser_tab',
+          targetFilePath: filePath
+        });
+      } finally {
+        setIsUploading(false);
+      }
+    } else {
+      window.api.shell.openGoogleSuite({
+        appType: 'drive',
+        windowMode: 'browser_tab',
+        targetFilePath: filePath
+      });
+    }
   };
 
   const editorLines = useMemo(() => {
@@ -240,11 +270,12 @@ export const CsvViewer: React.FC<CsvViewerProps> = ({
           {/* Google Drive Cloud Hub Button */}
           <button
             onClick={handleOpenGoogleDrive}
-            className="px-2.5 py-1.5 rounded-lg bg-indigo-950/60 hover:bg-indigo-900/60 text-xs text-indigo-300 hover:text-white border border-indigo-500/30 flex items-center gap-1.5 transition-colors shadow-sm"
-            title="Reveal CSV in Explorer and open The-AstroSquad Google Drive to edit in Google Sheets"
+            disabled={isUploading}
+            className="px-2.5 py-1.5 rounded-lg bg-indigo-950/60 hover:bg-indigo-900/60 text-xs text-indigo-300 hover:text-white border border-indigo-500/30 flex items-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+            title={isDriveConnected ? "Upload CSV & open live in Google Sheets" : "Reveal CSV in Explorer and open The-AstroSquad Google Drive to edit in Google Sheets"}
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span className="hidden sm:inline">Google Drive</span>
+            <span className="hidden sm:inline">{isUploading ? 'Uploading...' : (isDriveConnected ? '⚡ Google Sheets' : 'Google Drive')}</span>
           </button>
 
           {/* System Desktop Fallback */}

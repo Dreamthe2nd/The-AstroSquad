@@ -30,6 +30,13 @@ export interface StationSettings {
     sheetsUrl?: string;
     slidesUrl?: string;
     driveUrl?: string;
+    clientId?: string;
+    clientSecret?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    tokenExpiry?: number;
+    userEmail?: string;
+    userName?: string;
   };
 }
 
