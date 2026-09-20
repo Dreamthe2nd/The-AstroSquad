@@ -26682,6 +26682,15 @@ var FileHandlers = class {
         };
       }
       console.warn(`[GoogleDriveDesktop] shell.openPath on virtual file returned: "${openResult}". Falling through to Google Workspace.`);
+      try {
+        const vContent = import_fs2.default.readFileSync(virtualPath, "utf-8");
+        const vData = JSON.parse(vContent);
+        if (vData && vData.url) {
+          const appType2 = ext === ".pptx" || ext === ".ppt" || ext === ".gslides" ? "slides" : ext === ".csv" || ext === ".xlsx" || ext === ".xls" || ext === ".gsheet" ? "sheets" : "docs";
+          return this.openGoogleSuiteSession(appType2, "browser_tab", filePath, void 0, vData.url);
+        }
+      } catch {
+      }
     }
     const appType = ext === ".pptx" || ext === ".ppt" || ext === ".gslides" ? "slides" : ext === ".csv" || ext === ".xlsx" || ext === ".xls" || ext === ".gsheet" ? "sheets" : ext === ".pdf" || this.isPdfFile(filePath) || ext === ".gdoc" ? "docs" : "drive";
     return this.openGoogleSuiteSession(appType, "browser_tab", filePath);
@@ -26690,14 +26699,13 @@ var FileHandlers = class {
    * Opens local standalone session of Google Productivity Suite (Docs, Sheets, Slides, Drive)
    * Universal across macOS, Windows, and Linux.
    */
-  static async openGoogleSuiteSession(appType, windowMode = "station_window", targetFilePath, preferredEngine) {
-    if (appType === "drive") {
+  static async openGoogleSuiteSession(appType, windowMode = "station_window", targetFilePath, preferredEngine, explicitUrl) {
+    if (appType === "drive" && !targetFilePath && !explicitUrl) {
       return this.openInGoogleDriveDesktop();
     }
     const driveFolderUrl = "https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing";
     const driveInfo = this.detectGoogleDrivePath();
     let fileHint = "";
-    let targetUrl = "";
     let targetFileName = "";
     if (targetFilePath && import_fs2.default.existsSync(targetFilePath)) {
       targetFileName = import_path3.default.basename(targetFilePath);
@@ -26708,38 +26716,43 @@ var FileHandlers = class {
             import_fs2.default.mkdirSync(squadFolder, { recursive: true });
           }
           const destPath = import_path3.default.join(squadFolder, targetFileName);
-          import_fs2.default.copyFileSync(targetFilePath, destPath);
+          if (targetFilePath !== destPath) {
+            import_fs2.default.copyFileSync(targetFilePath, destPath);
+          }
           import_electron3.clipboard.writeText(destPath);
           fileHint = ` (Synced to Google Drive: ${destPath})`;
         } catch (e) {
           console.warn("Could not sync to Google Drive folder:", e);
         }
       }
-      const rawUrl = this.getRawGitHubUrl(targetFilePath);
-      if (rawUrl) {
-        targetUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}`;
-      } else if (driveInfo.driveRoot) {
-        targetUrl = `https://drive.google.com/drive/u/0/search?q=${encodeURIComponent(targetFileName)}`;
-      } else {
-        targetUrl = `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}`;
-      }
     }
-    if (!targetUrl) {
-      const defaultUrls = {
-        docs: targetFileName ? `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}` : "https://docs.google.com/document/u/0/",
-        sheets: targetFileName ? `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}` : "https://docs.google.com/spreadsheets/u/0/",
-        slides: targetFileName ? `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}` : "https://docs.google.com/presentation/u/0/",
-        drive: driveFolderUrl
-      };
-      targetUrl = defaultUrls[appType] || driveFolderUrl;
-    }
+    const appUrls = {
+      slides: "https://docs.google.com/presentation/u/0/",
+      sheets: "https://docs.google.com/spreadsheets/u/0/",
+      docs: "https://docs.google.com/document/u/0/",
+      drive: driveFolderUrl
+    };
+    let targetUrl = explicitUrl || appUrls[appType] || driveFolderUrl;
     try {
-      const userData = (process.env.APPDATA || process.env.USERPROFILE || "") + import_path3.default.sep + "astrosquad-station";
+      let userData = "";
+      try {
+        if (import_electron3.app && import_electron3.app.getPath) userData = import_electron3.app.getPath("userData");
+      } catch {
+      }
+      if (!userData) {
+        userData = (process.env.APPDATA || process.env.USERPROFILE || "") + import_path3.default.sep + "astrosquad-station";
+      }
       const settingsFile = import_path3.default.join(userData, "station_settings.json");
       let account = "0";
       if (import_fs2.default.existsSync(settingsFile)) {
         const parsed = JSON.parse(import_fs2.default.readFileSync(settingsFile, "utf-8"));
         account = parsed.googleSuite?.accountIndex || parsed.googleSuite?.userEmail || "0";
+        if (!explicitUrl) {
+          if (appType === "slides" && parsed.googleSuite?.slidesUrl) targetUrl = parsed.googleSuite.slidesUrl;
+          if (appType === "sheets" && parsed.googleSuite?.sheetsUrl) targetUrl = parsed.googleSuite.sheetsUrl;
+          if (appType === "docs" && parsed.googleSuite?.docsUrl) targetUrl = parsed.googleSuite.docsUrl;
+          if (appType === "drive" && parsed.googleSuite?.driveUrl) targetUrl = parsed.googleSuite.driveUrl;
+        }
       }
       if (account && targetUrl.includes("google.com")) {
         if (targetUrl.includes("/u/0/")) {

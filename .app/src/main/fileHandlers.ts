@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import child_process from 'child_process';
-import { dialog, shell, BrowserWindow, clipboard } from 'electron';
+import { app, dialog, shell, BrowserWindow, clipboard } from 'electron';
 import { GoogleWindowManager } from './googleWindowManager';
 
 export interface FileNode {
@@ -644,6 +644,16 @@ export class FileHandlers {
         };
       }
       console.warn(`[GoogleDriveDesktop] shell.openPath on virtual file returned: "${openResult}". Falling through to Google Workspace.`);
+      try {
+        const vContent = fs.readFileSync(virtualPath, 'utf-8');
+        const vData = JSON.parse(vContent);
+        if (vData && vData.url) {
+          const appType = (ext === '.pptx' || ext === '.ppt' || ext === '.gslides') ? 'slides'
+            : (ext === '.csv' || ext === '.xlsx' || ext === '.xls' || ext === '.gsheet') ? 'sheets'
+            : 'docs';
+          return this.openGoogleSuiteSession(appType, 'browser_tab', filePath, undefined, vData.url);
+        }
+      } catch {}
     }
 
     // R1: Direct routing to Google Workspace — DO NOT call shell.openPath on raw .pptx, .csv, or .pdf!
@@ -665,23 +675,23 @@ export class FileHandlers {
     appType: 'docs' | 'sheets' | 'slides' | 'drive',
     windowMode: 'station_window' | 'app_window' | 'browser_tab' = 'station_window',
     targetFilePath?: string,
-    preferredEngine?: string
+    preferredEngine?: string,
+    explicitUrl?: string
   ): Promise<{ success: boolean; message: string }> {
     // If opening Google Drive: route directly to local desktop Google Drive folder
-    if (appType === 'drive') {
+    if (appType === 'drive' && !targetFilePath && !explicitUrl) {
       return this.openInGoogleDriveDesktop();
     }
 
     const driveFolderUrl = 'https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?usp=sharing';
     const driveInfo = this.detectGoogleDrivePath();
     let fileHint = '';
-    let targetUrl = '';
     let targetFileName = '';
 
     if (targetFilePath && fs.existsSync(targetFilePath)) {
       targetFileName = path.basename(targetFilePath);
 
-      // 1. Sync to Google Drive Desktop if installed on machine
+      // 1. Sync to Google Drive Desktop if installed on machine (R2)
       if (driveInfo.driveRoot) {
         try {
           const squadFolder = driveInfo.squadPath || path.join(driveInfo.driveRoot, 'The-AstroSquad');
@@ -689,53 +699,47 @@ export class FileHandlers {
             fs.mkdirSync(squadFolder, { recursive: true });
           }
           const destPath = path.join(squadFolder, targetFileName);
-          fs.copyFileSync(targetFilePath, destPath);
+          if (targetFilePath !== destPath) {
+            fs.copyFileSync(targetFilePath, destPath);
+          }
           clipboard.writeText(destPath);
           fileHint = ` (Synced to Google Drive: ${destPath})`;
         } catch (e) {
           console.warn('Could not sync to Google Drive folder:', e);
         }
       }
-
-      // 2. Resolve document URL directly for Slides, Sheets, and Docs
-      const rawUrl = this.getRawGitHubUrl(targetFilePath);
-      if (rawUrl) {
-        // Opens Google Docs Viewer with instant slide/sheet rendering and 1-click "Open with Google Slides/Sheets/Docs" button
-        targetUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}`;
-      } else if (driveInfo.driveRoot) {
-        // File synced to Google Drive: search for it directly on Google Drive web to open in Slides/Sheets
-        targetUrl = `https://drive.google.com/drive/u/0/search?q=${encodeURIComponent(targetFileName)}`;
-      } else {
-        // Search directly in AstroSquad shared Google Drive folder preserving document context
-        targetUrl = `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}`;
-      }
     }
 
-    // Default URLs if targetFilePath not provided or URL not resolved
-    if (!targetUrl) {
-      const defaultUrls: Record<string, string> = {
-        docs: targetFileName
-          ? `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}`
-          : 'https://docs.google.com/document/u/0/',
-        sheets: targetFileName
-          ? `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}`
-          : 'https://docs.google.com/spreadsheets/u/0/',
-        slides: targetFileName
-          ? `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}`
-          : 'https://docs.google.com/presentation/u/0/',
-        drive: driveFolderUrl
-      };
-      targetUrl = defaultUrls[appType] || driveFolderUrl;
-    }
+    // Direct Google Workspace App URLs (R1: Slides for presentations, Sheets for CSV/data, Docs for PDFs/documents)
+    const appUrls: Record<'slides' | 'sheets' | 'docs' | 'drive', string> = {
+      slides: 'https://docs.google.com/presentation/u/0/',
+      sheets: 'https://docs.google.com/spreadsheets/u/0/',
+      docs: 'https://docs.google.com/document/u/0/',
+      drive: driveFolderUrl
+    };
+
+    let targetUrl = explicitUrl || appUrls[appType] || driveFolderUrl;
 
     // Account Switcher / Authuser: check station_settings.json for configured pro account index/email
     try {
-      const userData = (process.env.APPDATA || process.env.USERPROFILE || '') + path.sep + 'astrosquad-station';
+      let userData = '';
+      try {
+        if (app && app.getPath) userData = app.getPath('userData');
+      } catch {}
+      if (!userData) {
+        userData = (process.env.APPDATA || process.env.USERPROFILE || '') + path.sep + 'astrosquad-station';
+      }
       const settingsFile = path.join(userData, 'station_settings.json');
       let account = '0';
       if (fs.existsSync(settingsFile)) {
         const parsed = JSON.parse(fs.readFileSync(settingsFile, 'utf-8'));
         account = parsed.googleSuite?.accountIndex || parsed.googleSuite?.userEmail || '0';
+        if (!explicitUrl) {
+          if (appType === 'slides' && parsed.googleSuite?.slidesUrl) targetUrl = parsed.googleSuite.slidesUrl;
+          if (appType === 'sheets' && parsed.googleSuite?.sheetsUrl) targetUrl = parsed.googleSuite.sheetsUrl;
+          if (appType === 'docs' && parsed.googleSuite?.docsUrl) targetUrl = parsed.googleSuite.docsUrl;
+          if (appType === 'drive' && parsed.googleSuite?.driveUrl) targetUrl = parsed.googleSuite.driveUrl;
+        }
       }
       if (account && targetUrl.includes('google.com')) {
         if (targetUrl.includes('/u/0/')) {

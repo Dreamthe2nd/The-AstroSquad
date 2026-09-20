@@ -2,6 +2,21 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const assert = require('assert');
+const { execSync } = require('child_process');
+
+// Ensure dist/test-fileHandlers.js exists and is up to date (Fix for Ledger Issue 8)
+const compiledTestPath = path.join(__dirname, 'dist', 'test-fileHandlers.js');
+const srcFileHandlersPath = path.join(__dirname, 'src', 'main', 'fileHandlers.ts');
+const needsBuild = !fs.existsSync(compiledTestPath) || 
+  (fs.existsSync(srcFileHandlersPath) && fs.statSync(srcFileHandlersPath).mtimeMs > fs.statSync(compiledTestPath).mtimeMs);
+
+if (needsBuild) {
+  console.log('[Test Setup] Compiling FileHandlers with esbuild for runtime testing...');
+  execSync('npx esbuild src/main/fileHandlers.ts --bundle --platform=node --target=node22 --outfile=dist/test-fileHandlers.js --external:electron', {
+    cwd: __dirname,
+    stdio: 'inherit'
+  });
+}
 
 // Create a temp workspace for isolation
 const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'astrosquad-test-'));
@@ -19,11 +34,15 @@ fs.writeFileSync(testCsv, 'id,name,val\n1,alpha,100');
 const testPdf = path.join(tempDir, 'proposal.pdf');
 fs.writeFileSync(testPdf, '%PDF-1.4 dummy pdf content');
 
+const testProposalExtless = path.join(tempDir, 'proposal');
+fs.writeFileSync(testProposalExtless, '%PDF-1.4 extensionless proposal content');
+
 // Track Electron calls
 const electronCalls = {
   openPath: [],
   openExternal: [],
-  clipboard: []
+  clipboard: [],
+  mockOpenPathResult: ''
 };
 
 // Mock electron
@@ -34,7 +53,10 @@ const mockElectron = {
   },
   app: {
     whenReady: () => new Promise(() => {}),
-    getPath: () => tempDir,
+    getPath: (name) => {
+      if (name === 'userData') return tempDir;
+      return tempDir;
+    },
     on: () => {},
     quit: () => {}
   },
@@ -44,7 +66,7 @@ const mockElectron = {
   shell: {
     openPath: async (p) => {
       electronCalls.openPath.push(p);
-      return ''; // empty string indicates success in Electron
+      return electronCalls.mockOpenPathResult;
     },
     openExternal: async (url) => {
       electronCalls.openExternal.push(url);
@@ -65,10 +87,19 @@ const mockElectron = {
   }
 };
 
-// Compile / load fileHandlers by mocking electron in module cache
-require.cache[require.resolve('electron')] = {
-  id: require.resolve('electron'),
-  filename: require.resolve('electron'),
+// Safely hook module resolution so 'electron' can be required without requiring node_modules/electron
+const Module = require('module');
+const origResolve = Module._resolveFilename;
+Module._resolveFilename = function(request, parent, isMain, options) {
+  if (request === 'electron') {
+    return 'electron';
+  }
+  return origResolve.call(this, request, parent, isMain, options);
+};
+
+require.cache['electron'] = {
+  id: 'electron',
+  filename: 'electron',
   loaded: true,
   exports: mockElectron
 };
@@ -86,7 +117,7 @@ require.cache[path.join(__dirname, 'src', 'main', 'googleWindowManager.ts')] = {
   exports: mockGoogleWindowManager
 };
 
-// Read and evaluate FileHandlers from compiled dist or directly
+// Read and evaluate FileHandlers from compiled dist
 const { FileHandlers } = require('./dist/test-fileHandlers.js');
 
 // Mock detectGoogleDrivePath on FileHandlers to point to our mockDriveRoot
@@ -104,6 +135,7 @@ async function runRuntimeTests() {
   console.log('\n[TEST A] openInGoogleDriveDesktop("presentation.pptx")');
   electronCalls.openPath = [];
   electronCalls.openExternal = [];
+  electronCalls.mockOpenPathResult = '';
 
   const resA = await FileHandlers.openInGoogleDriveDesktop(testPptx);
   console.log('  Result:', resA);
@@ -118,11 +150,13 @@ async function runRuntimeTests() {
   assert.strictEqual(fs.existsSync(copiedPptx), true, 'FATAL ERROR: File was not copied to Google Drive squad folder!');
   console.log('  ✓ Verified: File was copied to local Google Drive folder for cloud background sync (R2)');
 
-  // Verify URL launched contains authuser parameter (R1)
+  // Verify URL launched targets Google Slides directly and contains authuser parameter (R1)
   const openedUrlA = electronCalls.openExternal[0];
   console.log('  Launched URL:', openedUrlA);
+  assert.strictEqual(openedUrlA.includes('presentation'), true, 'FATAL ERROR: URL must target Google Slides (presentation)! Got: ' + openedUrlA);
   assert.strictEqual(openedUrlA.includes('authuser='), true, 'FATAL ERROR: Launched URL must contain authuser parameter!');
-  console.log('  ✓ Verified: URL contains authuser query parameter matching Pro account');
+  assert.strictEqual(resA.message.includes('Google Slides'), true, 'FATAL ERROR: Message must state Google Slides!');
+  console.log('  ✓ Verified: Directly launched into Google Slides with authuser context');
 
   // TEST B: Opening CSV via openInGoogleDriveDesktop
   console.log('\n[TEST B] openInGoogleDriveDesktop("catalog.csv")');
@@ -142,10 +176,13 @@ async function runRuntimeTests() {
   assert.strictEqual(fs.existsSync(copiedCsv), true, 'FATAL ERROR: CSV file was not copied to Google Drive squad folder!');
   console.log('  ✓ Verified: CSV was copied to Google Drive folder for background sync (R2)');
 
+  // Verify URL launched targets Google Sheets directly and contains authuser parameter (R1)
   const openedUrlB = electronCalls.openExternal[0];
   console.log('  Launched URL:', openedUrlB);
+  assert.strictEqual(openedUrlB.includes('spreadsheets'), true, 'FATAL ERROR: URL must target Google Sheets (spreadsheets)! Got: ' + openedUrlB);
   assert.strictEqual(openedUrlB.includes('authuser='), true, 'FATAL ERROR: CSV URL must contain authuser parameter!');
-  console.log('  ✓ Verified: CSV URL contains authuser query parameter');
+  assert.strictEqual(resB.message.includes('Google Sheets'), true, 'FATAL ERROR: Message must state Google Sheets!');
+  console.log('  ✓ Verified: Directly launched into Google Sheets with authuser context');
 
   // TEST C: Opening PDF via openInGoogleDriveDesktop
   console.log('\n[TEST C] openInGoogleDriveDesktop("proposal.pdf")');
@@ -163,18 +200,22 @@ async function runRuntimeTests() {
   assert.strictEqual(fs.existsSync(copiedPdf), true, 'FATAL ERROR: PDF was not copied to Google Drive squad folder!');
   console.log('  ✓ Verified: PDF was copied to Google Drive folder for background sync (R2)');
 
+  // Verify URL launched targets Google Docs directly and contains authuser parameter (R1)
   const openedUrlC = electronCalls.openExternal[0];
   console.log('  Launched URL:', openedUrlC);
+  assert.strictEqual(openedUrlC.includes('document'), true, 'FATAL ERROR: URL must target Google Docs (document)! Got: ' + openedUrlC);
   assert.strictEqual(openedUrlC.includes('authuser='), true, 'FATAL ERROR: PDF URL must contain authuser parameter!');
-  console.log('  ✓ Verified: PDF URL contains authuser query parameter');
+  assert.strictEqual(resC.message.includes('Google Docs'), true, 'FATAL ERROR: Message must state Google Docs!');
+  console.log('  ✓ Verified: Directly launched into Google Docs with authuser context');
 
   // TEST D: When a native Google virtual file exists on G:\
   console.log('\n[TEST D] Native Google virtual file (.gslides) exists on G:\\');
   const virtualSlides = path.join(mockSquadFolder, 'presentation.gslides');
-  fs.writeFileSync(virtualSlides, '{"doc_id": "12345"}');
+  fs.writeFileSync(virtualSlides, JSON.stringify({ url: 'https://docs.google.com/presentation/d/native123/edit', doc_id: 'native123' }));
 
   electronCalls.openPath = [];
   electronCalls.openExternal = [];
+  electronCalls.mockOpenPathResult = '';
 
   const resD = await FileHandlers.openInGoogleDriveDesktop(testPptx);
   console.log('  Result:', resD);
@@ -191,12 +232,62 @@ async function runRuntimeTests() {
   assert.strictEqual(electronCalls.openPath.includes(testPptx), true, 'FATAL ERROR: System Default action must call shell.openPath on the file!');
   console.log('  ✓ Verified: "System Default" explicitly delegates to local OS association via shell.openPath');
 
+  // TEST F: Extensionless Proposal PDF
+  console.log('\n[TEST F] openInGoogleDriveDesktop("proposal") (extensionless PDF)');
+  electronCalls.openPath = [];
+  electronCalls.openExternal = [];
+
+  const resF = await FileHandlers.openInGoogleDriveDesktop(testProposalExtless);
+  console.log('  Result:', resF);
+  const openedExtless = electronCalls.openPath.some(p => p === testProposalExtless);
+  assert.strictEqual(openedExtless, false, 'FATAL ERROR: shell.openPath was called on proposal file!');
+  const openedUrlF = electronCalls.openExternal[0];
+  console.log('  Launched URL:', openedUrlF);
+  assert.strictEqual(openedUrlF.includes('document'), true, 'FATAL ERROR: Extensionless PDF must launch Google Docs! Got: ' + openedUrlF);
+  assert.strictEqual(openedUrlF.includes('authuser='), true, 'FATAL ERROR: Launched URL must contain authuser!');
+  console.log('  ✓ Verified: Extensionless PDF correctly detected and launched directly into Google Docs');
+
+  // TEST G: Configured Pro Account authuser propagation
+  console.log('\n[TEST G] Pro Account Switching (authuser propagation)');
+  const settingsPath = path.join(tempDir, 'station_settings.json');
+  fs.writeFileSync(settingsPath, JSON.stringify({
+    googleSuite: {
+      accountIndex: 'astrosquad.pro@gmail.com'
+    }
+  }));
+
+  // Remove virtual slides from squad folder so it routes to workspace URL
+  if (fs.existsSync(virtualSlides)) fs.unlinkSync(virtualSlides);
+
+  electronCalls.openPath = [];
+  electronCalls.openExternal = [];
+
+  await FileHandlers.openInGoogleDriveDesktop(testPptx);
+  const openedUrlG = electronCalls.openExternal[0];
+  console.log('  Launched URL with configured Pro account:', openedUrlG);
+  assert.strictEqual(openedUrlG.includes('authuser=astrosquad.pro%40gmail.com'), true, 'FATAL ERROR: URL must contain authuser with Pro account email! Got: ' + openedUrlG);
+  console.log('  ✓ Verified: Pro account email correctly applied to authuser parameter');
+
+  // TEST H: Native Google virtual file shell error fallback
+  console.log('\n[TEST H] Native Google virtual file with shell.openPath error fallback');
+  fs.writeFileSync(virtualSlides, JSON.stringify({ url: 'https://docs.google.com/presentation/d/native456/edit', doc_id: 'native456' }));
+  electronCalls.openPath = [];
+  electronCalls.openExternal = [];
+  electronCalls.mockOpenPathResult = 'Failed to launch desktop association';
+
+  await FileHandlers.openInGoogleDriveDesktop(testPptx);
+  assert.strictEqual(electronCalls.openPath.includes(virtualSlides), true);
+  const openedUrlH = electronCalls.openExternal[0];
+  console.log('  Launched URL on virtual file fallback:', openedUrlH);
+  assert.strictEqual(openedUrlH.includes('native456'), true, 'FATAL ERROR: Virtual file fallback must open document URL! Got: ' + openedUrlH);
+  console.log('  ✓ Verified: Virtual file error gracefully falls through to opening document URL with authuser');
+
   // Clean up
   try {
     fs.rmSync(tempDir, { recursive: true, force: true });
   } catch {}
 
-  console.log('\n=== ALL 5 RUNTIME BEHAVIORAL TESTS PASSED PERFECTLY ===');
+  console.log('\n=== ALL 8 RUNTIME BEHAVIORAL TESTS PASSED PERFECTLY ===');
 }
 
 runRuntimeTests().catch(err => {
