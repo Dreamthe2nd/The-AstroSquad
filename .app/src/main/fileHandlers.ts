@@ -776,15 +776,30 @@ export class FileHandlers {
       }
     }
 
-    // Direct Google Workspace App URLs (R1: Slides for presentations, Sheets for CSV/data, Docs for PDFs/documents)
-    const appUrls: Record<'slides' | 'sheets' | 'docs' | 'drive', string> = {
-      slides: 'https://docs.google.com/presentation/u/0/',
-      sheets: 'https://docs.google.com/spreadsheets/u/0/',
-      docs: 'https://docs.google.com/document/u/0/',
-      drive: driveFolderUrl
-    };
+    let targetUrl = explicitUrl || '';
 
-    let targetUrl = explicitUrl || appUrls[appType] || driveFolderUrl;
+    if (!targetUrl && targetFilePath && fs.existsSync(targetFilePath)) {
+      targetFileName = path.basename(targetFilePath);
+      const rawUrl = this.getRawGitHubUrl(targetFilePath);
+      if (rawUrl) {
+        // Opens Google Docs Viewer with instant slide/sheet/doc rendering and 1-click "Open with Google Slides/Sheets/Docs" button
+        targetUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}`;
+      } else {
+        // Search directly in AstroSquad shared Google Drive folder preserving document context
+        targetUrl = `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}`;
+      }
+    }
+
+    // Default naked app URLs ONLY when no file context is provided and no explicit URL
+    if (!targetUrl) {
+      const appUrls: Record<'slides' | 'sheets' | 'docs' | 'drive', string> = {
+        slides: 'https://docs.google.com/presentation/u/0/',
+        sheets: 'https://docs.google.com/spreadsheets/u/0/',
+        docs: 'https://docs.google.com/document/u/0/',
+        drive: driveFolderUrl
+      };
+      targetUrl = appUrls[appType] || driveFolderUrl;
+    }
 
     // Account Switcher / Authuser: check station_settings.json for configured pro account index/email
     try {
@@ -800,7 +815,8 @@ export class FileHandlers {
       if (fs.existsSync(settingsFile)) {
         const parsed = JSON.parse(fs.readFileSync(settingsFile, 'utf-8'));
         account = parsed.googleSuite?.accountIndex || parsed.googleSuite?.userEmail || '0';
-        if (!explicitUrl) {
+        // Only apply custom URLs if no specific file was requested and no explicit URL was given
+        if (!explicitUrl && (!targetFilePath || !fs.existsSync(targetFilePath))) {
           if (appType === 'slides' && parsed.googleSuite?.slidesUrl) targetUrl = parsed.googleSuite.slidesUrl;
           if (appType === 'sheets' && parsed.googleSuite?.sheetsUrl) targetUrl = parsed.googleSuite.sheetsUrl;
           if (appType === 'docs' && parsed.googleSuite?.docsUrl) targetUrl = parsed.googleSuite.docsUrl;

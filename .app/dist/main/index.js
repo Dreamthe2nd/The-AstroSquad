@@ -26785,13 +26785,25 @@ var FileHandlers = class {
         }
       }
     }
-    const appUrls = {
-      slides: "https://docs.google.com/presentation/u/0/",
-      sheets: "https://docs.google.com/spreadsheets/u/0/",
-      docs: "https://docs.google.com/document/u/0/",
-      drive: driveFolderUrl
-    };
-    let targetUrl = explicitUrl || appUrls[appType] || driveFolderUrl;
+    let targetUrl = explicitUrl || "";
+    if (!targetUrl && targetFilePath && import_fs2.default.existsSync(targetFilePath)) {
+      targetFileName = import_path3.default.basename(targetFilePath);
+      const rawUrl = this.getRawGitHubUrl(targetFilePath);
+      if (rawUrl) {
+        targetUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(rawUrl)}`;
+      } else {
+        targetUrl = `https://drive.google.com/drive/folders/1YE6FbXZVLZLZKNvxqfUqIsScqk_4HIzC?q=${encodeURIComponent(targetFileName)}`;
+      }
+    }
+    if (!targetUrl) {
+      const appUrls = {
+        slides: "https://docs.google.com/presentation/u/0/",
+        sheets: "https://docs.google.com/spreadsheets/u/0/",
+        docs: "https://docs.google.com/document/u/0/",
+        drive: driveFolderUrl
+      };
+      targetUrl = appUrls[appType] || driveFolderUrl;
+    }
     try {
       let userData = "";
       try {
@@ -26806,7 +26818,7 @@ var FileHandlers = class {
       if (import_fs2.default.existsSync(settingsFile)) {
         const parsed = JSON.parse(import_fs2.default.readFileSync(settingsFile, "utf-8"));
         account = parsed.googleSuite?.accountIndex || parsed.googleSuite?.userEmail || "0";
-        if (!explicitUrl) {
+        if (!explicitUrl && (!targetFilePath || !import_fs2.default.existsSync(targetFilePath))) {
           if (appType === "slides" && parsed.googleSuite?.slidesUrl) targetUrl = parsed.googleSuite.slidesUrl;
           if (appType === "sheets" && parsed.googleSuite?.sheetsUrl) targetUrl = parsed.googleSuite.sheetsUrl;
           if (appType === "docs" && parsed.googleSuite?.docsUrl) targetUrl = parsed.googleSuite.docsUrl;
