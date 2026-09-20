@@ -1164,7 +1164,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="flex items-center gap-2 pt-1">
                   <input
                     type="text"
-                    placeholder="Auto-detect (C:\Program Files\KStars\bin\kstars.exe, system PATH)"
+                    placeholder="Auto-detect (Program Files, PATH, Microsoft Store)"
                     value={settings.kstarsPath || ''}
                     onChange={(e) => setSettings((prev) => prev ? { ...prev, kstarsPath: e.target.value } : prev)}
                     className="flex-1 px-3 py-1.5 bg-black/40 border border-white/[0.08] rounded-xl text-slate-100 text-xs font-mono placeholder-slate-600 focus:outline-none focus:border-white/30 truncate"

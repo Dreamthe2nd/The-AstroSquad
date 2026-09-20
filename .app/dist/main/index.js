@@ -27244,7 +27244,16 @@ var FileHandlers = class {
   static openKStars(customPath) {
     const candidates = [];
     if (customPath && customPath.trim()) {
-      candidates.push(customPath.trim());
+      const trimmed = customPath.trim();
+      if (trimmed.startsWith("shell:AppsFolder")) {
+        try {
+          import_child_process.default.spawn("explorer.exe", [trimmed], { detached: true, stdio: "ignore" }).unref();
+          return { success: true, message: `Launched KStars via ${trimmed}`, path: trimmed };
+        } catch (err) {
+          console.error("[FileHandlers] Failed to launch KStars Store app:", err);
+        }
+      }
+      candidates.push(trimmed);
     }
     if (process.platform === "win32") {
       const localAppData = process.env.LOCALAPPDATA || "";
@@ -27272,6 +27281,20 @@ var FileHandlers = class {
         } catch (err) {
           console.error("[FileHandlers] Failed to spawn KStars at path:", cand, err);
         }
+      }
+    }
+    if (process.platform === "win32") {
+      try {
+        const aumid = import_child_process.default.execFileSync("powershell.exe", ["-NoProfile", "-Command", "(Get-StartApps *kstars*).AppID"], {
+          timeout: 3500,
+          encoding: "utf8"
+        }).trim();
+        if (aumid && aumid.length > 0) {
+          import_child_process.default.spawn("explorer.exe", [`shell:AppsFolder\\${aumid}`], { detached: true, stdio: "ignore" }).unref();
+          return { success: true, message: `Launched KStars (Microsoft Store)`, path: `shell:AppsFolder\\${aumid}` };
+        }
+      } catch (err) {
+        console.warn("[FileHandlers] Microsoft Store KStars detection skipped/timed out:", err.message);
       }
     }
     try {
