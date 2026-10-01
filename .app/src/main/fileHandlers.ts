@@ -35,7 +35,14 @@ export class FileHandlers {
       const nodes: FileNode[] = [];
 
       for (const item of items) {
-        if (item.name === '.git' || item.name === 'node_modules' || (item.name.startsWith('.') && item.name !== '.app')) {
+        if (
+          item.name === '.git' ||
+          item.name === 'node_modules' ||
+          item.name === '.app' ||
+          item.name === 'desktop.ini' ||
+          item.name.startsWith('.') ||
+          item.name.includes('_conflict_')
+        ) {
           continue;
         }
 

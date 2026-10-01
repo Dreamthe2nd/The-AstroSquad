@@ -25868,7 +25868,6 @@ var GitEngine = class {
         };
       }
       if (progressCallback) progressCallback("Checking for incoming Doppler updates...");
-      const conflictBackups = await this.guardrailBackupLocalModifications();
       await import_isomorphic_git.default.fetch({
         fs: import_fs.default,
         http: node_default,
@@ -25878,6 +25877,7 @@ var GitEngine = class {
         depth: 10,
         onAuth: this.getAuthCallback()
       });
+      let conflictBackups = [];
       try {
         await import_isomorphic_git.default.merge({
           fs: import_fs.default,
@@ -25886,7 +25886,9 @@ var GitEngine = class {
           theirs: `origin/${this.branch}`,
           author: { name: "AstroSquad Researcher", email: "researcher@astrosquad.space" }
         });
-      } catch {
+      } catch (mergeError) {
+        console.warn("[GitEngine] Merge conflict detected. Running guardrail backup before reset:", mergeError);
+        conflictBackups = await this.guardrailBackupLocalModifications();
         await import_isomorphic_git.default.checkout({
           fs: import_fs.default,
           dir: this.repoDir,
@@ -25910,7 +25912,7 @@ var GitEngine = class {
   }
   /**
    * Non-Technical Guardrail:
-   * Scans for any files modified locally. If modified, backs them up as:
+   * Scans for tracked files modified locally. If modified, backs them up as:
    * [filename]_conflict_[timestamp].[ext]
    */
   async guardrailBackupLocalModifications() {
@@ -25919,11 +25921,11 @@ var GitEngine = class {
       const statusMatrix = await import_isomorphic_git.default.statusMatrix({
         fs: import_fs.default,
         dir: this.repoDir,
-        filter: (p) => !p.startsWith(".git") && !p.startsWith(".app") && !p.includes("node_modules") && !p.includes("dist") && !p.includes("_conflict_")
+        filter: (p) => !p.startsWith(".git") && !p.startsWith(".app") && !p.includes("node_modules") && !p.includes("dist") && !p.includes("_conflict_") && !p.endsWith("desktop.ini")
       });
       const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
       for (const [filepath, head, workdir] of statusMatrix) {
-        if (workdir !== head && workdir !== 0) {
+        if (head === 1 && workdir === 2) {
           if (filepath.includes("_conflict_")) continue;
           const fullPath = import_path.default.join(this.repoDir, filepath);
           if (import_fs.default.existsSync(fullPath)) {
@@ -25964,7 +25966,7 @@ var GitEngine = class {
       const matrix = await import_isomorphic_git.default.statusMatrix({
         fs: import_fs.default,
         dir: this.repoDir,
-        filter: (p) => !p.startsWith(".git")
+        filter: (p) => !p.startsWith(".git") && !p.startsWith(".app") && !p.includes("node_modules") && !p.includes("dist") && !p.includes("_conflict_") && !p.endsWith("desktop.ini")
       });
       let changesCount = 0;
       for (const [filepath, head, workdir] of matrix) {
@@ -26002,12 +26004,11 @@ var GitEngine = class {
         onAuth: this.getAuthCallback()
       });
       if (!pushResult.ok) {
-        const backups = await this.guardrailBackupLocalModifications();
-        await this.syncRepository();
+        const syncRes = await this.syncRepository();
         return {
           success: false,
-          message: `Remote had newer updates. Local changes backed up to preserve edits.`,
-          conflictsResolved: backups
+          message: syncRes.conflictsResolved && syncRes.conflictsResolved.length > 0 ? `Remote had newer updates. Local changes backed up to preserve edits.` : `Remote had newer updates. Synchronized latest changes from main.`,
+          conflictsResolved: syncRes.conflictsResolved
         };
       }
       return {
@@ -26130,7 +26131,7 @@ var FileHandlers = class {
       const items = import_fs2.default.readdirSync(currentDir, { withFileTypes: true });
       const nodes = [];
       for (const item of items) {
-        if (item.name === ".git" || item.name === "node_modules" || item.name.startsWith(".") && item.name !== ".app") {
+        if (item.name === ".git" || item.name === "node_modules" || item.name === ".app" || item.name === "desktop.ini" || item.name.startsWith(".") || item.name.includes("_conflict_")) {
           continue;
         }
         const absPath = import_path3.default.join(currentDir, item.name);

@@ -4,5 +4,8 @@ node_modules/
 release/
 *.log
 .DS_Store
+desktop.ini
+*.ini
+*_conflict_*
 .obsidian/
 .app/dist/test-fileHandlers.js

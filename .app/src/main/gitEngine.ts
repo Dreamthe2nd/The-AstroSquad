@@ -344,10 +344,7 @@ export class GitEngine {
       // Existing repository: pull changes
       if (progressCallback) progressCallback('Checking for incoming Doppler updates...');
 
-      // 1. Check for uncommitted local modifications to guard against data loss
-      const conflictBackups = await this.guardrailBackupLocalModifications();
-
-      // 2. Fetch latest changes from remote branch
+      // 1. Fetch latest changes from remote branch
       await git.fetch({
         fs,
         http,
@@ -358,7 +355,8 @@ export class GitEngine {
         onAuth: this.getAuthCallback()
       });
 
-      // 3. Merge or fast-forward
+      // 2. Merge or fast-forward
+      let conflictBackups: Array<{ original: string; backup: string }> = [];
       try {
         await git.merge({
           fs,
@@ -367,8 +365,12 @@ export class GitEngine {
           theirs: `origin/${this.branch}`,
           author: { name: 'AstroSquad Researcher', email: 'researcher@astrosquad.space' }
         });
-      } catch {
-        // In case merge has index conflicts, checkout remote branch cleanly since we already preserved local backups
+      } catch (mergeError: any) {
+        console.warn('[GitEngine] Merge conflict detected. Running guardrail backup before reset:', mergeError);
+        // ONLY back up local modifications when an actual merge conflict occurs!
+        conflictBackups = await this.guardrailBackupLocalModifications();
+
+        // In case merge has index conflicts, checkout remote branch cleanly since we preserved backups
         await git.checkout({
           fs,
           dir: this.repoDir,
@@ -397,7 +399,7 @@ export class GitEngine {
 
   /**
    * Non-Technical Guardrail:
-   * Scans for any files modified locally. If modified, backs them up as:
+   * Scans for tracked files modified locally. If modified, backs them up as:
    * [filename]_conflict_[timestamp].[ext]
    */
   public async guardrailBackupLocalModifications(): Promise<Array<{ original: string; backup: string }>> {
@@ -412,14 +414,15 @@ export class GitEngine {
           !p.startsWith('.app') &&
           !p.includes('node_modules') &&
           !p.includes('dist') &&
-          !p.includes('_conflict_')
+          !p.includes('_conflict_') &&
+          !p.endsWith('desktop.ini')
       });
 
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
       for (const [filepath, head, workdir] of statusMatrix) {
-        // workdir !== head means locally modified or added
-        if (workdir !== head && workdir !== 0) {
+        // Only back up tracked files that have genuine local modifications (head === 1 and workdir === 2)
+        if (head === 1 && workdir === 2) {
           if (filepath.includes('_conflict_')) continue;
           const fullPath = path.join(this.repoDir, filepath);
           if (fs.existsSync(fullPath)) {
@@ -463,11 +466,17 @@ export class GitEngine {
       const authorName = user.user?.name || user.user?.login || 'AstroSquad Researcher';
       const authorEmail = user.user?.login ? `${user.user.login}@users.noreply.github.com` : 'researcher@astrosquad.space';
 
-      // 1. Stage all changes
+      // 1. Stage all changes (excluding internal .app, conflict backups, and system files)
       const matrix = await git.statusMatrix({
         fs,
         dir: this.repoDir,
-        filter: (p) => !p.startsWith('.git')
+        filter: (p) =>
+          !p.startsWith('.git') &&
+          !p.startsWith('.app') &&
+          !p.includes('node_modules') &&
+          !p.includes('dist') &&
+          !p.includes('_conflict_') &&
+          !p.endsWith('desktop.ini')
       });
 
       let changesCount = 0;
@@ -517,14 +526,14 @@ export class GitEngine {
       });
 
       if (!pushResult.ok) {
-        // Check if remote had changes (conflict)
-        // Backup local modifications and pull
-        const backups = await this.guardrailBackupLocalModifications();
-        await this.syncRepository();
+        // Remote had newer updates. Sync cleanly
+        const syncRes = await this.syncRepository();
         return {
           success: false,
-          message: `Remote had newer updates. Local changes backed up to preserve edits.`,
-          conflictsResolved: backups
+          message: syncRes.conflictsResolved && syncRes.conflictsResolved.length > 0
+            ? `Remote had newer updates. Local changes backed up to preserve edits.`
+            : `Remote had newer updates. Synchronized latest changes from main.`,
+          conflictsResolved: syncRes.conflictsResolved
         };
       }
 
