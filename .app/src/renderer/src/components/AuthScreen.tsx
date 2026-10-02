@@ -104,25 +104,21 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, showToa
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center bg-slate-950 text-slate-100 cosmic-grid overflow-hidden p-6 select-none">
-      {/* Background Doppler Aura Rings */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none animate-pulse-slow" />
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl pointer-events-none animate-pulse-slow" />
-
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-obsidian-950 text-slate-100 overflow-hidden p-6 select-none animate-fade-in">
       {/* Main Terminal Card */}
-      <div className="relative z-10 w-full max-w-xl rounded-2xl bg-obsidian-900/80 border border-white/[0.08] shadow-2xl backdrop-blur-2xl p-8 transition-all font-sans">
+      <div className="relative z-10 w-full max-w-xl rounded-2xl bg-obsidian-900/80 border border-white/[0.04] shadow-glass backdrop-blur-xl p-8 transition-all font-sans">
         {/* Header telemetry badge */}
         <div className="flex items-center justify-between pb-6 border-b border-white/[0.08]">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-slate-200">
-              <Orbit className="w-5 h-5 animate-spin" style={{ animationDuration: '30s' }} />
+              <Orbit className="w-5 h-5 animate-spin-slow" />
             </div>
             <div>
               <h1 className="text-base font-semibold tracking-tight text-white flex items-center gap-2">
                 AstroSquad Station
               </h1>
               <p className="text-xs text-slate-400 font-sans flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-nothing-500 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-nothing-500" />
                 <span>Comparative Spectroscopy · M82 Redshift &amp; M31 Blueshift</span>
               </p>
             </div>
@@ -153,7 +149,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, showToa
               />
               <button
                 onClick={generateCode}
-                className="px-3.5 py-1.5 bg-white/[0.06] hover:bg-white/[0.1] text-white font-medium rounded-lg transition-all border border-white/[0.08] active:scale-[0.98]"
+                className="px-3.5 py-1.5 bg-white/[0.06] hover:bg-white/[0.1] text-white font-medium rounded-xl transition-all border border-white/[0.08] active:scale-[0.98]"
               >
                 Regenerate
               </button>
@@ -175,7 +171,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, showToa
           </div>
 
           {/* 8-Character Device Code Display Box */}
-          <div className="relative p-6 rounded-2xl bg-obsidian-950 border border-white/[0.08] flex flex-col items-center justify-center gap-2 shadow-inner">
+          <div className="relative p-6 rounded-2xl bg-obsidian-950 border border-white/[0.04] flex flex-col items-center justify-center gap-2">
             <span className="text-[11px] font-mono uppercase tracking-widest text-slate-500">
               Your 8-Character Device Code
             </span>
@@ -191,7 +187,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, showToa
           {/* Single "Copy Code & Open GitHub" Button */}
           <button
             onClick={handleCopyAndOpenGitHub}
-            className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-medium text-sm text-white bg-nothing-600 hover:bg-nothing-500 transition-all shadow-crimson active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-medium text-sm text-white bg-nothing-600 hover:bg-nothing-500 transition-all shadow-card active:scale-[0.98]"
           >
             {copied ? (
               <>
@@ -259,7 +255,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, showToa
                   />
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-white/[0.08] hover:bg-white/[0.12] text-white font-medium rounded-lg text-xs transition-all border border-white/[0.1] active:scale-[0.98]"
+                    className="px-4 py-2 bg-white/[0.08] hover:bg-white/[0.12] text-white font-medium rounded-xl text-xs transition-all border border-white/[0.1] active:scale-[0.98]"
                   >
                     Save &amp; Enter
                   </button>
@@ -279,10 +275,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, showToa
         {/* Footer telemetry */}
         <div className="mt-8 pt-4 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-sans text-slate-500">
           <span className="flex items-center gap-1.5 text-slate-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-sapphire-400" />
-            <span>M31 Blueshift v ≈ -301 km/s (z = -0.001)</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+            <span>AstroSquad Station</span>
           </span>
-          <span className="text-slate-400 font-mono">Station v1.0.0</span>
+          <span className="text-slate-400 font-mono">Station v1.0.3</span>
         </div>
       </div>
     </div>

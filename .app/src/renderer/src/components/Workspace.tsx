@@ -267,8 +267,8 @@ export const Workspace: React.FC<WorkspaceProps> = ({
     if (!selectedFile) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-3 select-none">
-          <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-center text-slate-600">
-            <Orbit className="w-6 h-6 animate-spin" style={{ animationDuration: '30s' }} />
+          <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center text-slate-600">
+            <Orbit className="w-6 h-6 animate-spin-slow" />
           </div>
           <p className="text-xs text-slate-500 font-sans">Select a document or data file from the sidebar to inspect.</p>
         </div>
@@ -365,7 +365,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
     // Fallback for unknown file types
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center space-y-4 select-none">
-        <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-slate-500">
+        <div className="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.04] flex items-center justify-center text-slate-500">
           <FileQuestion className="w-6 h-6" />
         </div>
         <div className="space-y-1">
@@ -374,7 +374,7 @@ export const Workspace: React.FC<WorkspaceProps> = ({
         </div>
         <button
           onClick={handleEditInDesktop}
-          className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-slate-200 hover:text-white text-xs font-sans font-medium transition-all active:scale-[0.98]"
+          className="px-4 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.04] text-slate-200 hover:text-white text-xs font-sans font-medium transition-all active:scale-[0.98]"
         >
           Open with System Default App
         </button>

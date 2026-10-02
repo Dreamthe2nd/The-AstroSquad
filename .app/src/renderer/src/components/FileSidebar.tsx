@@ -57,19 +57,19 @@ export const FileSidebar: React.FC<FileSidebarProps> = ({
     const name = node.name.toLowerCase();
 
     if (ext === 'pdf' || name === 'proposal') {
-      return <FileText className="w-3.5 h-3.5 text-rose-400/90 shrink-0" />;
+      return <FileText className="w-3.5 h-3.5 text-slate-500 shrink-0" />;
     }
     if (ext === 'pptx') {
-      return <Presentation className="w-3.5 h-3.5 text-amber-400/90 shrink-0" />;
+      return <Presentation className="w-3.5 h-3.5 text-slate-500 shrink-0" />;
     }
     if (ext === 'csv') {
-      return <FileSpreadsheet className="w-3.5 h-3.5 text-teal-400/90 shrink-0" />;
+      return <FileSpreadsheet className="w-3.5 h-3.5 text-slate-500 shrink-0" />;
     }
     if (['png', 'jpg', 'jpeg', 'webp'].includes(ext || '')) {
-      return <ImageIcon className="w-3.5 h-3.5 text-emerald-400/90 shrink-0" />;
+      return <ImageIcon className="w-3.5 h-3.5 text-slate-500 shrink-0" />;
     }
     if (ext === 'md' || ['ts', 'tsx', 'js', 'jsx', 'json', 'css', 'html', 'ps1', 'bat', 'sh', 'py', 'toml', 'yaml', 'yml', 'lock'].includes(ext || '')) {
-      return <FileCode className="w-3.5 h-3.5 text-sapphire-400/90 shrink-0" />;
+      return <FileCode className="w-3.5 h-3.5 text-slate-500 shrink-0" />;
     }
     return <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />;
   };
@@ -102,7 +102,7 @@ export const FileSidebar: React.FC<FileSidebarProps> = ({
             </div>
 
             {isExpanded && node.children && (
-              <div className="border-l border-white/[0.06] ml-3.5 my-0.5">
+              <div className="border-l border-white/[0.03] ml-3.5 my-0.5">
                 {renderTree(node.children, depth + 1)}
               </div>
             )}
@@ -117,7 +117,7 @@ export const FileSidebar: React.FC<FileSidebarProps> = ({
           style={{ paddingLeft: `${depth * 12 + 14}px` }}
           className={`flex items-center justify-between gap-2 py-1.5 pr-2.5 rounded-lg cursor-pointer text-xs font-sans transition-all my-0.5 active:scale-[0.99] ${
             isSelected
-              ? 'bg-white/[0.08] text-white font-medium border border-white/[0.12] shadow-ambient'
+              ? 'bg-white/[0.06] text-white font-medium border-l-2 border-l-nothing-500 border-y-0 border-r-0'
               : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03]'
           }`}
         >
@@ -138,18 +138,18 @@ export const FileSidebar: React.FC<FileSidebarProps> = ({
 
   if (!isOpen) {
     return (
-      <div className="w-12 h-full bg-obsidian-950 border-r border-white/[0.06] flex flex-col items-center justify-between py-4 select-none">
+      <div className="w-12 h-full bg-obsidian-950 border-r border-white/[0.04] flex flex-col items-center justify-between py-4 select-none">
         <div className="flex flex-col items-center gap-3">
           <button
             onClick={onToggleOpen}
-            className="p-2 rounded-lg hover:bg-white/[0.06] text-slate-400 hover:text-white transition-colors active:scale-[0.98]"
+            className="p-2 rounded-xl hover:bg-white/[0.06] text-slate-400 hover:text-white transition-colors active:scale-[0.98]"
             title="Expand Sidebar"
           >
             <PanelLeftOpen className="w-4 h-4" />
           </button>
           <button
             onClick={onReturnToHub}
-            className="p-2 rounded-lg hover:bg-white/[0.06] text-slate-400 hover:text-white transition-colors active:scale-[0.98]"
+            className="p-2 rounded-xl hover:bg-white/[0.06] text-slate-400 hover:text-white transition-colors active:scale-[0.98]"
             title="Return to Flight Deck"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -163,13 +163,13 @@ export const FileSidebar: React.FC<FileSidebarProps> = ({
   }
 
   return (
-    <aside className="w-64 h-full bg-obsidian-950/90 border-r border-white/[0.06] flex flex-col justify-between select-none overflow-hidden shrink-0 backdrop-blur-xl">
+    <aside className="w-64 h-full bg-obsidian-950/90 border-r border-white/[0.04] flex flex-col justify-between select-none overflow-hidden shrink-0 backdrop-blur-xl">
       {/* Top Header */}
       <div>
         <div className="flex items-center justify-between p-3 border-b border-white/[0.06]">
           <div className="flex items-center gap-2.5">
             <div className="w-6 h-6 rounded-lg bg-white/[0.06] border border-white/[0.1] flex items-center justify-center">
-              <span className="w-2 h-2 rounded-full bg-nothing animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-nothing" />
             </div>
             <div>
               <h2 className="text-xs font-semibold text-white tracking-tight">
@@ -185,14 +185,14 @@ export const FileSidebar: React.FC<FileSidebarProps> = ({
             <button
               onClick={onRefresh}
               disabled={isSyncing}
-              className="p-1.5 rounded-lg hover:bg-white/[0.06] text-slate-400 hover:text-white transition-colors disabled:opacity-40 active:scale-[0.98]"
+              className="p-1.5 rounded-xl hover:bg-white/[0.06] text-slate-400 hover:text-white transition-colors disabled:opacity-40 active:scale-[0.98]"
               title="Pull & Refresh Directory"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-slate-300' : ''}`} />
             </button>
             <button
               onClick={onToggleOpen}
-              className="p-1.5 rounded-lg hover:bg-white/[0.06] text-slate-400 hover:text-white transition-colors active:scale-[0.98]"
+              className="p-1.5 rounded-xl hover:bg-white/[0.06] text-slate-400 hover:text-white transition-colors active:scale-[0.98]"
               title="Collapse Sidebar"
             >
               <PanelLeftClose className="w-3.5 h-3.5" />
@@ -203,7 +203,7 @@ export const FileSidebar: React.FC<FileSidebarProps> = ({
         {/* Back to Flight Deck Link */}
         <button
           onClick={onReturnToHub}
-          className="w-[calc(100%-16px)] m-2 flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/[0.04] bg-white/[0.02] hover:bg-white/[0.06] text-xs font-sans text-slate-400 hover:text-white transition-all active:scale-[0.98]"
+          className="w-[calc(100%-16px)] m-2 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] text-xs font-sans text-slate-400 hover:text-white transition-all active:scale-[0.98]"
         >
           <ArrowLeft className="w-3.5 h-3.5 text-slate-400" />
           <span>Flight Deck</span>
@@ -212,9 +212,6 @@ export const FileSidebar: React.FC<FileSidebarProps> = ({
 
       {/* Directory Hierarchy Tree */}
       <div className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
-        <div className="text-[10px] font-sans font-medium uppercase tracking-wider text-slate-500 px-2 py-1">
-          Files & Research
-        </div>
         {files && files.length > 0 ? (
           renderTree(files)
         ) : (
@@ -225,12 +222,7 @@ export const FileSidebar: React.FC<FileSidebarProps> = ({
       </div>
 
       {/* Footer telemetry */}
-      <div className="p-2.5 border-t border-white/[0.06] bg-black/30 text-[10px] font-mono text-slate-500 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-slate-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-          <span>STATION ONLINE</span>
-        </span>
-      </div>
+      <div className="p-1.5 border-t border-white/[0.04]" />
     </aside>
   );
 };

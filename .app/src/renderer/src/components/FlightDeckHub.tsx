@@ -28,7 +28,6 @@ import {
   Globe
 } from 'lucide-react';
 import { AuthStatus } from '../types';
-import { DopplerWavesBackground } from './DopplerWavesBackground';
 import { PrerequisitesModal } from './PrerequisitesModal';
 
 interface FlightDeckHubProps {
@@ -49,7 +48,6 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
   showToast
 }) => {
   const [loadingAction, setLoadingAction] = useState<'repo' | 'discord' | 'proposal' | 'meeting' | 'kstars' | 'website' | null>(null);
-  const [showProposalMatrix, setShowProposalMatrix] = useState<boolean>(true);
   const [showPrerequisites, setShowPrerequisites] = useState<boolean>(false);
   const isCollaborator = Boolean(authStatus?.authenticated && authStatus?.isCollaborator);
 
@@ -165,14 +163,9 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
   };
 
   return (
-    <div className="relative h-full w-full bg-obsidian-950 text-slate-100 flex flex-col justify-between p-6 md:p-8 overflow-y-auto overflow-x-hidden font-sans selection:bg-nothing/30 dot-matrix-bg">
-      {/* 3D Vertically Rotating Doppler Waves */}
-      <div className="opacity-35 pointer-events-none">
-        <DopplerWavesBackground />
-      </div>
-
+    <div className="relative h-full w-full bg-obsidian-950 text-slate-100 flex flex-col justify-between p-6 md:p-8 overflow-y-auto overflow-x-hidden font-sans selection:bg-nothing/30 animate-fade-in">
       {/* Top Station Flight Deck Bar */}
-      <header className="relative z-10 flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-obsidian-900/70 border border-white/[0.08] backdrop-blur-xl shrink-0 shadow-sm">
+      <header className="relative z-10 flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-obsidian-900/70 border border-white/[0.04] shrink-0 shadow-sm">
         <div className="flex items-center gap-3.5">
           <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-white relative">
             <Orbit className="w-5 h-5 text-white" />
@@ -263,7 +256,7 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
         {/* Welcome Banner */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-xs text-slate-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-nothing animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-nothing" />
             <span>Spectroscopic Research Station</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight font-sans">
@@ -279,14 +272,14 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
           {/* Tile 1: View Repository */}
           <div
             onClick={handleViewRepository}
-            className="group relative cursor-pointer rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.2] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-ambient active:scale-[0.99] flex flex-col justify-between backdrop-blur-xl"
+            className="group relative cursor-pointer rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] hover:border-white/[0.06] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover active:scale-[0.99] flex flex-col justify-between backdrop-blur-xl"
           >
             <div>
-              <div className="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-slate-100 mb-5 group-hover:bg-white/[0.08] transition-all">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-slate-100 mb-5 group-hover:bg-white/[0.08] transition-all">
                 {loadingAction === 'repo' ? (
                   <RefreshCw className="w-6 h-6 animate-spin text-white" />
                 ) : (
-                  <FolderGit2 className="w-6 h-6 text-slate-200" />
+                  <FolderGit2 className="w-6 h-6 text-slate-300" />
                 )}
               </div>
 
@@ -295,9 +288,6 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
                   <h3 className="text-base font-bold text-white tracking-tight">
                     Research Data
                   </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 font-medium">
-                    AUTO-PULL
-                  </span>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed font-sans">
                   Runs background sync from <code className="text-slate-200 font-mono text-[11px]">main</code> to pull latest M82 &amp; M31 spectra, reduction notebooks, and logs.
@@ -314,14 +304,14 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
           {/* Tile 2: Squad Comms (Discord) */}
           <div
             onClick={handleOpenDiscord}
-            className="group relative cursor-pointer rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.2] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-ambient active:scale-[0.99] flex flex-col justify-between backdrop-blur-xl"
+            className="group relative cursor-pointer rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] hover:border-white/[0.06] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover active:scale-[0.99] flex flex-col justify-between backdrop-blur-xl"
           >
             <div>
-              <div className="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-slate-100 mb-5 group-hover:bg-white/[0.08] transition-all">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-slate-100 mb-5 group-hover:bg-white/[0.08] transition-all">
                 {loadingAction === 'discord' ? (
                   <RefreshCw className="w-6 h-6 animate-spin text-white" />
                 ) : (
-                  <MessageSquare className="w-6 h-6 text-slate-200" />
+                  <MessageSquare className="w-6 h-6 text-slate-300" />
                 )}
               </div>
 
@@ -330,9 +320,6 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
                   <h3 className="text-base font-bold text-white tracking-tight">
                     Squad Comms
                   </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 font-medium">
-                    DISCORD
-                  </span>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed font-sans">
                   Collaborate live with Shlok, Annushka, Keya, and Sheetal to plan Takahashi &amp; Meade telescope observation runs.
@@ -349,14 +336,14 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
           {/* Tile 3: View Proposal */}
           <div
             onClick={handleViewProposal}
-            className="group relative cursor-pointer rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.2] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-ambient active:scale-[0.99] flex flex-col justify-between backdrop-blur-xl"
+            className="group relative cursor-pointer rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] hover:border-white/[0.06] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover active:scale-[0.99] flex flex-col justify-between backdrop-blur-xl"
           >
             <div>
-              <div className="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-slate-100 mb-5 group-hover:bg-white/[0.08] transition-all">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-slate-100 mb-5 group-hover:bg-white/[0.08] transition-all">
                 {loadingAction === 'proposal' ? (
                   <RefreshCw className="w-6 h-6 animate-spin text-white" />
                 ) : (
-                  <FileText className="w-6 h-6 text-slate-200" />
+                  <FileText className="w-6 h-6 text-slate-300" />
                 )}
               </div>
 
@@ -365,9 +352,6 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
                   <h3 className="text-base font-bold text-white tracking-tight">
                     Research Proposal
                   </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 font-medium">
-                    7-PAGE PDF
-                  </span>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed font-sans">
                   Official proposal: <span className="text-slate-200 italic font-medium">"Spectroscopic Analysis of galaxies M82 and M31"</span>.
@@ -384,14 +368,14 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
           {/* Tile 4: Team Video Briefing */}
           <div
             onClick={handleOpenMeeting}
-            className="group relative cursor-pointer rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.08] hover:border-white/[0.2] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-ambient active:scale-[0.99] flex flex-col justify-between backdrop-blur-xl"
+            className="group relative cursor-pointer rounded-2xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.04] hover:border-white/[0.06] p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover active:scale-[0.99] flex flex-col justify-between backdrop-blur-xl"
           >
             <div>
-              <div className="w-12 h-12 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-slate-100 mb-5 group-hover:bg-white/[0.08] transition-all">
+              <div className="w-12 h-12 rounded-xl bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-slate-100 mb-5 group-hover:bg-white/[0.08] transition-all">
                 {loadingAction === 'meeting' ? (
                   <RefreshCw className="w-6 h-6 animate-spin text-white" />
                 ) : (
-                  <Video className="w-6 h-6 text-slate-200" />
+                  <Video className="w-6 h-6 text-slate-300" />
                 )}
               </div>
 
@@ -400,9 +384,6 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
                   <h3 className="text-base font-bold text-white tracking-tight">
                     Team Briefing
                   </h3>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 font-medium">
-                    MEET / ZOOM
-                  </span>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed font-sans">
                   Instant one-click access to the synchronized team briefing room. Compatible with Google Meet and Zoom.
@@ -422,7 +403,7 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
           <button
             onClick={handleOpenKStars}
             disabled={loadingAction === 'kstars'}
-            className="group px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/[0.2] text-xs font-sans text-slate-300 hover:text-white flex items-center gap-2 transition-all duration-150 active:scale-[0.98] shadow-sm backdrop-blur-xl disabled:opacity-50"
+            className="group px-3 py-1.5 rounded-xl bg-transparent hover:bg-white/[0.04] text-slate-500 hover:text-slate-300 border-0 flex items-center gap-2 transition-all duration-150 active:scale-[0.98] disabled:opacity-50"
             title="Launch KStars Planetarium & Telescope Control (macOS & Windows)"
           >
             {loadingAction === 'kstars' ? (
@@ -439,7 +420,7 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
           <button
             onClick={handleOpenWebsite}
             disabled={loadingAction === 'website'}
-            className="group px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] hover:border-white/[0.2] text-xs font-sans text-slate-300 hover:text-white flex items-center gap-2 transition-all duration-150 active:scale-[0.98] shadow-sm backdrop-blur-xl disabled:opacity-50"
+            className="group px-3 py-1.5 rounded-xl bg-transparent hover:bg-white/[0.04] text-slate-500 hover:text-slate-300 border-0 flex items-center gap-2 transition-all duration-150 active:scale-[0.98] disabled:opacity-50"
             title="Visit thegeekshed.us (AstroSquad Portal)"
           >
             {loadingAction === 'website' ? (
@@ -453,7 +434,7 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
         </div>
 
         {/* Research Team Banner */}
-        <div className="p-5 rounded-2xl bg-obsidian-900/70 border border-white/[0.08] shadow-sm flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl">
+        <div className="p-5 rounded-2xl bg-obsidian-900/70 border border-white/[0.04] shadow-sm flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-slate-300 shrink-0">
               <Users className="w-5 h-5" />
@@ -480,7 +461,7 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
           <div className="flex flex-wrap items-center gap-3 text-xs">
             {/* Target 1: M82 */}
             <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-nothing animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-nothing" />
               <div>
                 <div className="font-semibold text-xs text-white flex items-center gap-1.5 font-sans">
                   <span>M82 (Cigar Galaxy)</span>
@@ -496,7 +477,7 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
 
             {/* Target 2: M31 */}
             <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.08] text-slate-300">
-              <span className="w-2 h-2 rounded-full bg-sapphire animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-sapphire" />
               <div>
                 <div className="font-semibold text-xs text-white flex items-center gap-1.5 font-sans">
                   <span>M31 (Andromeda)</span>
@@ -511,7 +492,7 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
             </div>
 
             {/* Doppler Equation Badge */}
-            <div className="px-3 py-2 rounded-xl bg-black/40 border border-white/[0.08] text-slate-300 text-[11px] font-mono shadow-inner">
+            <div className="px-3 py-2 rounded-xl bg-black/40 border border-white/[0.08] text-slate-300 text-[11px] font-mono">
               <span className="text-slate-500">Doppler: </span>
               <span className="text-sapphire-400 font-medium">z = Δλ / λ₀</span>
               <span className="text-slate-700 mx-2">|</span>
@@ -519,134 +500,12 @@ export const FlightDeckHub: React.FC<FlightDeckHubProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Proposal Research Matrix & Hypotheses Panel */}
-        <div className="rounded-2xl bg-obsidian-900/70 border border-white/[0.08] overflow-hidden shadow-sm backdrop-blur-xl">
-          <div className="px-6 py-4 bg-obsidian-950/60 border-b border-white/[0.08] flex items-center justify-between cursor-pointer" onClick={() => setShowProposalMatrix(!showProposalMatrix)}>
-            <div className="flex items-center gap-2.5">
-              <BookOpen className="w-4 h-4 text-slate-300" />
-              <h3 className="text-sm font-bold text-white font-sans uppercase tracking-wide">
-                Research Proposal Matrix: M82 vs. M31 Comparative Spectroscopy
-              </h3>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/[0.04] text-slate-400 border border-white/[0.08]">
-                PROPOSAL.PDF ALIGNED
-              </span>
-            </div>
-            <div className="flex items-center gap-3 font-sans">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleViewProposal();
-                }}
-                className="text-xs text-slate-300 hover:text-white underline underline-offset-4 flex items-center gap-1 transition-colors"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>Read Full Document</span>
-              </button>
-              {showProposalMatrix ? (
-                <ChevronUp className="w-4 h-4 text-slate-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-slate-400" />
-              )}
-            </div>
-          </div>
-
-          {showProposalMatrix && (
-            <div className="p-6 space-y-6 font-sans">
-              {/* Comparative Hypotheses Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* M82 Starburst Box */}
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-nothing"></span>
-                      <h4 className="font-bold text-white text-sm font-sans">M82 — Starburst Cigar Galaxy</h4>
-                    </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-nothing/15 text-nothing-400 border border-nothing/30">
-                      Redshifted (+v)
-                    </span>
-                  </div>
-                  <ul className="text-xs text-slate-300 space-y-2 font-sans">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-nothing-400 mt-0.5 shrink-0" />
-                      <span><strong>Kinematics:</strong> Accelerating away from relative position of Earth (+203 km/s).</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-nothing-400 mt-0.5 shrink-0" />
-                      <span><strong>Atmosphere &amp; Elements:</strong> Abundance of ionized H II &amp; [N II] gases; presence of forbidden H, N, or S lines.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-nothing-400 mt-0.5 shrink-0" />
-                      <span><strong>Star Formation:</strong> Cradle of very hot, bright, young short-lived stars with superwind outflow jets.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-nothing-400 mt-0.5 shrink-0" />
-                      <span><strong>Estimated Distance:</strong> Many million light years (~12 Mly).</span>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* M31 Andromeda Box */}
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.08] space-y-3">
-                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06]">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-sapphire"></span>
-                      <h4 className="font-bold text-white text-sm font-sans">M31 — Andromeda Spiral Galaxy</h4>
-                    </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sapphire/15 text-sapphire-400 border border-sapphire/30">
-                      Blueshifted (-v)
-                    </span>
-                  </div>
-                  <ul className="text-xs text-slate-300 space-y-2 font-sans">
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-sapphire-400 mt-0.5 shrink-0" />
-                      <span><strong>Kinematics:</strong> Accelerating towards relative position of Earth (-300 km/s).</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-sapphire-400 mt-0.5 shrink-0" />
-                      <span><strong>Atmosphere &amp; Elements:</strong> Dominated by classical stellar absorption spectra; absence of starburst ejections.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-sapphire-400 mt-0.5 shrink-0" />
-                      <span><strong>Star Formation:</strong> Relatively stable galaxy; lacks extreme H II burst region signatures.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-sapphire-400 mt-0.5 shrink-0" />
-                      <span><strong>Estimated Distance:</strong> Just a couple of million light years (~2.5 Mly).</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Instrumentation & Reduction Pipeline Strip */}
-              <div className="p-4 rounded-xl bg-black/40 border border-white/[0.08] text-xs font-mono text-slate-300 flex flex-wrap items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <div className="text-[10px] uppercase text-sapphire-400 font-medium tracking-wider">
-                    Observation Hardware &amp; Optics (Proposal Spec):
-                  </div>
-                  <div className="text-slate-300">
-                    Takahashi Apo Refractor (106mm / 530mm) · Meade Schmidt-Cassegrain (305mm / 3,048mm) · Computerized GEM · 3D-Printed Czerny-Turner (&lt;350nm to 1µm)
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-[10px] uppercase text-nothing-400 font-medium tracking-wider">
-                    Data Reduction Protocol:
-                  </div>
-                  <div className="text-slate-300">
-                    Bias/Dark Subtraction → Flat-Field Correction → Argon-Neon Lamp Wavelength Calibration → 1D Spectral Extraction → Flux Normalization
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </main>
 
       {/* Footer telemetry */}
-      <footer className="relative z-10 flex items-center justify-between text-xs font-sans text-slate-500 pt-6 pb-6 border-t border-white/[0.08] mt-8 shrink-0">
+      <footer className="relative z-10 flex items-center justify-between text-xs font-sans text-slate-500 pt-6 pb-6 border-t border-white/[0.04] mt-8 shrink-0">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Non-Technical Guardrail Engine: Zero Git CLI / Automatic Conflict Backups</span>
+          <span>AstroSquad Station</span>
         </div>
         <div className="font-mono text-[11px] text-slate-500">
           <span>Remote: github.com/Dreamthe2nd/The-AstroSquad</span>

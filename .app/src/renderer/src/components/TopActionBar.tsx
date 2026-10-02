@@ -111,29 +111,29 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
   const pathParts = currentPath ? currentPath.split(/[/\\]/).filter(Boolean) : [];
 
   return (
-    <div className="relative z-20 flex items-center justify-between mx-2.5 my-2 px-3.5 h-11 bg-obsidian-900/80 border border-white/[0.08] backdrop-blur-xl rounded-xl shadow-lg select-none">
+    <div className="relative z-20 flex items-center justify-between mx-2.5 my-2 px-3.5 h-11 bg-obsidian-900/60 border border-white/[0.04] backdrop-blur-xl rounded-xl shadow-card select-none">
       {/* Left: Pill "New" Action & Minimalist Breadcrumbs */}
       <div className="flex items-center gap-3 min-w-0">
         {/* Persistent "+ New" Pill with Dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowNewDropdown(!showNewDropdown)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-sans font-medium text-xs bg-white/[0.06] hover:bg-white/[0.1] text-slate-100 border border-white/[0.08] transition-all active:scale-[0.98] shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-sans font-medium text-xs bg-white/[0.06] hover:bg-white/[0.1] text-slate-100 border border-white/[0.04] transition-all active:scale-[0.98] shadow-sm"
           >
             <Plus className="w-3.5 h-3.5 text-slate-300" />
             <span>New</span>
           </button>
 
           {showNewDropdown && (
-            <div className="absolute left-0 mt-2 w-64 rounded-xl bg-obsidian-900/95 border border-white/[0.1] shadow-2xl backdrop-blur-2xl p-1.5 z-30 font-sans text-xs">
+            <div className="absolute left-0 mt-2 w-64 rounded-xl bg-obsidian-900/95 border border-white/[0.04] shadow-glass backdrop-blur-2xl p-1.5 z-30 font-sans text-xs">
               <button
                 onClick={() => {
                   setShowNewDropdown(false);
                   onImportFiles();
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/[0.06] text-slate-300 hover:text-white transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/[0.06] text-slate-300 hover:text-white transition-colors text-left"
               >
-                <Upload className="w-4 h-4 text-sapphire-400" />
+                <Upload className="w-4 h-4 text-slate-400" />
                 <div>
                   <div className="font-medium text-slate-200">Import File(s)</div>
                   <div className="text-[10px] text-slate-500">Copy spectra, CSVs, or slides into folder</div>
@@ -145,9 +145,9 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
                   setShowNewDropdown(false);
                   onImportFolder();
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/[0.06] text-slate-300 hover:text-white transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/[0.06] text-slate-300 hover:text-white transition-colors text-left"
               >
-                <FolderPlus className="w-4 h-4 text-sapphire-400" />
+                <FolderPlus className="w-4 h-4 text-slate-400" />
                 <div>
                   <div className="font-medium text-slate-200">Import Folder</div>
                   <div className="text-[10px] text-slate-500">Recursively import directories</div>
@@ -161,9 +161,9 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
                   setShowNewDropdown(false);
                   setShowNewNoteModal(true);
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-white/[0.06] text-slate-300 hover:text-white transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/[0.06] text-slate-300 hover:text-white transition-colors text-left"
               >
-                <FileEdit className="w-4 h-4 text-nothing-400" />
+                <FileEdit className="w-4 h-4 text-slate-400" />
                 <div>
                   <div className="font-medium text-slate-200">New Note</div>
                   <div className="text-[10px] text-slate-500">Markdown document with math support</div>
@@ -209,7 +209,7 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
           <button
             onClick={onSaveAndShare}
             disabled={isSyncing}
-            className="group flex items-center gap-2 px-3 py-1.5 rounded-lg font-sans font-medium text-xs text-white bg-nothing hover:bg-nothing-600 border border-nothing-400/30 transition-all shadow-crimson active:scale-[0.98] disabled:opacity-50"
+            className="group flex items-center gap-2 px-3 py-1.5 rounded-xl font-sans font-medium text-xs text-white bg-nothing hover:bg-nothing-600 border border-nothing/20 transition-all shadow-card active:scale-[0.98] disabled:opacity-50"
           >
             {isSyncing ? (
               <>
@@ -218,7 +218,7 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
               </>
             ) : (
               <>
-                <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-white" />
                 <span>Save & Share</span>
                 <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/30 border border-white/20 text-white/90">
                   PUSH
@@ -231,7 +231,7 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
           <button
             onClick={onEditInDesktop}
             disabled={!selectedFile || isSyncing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-sans font-medium text-xs border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white disabled:opacity-40 disabled:hover:bg-white/[0.04] disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-sans font-medium text-xs border border-white/[0.04] bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white disabled:opacity-40 disabled:hover:bg-white/[0.04] disabled:cursor-not-allowed transition-all active:scale-[0.98]"
             title={selectedFile ? "Pulls remote changes & opens file in default desktop app" : "Select a file to edit"}
           >
             {isSyncing ? (
@@ -248,7 +248,7 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
           <button
             onClick={onSyncDrive}
             disabled={isDriveSyncing || isSyncing}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-all text-xs font-sans active:scale-[0.98] disabled:opacity-50"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-white/[0.04] bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-all text-xs font-sans active:scale-[0.98] disabled:opacity-50"
             title="Pull updated slides, sheets, and documents from Google Drive (G:\My Drive\The-AstroSquad)"
           >
             {isDriveSyncing ? (
@@ -276,7 +276,7 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
               }
             }
           }}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-all text-xs font-sans active:scale-[0.98]"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-white/[0.04] bg-white/[0.04] hover:bg-white/[0.08] text-slate-300 hover:text-white transition-all text-xs font-sans active:scale-[0.98]"
           title="Open The-AstroSquad Google Drive Desktop Folder (G:\My Drive\The-AstroSquad)"
         >
           <Sparkles className="w-3.5 h-3.5 text-slate-400" />
@@ -286,10 +286,10 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
         {hasUpdate && onOpenSettings && (
           <button
             onClick={onOpenSettings}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-nothing/30 bg-nothing/15 hover:bg-nothing/25 text-nothing-400 hover:text-nothing-300 transition-all text-xs font-sans active:scale-[0.98]"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white transition-all text-xs font-sans active:scale-[0.98]"
             title={`Station Update Available: v${hasUpdate} (Click to open Settings)`}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-nothing animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-nothing" />
             <span className="font-mono font-medium text-[11px]">v{hasUpdate} Update</span>
           </button>
         )}
@@ -297,7 +297,7 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
         {onOpenSettings && (
           <button
             onClick={onOpenSettings}
-            className="p-2 rounded-lg border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white transition-all active:scale-[0.98]"
+            className="p-2 rounded-xl border border-white/[0.04] bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white transition-all active:scale-[0.98]"
             title="Station Mission Settings (Custom Apps, Repositories, Discord, Updates)"
           >
             <Settings className="w-3.5 h-3.5" />
@@ -307,8 +307,8 @@ export const TopActionBar: React.FC<TopActionBarProps> = ({
 
       {/* Create New Note Modal */}
       {showNewNoteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl bg-obsidian-900/90 border border-white/[0.1] p-6 shadow-2xl backdrop-blur-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian-950/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl bg-obsidian-900/90 border border-white/[0.04] p-6 shadow-2xl backdrop-blur-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-white/[0.06]">
               <h3 className="text-sm font-semibold text-white flex items-center gap-2">
                 <FileEdit className="w-4 h-4 text-nothing-400" />

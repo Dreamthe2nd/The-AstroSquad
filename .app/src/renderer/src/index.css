@@ -13,7 +13,7 @@
   }
 }
 
-/* Minimalist Unix/Nothing Scrollbars */
+/* Minimal scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -24,43 +24,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.10);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
-}
-
-/* Nothing OS Micro-Dot Matrix Pattern */
-.dot-matrix-bg,
-.cosmic-grid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-  background-size: 24px 24px;
-  background-position: 0 0;
-}
-
-/* Refined Micro-Borders */
-.micro-border {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.doppler-border-cyan {
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  box-shadow: 0 0 15px rgba(56, 189, 248, 0.06);
-}
-
-.doppler-border-cyan:hover {
-  border-color: rgba(56, 189, 248, 0.45);
-}
-
-.doppler-border-red {
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.08);
-}
-
-.doppler-border-red:hover {
-  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(255, 255, 255, 0.20);
 }
 
 /* KaTeX Clean Overrides */
@@ -68,7 +37,7 @@
   padding: 0.75rem 1rem;
   background: rgba(18, 21, 30, 0.5);
   border-radius: 0.5rem;
-  border-left: 2px solid #ef4444;
+  border-left: 2px solid rgba(239, 68, 68, 0.5);
   overflow-x: auto;
   overflow-y: hidden;
 }

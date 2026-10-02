@@ -32,45 +32,29 @@ export default {
           500: '#38bdf8',
           600: '#0284c7',
         },
-        lavender: {
-          DEFAULT: '#c084fc',
-          400: '#c084fc',
-          500: '#a855f7',
-        },
-        // Backwards compatibility mappings for legacy classes
-        cosmic: {
-          950: '#07080b',
-          900: '#0d0f15',
-          850: '#12151e',
-          800: '#1a1e2b',
-          700: '#262c3e',
-        },
-        blueshift: {
-          DEFAULT: '#38bdf8',
-          glow: '#7dd3fc',
-          dim: '#0c2438',
-          dark: '#0369a1'
-        },
-        redshift: {
-          DEFAULT: '#ef4444',
-          glow: '#f87171',
-          dim: '#450a0a',
-          dark: '#b91c1c'
-        }
       },
       boxShadow: {
-        'ambient': '0 0 25px -5px rgba(255, 255, 255, 0.04), 0 0 10px -2px rgba(255, 255, 255, 0.02)',
-        'crimson': '0 0 20px -3px rgba(239, 68, 68, 0.35)',
+        'ambient': '0 0 25px -5px rgba(255, 255, 255, 0.03)',
         'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.45)',
-        'card': '0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.08)',
-        'doppler-blue': '0 0 20px -5px rgba(56, 189, 248, 0.25)',
-        'doppler-red': '0 0 20px -5px rgba(239, 68, 68, 0.25)',
-        'doppler-glow': '0 0 25px -5px rgba(255, 255, 255, 0.06)',
+        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+        'card-hover': '0 4px 16px 0 rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.08)',
       },
       animation: {
+        'spin-slow': 'spin 30s linear infinite',
         'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'pulse-glow': 'pulse 2s ease-in-out infinite',
-      }
+        'fade-in': 'fadeIn 200ms ease-out',
+        'slide-up': 'slideUp 200ms cubic-bezier(0.22, 1, 0.36, 1)',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(8px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+      },
     },
   },
   plugins: [],
